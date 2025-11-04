@@ -13,9 +13,9 @@ from dataclasses import dataclass
 from gutenbergpy.textget import get_text_by_id, strip_headers
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging to be less verbose
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)  # Only show warnings and errors
 
 
 @dataclass
@@ -61,8 +61,6 @@ class DocumentLibrary:
         attempts = 0
         max_attempts = count * 10  # Allow for failures
 
-        logger.info(f"🔍 Retrieving {count} diverse documents (min {min_length} chars)...")
-
         while len(documents) < count and attempts < max_attempts:
             attempts += 1
 
@@ -71,14 +69,9 @@ class DocumentLibrary:
                                          force_different=True)
             if doc and len(doc) >= min_length:
                 documents.append(doc)
-                logger.info(f"  ✓ Document {len(documents)}/{count} retrieved ({len(doc):,} chars)")
-            else:
-                logger.warning(f"  ⚠ Attempt {attempts}: Document too short or failed")
 
             # Brief pause to avoid overwhelming the API
             time.sleep(0.2)
-
-        logger.info(f"Successfully retrieved {len(documents)} diverse documents!")
         return documents
 
     def get_single_document(self, min_length: int = 1000,
@@ -138,12 +131,9 @@ class DocumentLibrary:
                 return text
 
             except Exception as e:
-                logger.warning(f"Error fetching document {document_id}: {e}")
                 if 'document_id' in locals():
                     self.bad_document_ids.add(document_id)
                 continue
-
-        logger.error(f"Failed to retrieve document after 20 attempts")
         return None
 
     def _clean_text(self, text: str) -> str:
@@ -220,7 +210,7 @@ class DocumentLibrary:
         """Clear all caches (for testing or memory management)"""
         self.document_cache.clear()
         self.recently_used.clear()
-        logger.info("Document library cache cleared")
+        pass  # Cache cleared silently
 
 
 # Global instance for easy access across modules

@@ -94,7 +94,7 @@ class ResonantFragmentMiner:
 
         collection = FragmentCollection()
         seen_fragments = set()  # Deduplication tracking
-        fragments_per_text = max(3, target_count // num_texts)  # Distribute across texts
+        fragments_per_text = max(10, target_count // num_texts + 5)  # More generous distribution
 
         # Get diverse documents all at once - this ensures variety
         print(f"  📚 Retrieving {num_texts} diverse documents...")
@@ -172,7 +172,7 @@ class ResonantFragmentMiner:
             for pattern in patterns:
                 matches = re.findall(pattern, cleaned_text, re.MULTILINE)
 
-                for match in matches[:10]:  # Limit per pattern to avoid spam
+                for match in matches[:25]:  # Increased limit for better yield
                     fragment_text = match.strip()
 
                     # Quality filter
@@ -249,8 +249,8 @@ class ResonantFragmentMiner:
         text = fragment.text
         words = text.split()
 
-        # Minimum quality score threshold
-        if fragment.poetic_score < 0.65:
+        # Minimum quality score threshold (lowered for better yield)
+        if fragment.poetic_score < 0.55:
             return False
 
         # Reject overly generic fragments
