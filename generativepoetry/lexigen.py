@@ -3,11 +3,7 @@ from typing import List, TypeVar, Optional
 import pronouncing
 from datamuse import datamuse
 from .utils import *
-try:
-    from .word_validator import word_validator
-    USE_VALIDATOR = True
-except ImportError:
-    USE_VALIDATOR = False
+from .word_validator import word_validator
 
 
 def clean_api_results(word_list, exclude_words=None, use_validator=True):
@@ -27,8 +23,8 @@ def clean_api_results(word_list, exclude_words=None, use_validator=True):
     # First pass: basic filtering
     filtered = filter_word_list(word_list, spellcheck=False, exclude_words=exclude_words)
 
-    # Second pass: enhanced validation if available
-    if USE_VALIDATOR and use_validator:
+    # Second pass: enhanced validation
+    if use_validator:
         filtered = word_validator.clean_word_list(filtered, allow_rare=False)
 
     return filtered
@@ -252,9 +248,8 @@ def phonetically_related_words(input_val: str_or_list_of_str, sample_size=None, 
         exclude_words = results.copy()
         similar_words = similar_sounding_words(
             word, sample_size=sample_size, datamuse_api_max=datamuse_api_max)
-        # Apply enhanced filtering if available
-        if USE_VALIDATOR:
-            similar_words = word_validator.clean_word_list(similar_words, allow_rare=False)
+        # Apply enhanced filtering
+        similar_words = word_validator.clean_word_list(similar_words, allow_rare=False)
         nonrhymes = filter_word_list(similar_words, exclude_words=exclude_words)
         results.extend(nonrhymes[:max_results_per_input_word])
     results = extract_sample(results, sample_size=sample_size)

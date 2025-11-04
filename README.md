@@ -10,12 +10,18 @@ A Python library for procedurally generating visual concrete poems
 ### Installation
 
 ```bash
-# Install from PyPI
-pip install generativepoetry
-
-# Or install from source
+# Install from source (recommended)
 git clone https://github.com/sndwch/generativepoetry-py.git
 cd generativepoetry-py
+pip install -r requirements.txt
+
+# Download required NLTK data
+python -c "import nltk; nltk.download('punkt'); nltk.download('averaged_perceptron_tagger'); nltk.download('words'); nltk.download('brown'); nltk.download('wordnet')"
+
+# Download spaCy English model
+python -m spacy download en_core_web_sm
+
+# Install the package
 pip install -e .
 ```
 

@@ -20,11 +20,7 @@ from .decomposer import (
 )
 from .utils import filter_word_list
 
-try:
-    from .word_validator import word_validator
-    USE_VALIDATOR = True
-except ImportError:
-    USE_VALIDATOR = False
+from .word_validator import word_validator
 
 logger = logging.getLogger(__name__)
 
@@ -197,10 +193,9 @@ class MetaphorGenerator:
         if len(source) < 3 or len(target) < 3:
             return False
 
-        # Use word validator if available
-        if USE_VALIDATOR:
-            return (word_validator.is_valid_english_word(source) and
-                   word_validator.is_valid_english_word(target))
+        # Use word validator
+        return (word_validator.is_valid_english_word(source) and
+               word_validator.is_valid_english_word(target))
 
         return True
 
@@ -261,8 +256,7 @@ class MetaphorGenerator:
         targets.extend(random.sample(self.domains[random_domain], 2))
 
         # Clean and validate
-        if USE_VALIDATOR:
-            targets = word_validator.clean_word_list(targets)
+        targets = word_validator.clean_word_list(targets)
 
         return list(set(targets))  # Remove duplicates
 
