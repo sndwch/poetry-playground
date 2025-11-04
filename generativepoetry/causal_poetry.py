@@ -93,8 +93,10 @@ class ResonantFragmentMiner:
         print(f"🔍 Mining {target_count} resonant fragments from {num_texts} classic texts...")
 
         collection = FragmentCollection()
+        seen_fragments = set()  # Deduplication tracking
         attempts = 0
-        max_attempts = num_texts * 2
+        max_attempts = max(num_texts * 3, target_count // 5)  # Scale with target
+        fragments_per_text = max(3, target_count // num_texts)  # Distribute across texts
 
         while collection.total_count() < target_count and attempts < max_attempts:
             attempts += 1
@@ -105,34 +107,63 @@ class ResonantFragmentMiner:
                 if not text or len(text) < 1000:
                     continue
 
-                print(f"  Scanning text {attempts}...")
+                print(f"  Scanning text {attempts}... (found {collection.total_count()}/{target_count})")
 
                 # Mine fragments from this text
                 fragments = self._extract_fragments_from_text(text)
 
-                # Add the best fragments to our collection
+                # Sort by quality and take best ones from this text
+                fragments.sort(key=lambda f: f.poetic_score, reverse=True)
+
+                added_from_this_text = 0
                 for fragment in fragments:
                     if collection.total_count() >= target_count:
                         break
-                    self._add_fragment_to_collection(fragment, collection)
+                    if added_from_this_text >= fragments_per_text:
+                        break  # Limit per text for diversity
+
+                    # Check for duplicates (normalize text)
+                    normalized_text = fragment.text.lower().strip()
+                    if normalized_text in seen_fragments:
+                        continue
+
+                    # Additional quality check
+                    if self._is_high_quality_fragment(fragment):
+                        seen_fragments.add(normalized_text)
+                        self._add_fragment_to_collection(fragment, collection)
+                        added_from_this_text += 1
 
                 # Brief pause
-                time.sleep(0.5)
+                time.sleep(0.3)
 
             except Exception as e:
                 print(f"    Warning: Error processing text {attempts}: {e}")
                 continue
 
-        print(f"Successfully mined {collection.total_count()} fragments!")
+        print(f"Successfully mined {collection.total_count()} unique fragments from {attempts} texts!")
         return collection
 
     def _extract_fragments_from_text(self, text: str) -> List[ResonantFragment]:
         """Extract resonant fragments from a single text"""
         fragments = []
-        source_preview = text[:100].replace('\n', ' ').strip()
+
+        # Sample from different sections of the text for variety
+        text_len = len(text)
+        if text_len > 10000:
+            # Take samples from beginning, middle, and end
+            sections = [
+                text[:text_len//3],
+                text[text_len//3:2*text_len//3],
+                text[2*text_len//3:]
+            ]
+            sample_text = ' '.join(sections)
+        else:
+            sample_text = text
+
+        source_preview = sample_text[:100].replace('\n', ' ').strip()
 
         # Clean the text - remove excessive whitespace and weird characters
-        cleaned_text = re.sub(r'\s+', ' ', text)
+        cleaned_text = re.sub(r'\s+', ' ', sample_text)
         cleaned_text = re.sub(r'[^\w\s.!?,:;\'"-]', ' ', cleaned_text)
 
         # Search for each pattern type
@@ -211,6 +242,38 @@ class ResonantFragmentMiner:
             score += 0.1
 
         return min(1.0, score)
+
+    def _is_high_quality_fragment(self, fragment: ResonantFragment) -> bool:
+        """Additional quality check for fragments with higher standards"""
+        text = fragment.text
+        words = text.split()
+
+        # Minimum quality score threshold
+        if fragment.poetic_score < 0.65:
+            return False
+
+        # Reject overly generic fragments
+        generic_patterns = [
+            r'^(What|How|Where|When|Why)\s+(could|would|should|might)',  # "What could it mean?"
+            r'^\w+\s+(said|asked|replied|answered)',  # Dialogue tags
+            r'^(I|We|You|He|She|They)\s+(was|were|am|is|are)',  # Simple statements
+            r'^\w+\s+\w+ed?\.$',  # Two words with simple past tense
+        ]
+
+        for pattern in generic_patterns:
+            if re.match(pattern, text, re.IGNORECASE):
+                return False
+
+        # Reject fragments with too many proper names (characters)
+        proper_nouns = [word for word in words if word[0].isupper() and word.lower() not in ['the', 'a', 'an', 'i']]
+        if len(proper_nouns) > 2:  # Too character-specific
+            return False
+
+        # Prefer fragments with interesting imagery or action
+        has_imagery = any(vocabulary.is_evocative_word(word.lower()) for word in words)
+        has_action = any(word.endswith(('ed', 'ing', 's')) for word in words if len(word) > 3)
+
+        return has_imagery or has_action
 
     def _add_fragment_to_collection(self, fragment: ResonantFragment, collection: FragmentCollection):
         """Add fragment to the appropriate category in collection"""
