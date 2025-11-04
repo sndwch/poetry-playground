@@ -110,7 +110,7 @@ Based on comprehensive external code review, the following improvements have bee
    - **Results**: Config priority verified: CLI > YAML > pyproject.toml > env > defaults
    - **Benefit**: Professional packaging, type-safe configuration, flexible customization, validated settings
    - **Files**: `generativepoetry/config.py` (complete rewrite, 381 lines), `generativepoetry/cli.py`, `generativepoetry/cache.py`, `pyproject.toml`, `README.md`
-   - **Commit**: Pending
+   - **Commit**: 1788eb6
 
 7. **✅ Type Safety & Linting** 🔍 - COMPLETED (2025-11-04)
    - ✅ Installed and configured ruff + mypy

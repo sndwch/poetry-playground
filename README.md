@@ -389,9 +389,14 @@ Customize filtering in `generativepoetry/word_validator.py` and `generativepoetr
 ## Recent Improvements & Architecture
 
 ### Version 2024.11 Major Updates
+- **Modern Configuration System**: Pydantic v2 with multi-source loading (CLI > YAML > pyproject.toml > env > defaults), type-safe validation, and flexible spaCy model selection
+- **Persistent API Caching**: 158x speedup for Datamuse, 30x for CMU pronouncing with diskcache, exponential backoff, and offline mode
+- **Deterministic Outputs**: Full reproducibility with `--seed` flag, perfect determinism for creative experiments
+- **Professional CLI**: Comprehensive flags (--config, --spacy-model, --out, --format, --quiet, --verbose, --dry-run, --list-fonts, --list-procedures)
+- **Type Safety & Linting**: Modern ruff + mypy setup with pre-commit hooks, 82% violation reduction (164 → 29)
+- **Automated Model Downloads**: Zero-friction setup with lazy-loading and `--setup` command for NLTK/spaCy models
 - **Adaptive Scaling System**: Intelligent document retrieval that maintains quality while scaling quantity
 - **Centralized Document Library**: Anti-repetition tracking ensures diverse text sources across all modules
-- **Configuration Management**: Centralized constants and thresholds for consistent behavior
 - **Enhanced Fragment Mining**: 26 specialized patterns across 5 categories with quality scoring
 - **Comprehensive DRY Refactoring**: Eliminated duplicate code and consolidated shared functionality
 - **Vocabulary Centralization**: 600+ evocative verbs and 400+ atmospheric nouns from extensive research
