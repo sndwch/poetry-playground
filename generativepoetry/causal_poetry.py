@@ -53,36 +53,50 @@ class ResonantFragmentMiner:
     def __init__(self):
         self.word_validator = WordValidator()
 
-        # Fragment patterns to search for (more flexible)
+        # Fragment patterns - more flexible to capture diverse literary language
         self.patterns = {
             'causality': [
                 r'The [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',           # "The door slammed."
                 r'The [a-zA-Z]+ had [a-zA-Z]+[^.!?]{0,50}[.!?]',       # "The light had faded."
                 r'[A-Z][a-zA-Z]+ [a-zA-Z]+ed[^.!?]{0,40}[.!?]',        # "Something crashed."
+                r'[A-Z][a-zA-Z]+ [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,40}[.!?]', # "Fire burns everything."
+                r'It [a-zA-Z]+[^.!?]{0,40}[.!?]',                      # "It shattered."
+                r'She [a-zA-Z]+[^.!?]{0,40}[.!?]',                     # "She whispered."
+                r'He [a-zA-Z]+[^.!?]{0,40}[.!?]',                      # "He vanished."
             ],
             'temporal': [
-                r'When [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',          # "When silence fell."
-                r'As [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',            # "As darkness crept."
-                r'Until [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',         # "Until morning broke."
-                r'Before [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',        # "Before dawn arrived."
-                r'After [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',         # "After thunder roared."
+                r'When [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "When silence fell."
+                r'As [a-zA-Z]+[^.!?]{0,50}[.!?]',                      # "As darkness crept."
+                r'Until [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "Until morning broke."
+                r'Before [a-zA-Z]+[^.!?]{0,50}[.!?]',                  # "Before dawn arrived."
+                r'After [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "After thunder roared."
+                r'Then [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Then everything changed."
+                r'Now [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "Now darkness falls."
+                r'Soon [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Soon hope returned."
             ],
             'universal': [
-                r'Every [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',         # "Every shadow whispered."
-                r'All [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',           # "All hope vanished."
-                r'No [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',            # "No sound escaped."
-                r'Each [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',          # "Each breath echoed."
+                r'Every [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "Every shadow whispered."
+                r'All [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "All hope vanished."
+                r'No [a-zA-Z]+[^.!?]{0,50}[.!?]',                      # "No sound escaped."
+                r'Each [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Each breath echoed."
+                r'Any [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "Any movement ceased."
+                r'None [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "None dared speak."
             ],
             'singular': [
-                r'One [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',           # "One candle burned."
-                r'Only [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',          # "Only silence remained."
+                r'One [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "One candle burned."
+                r'Only [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Only silence remained."
                 r'Something [a-zA-Z]+[^.!?]{0,50}[.!?]',                # "Something stirred."
                 r'Nothing [a-zA-Z]+[^.!?]{0,50}[.!?]',                  # "Nothing moved."
+                r'Someone [a-zA-Z]+[^.!?]{0,50}[.!?]',                  # "Someone whispered."
+                r'Anyone [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "Anyone could see."
             ],
             'modal': [
                 r'[A-Z][a-zA-Z]+ would [a-zA-Z]+[^.!?]{0,50}[.!?]',    # "Memory would return."
                 r'[A-Z][a-zA-Z]+ could [a-zA-Z]+[^.!?]{0,50}[.!?]',    # "Fire could consume."
                 r'[A-Z][a-zA-Z]+ might [a-zA-Z]+[^.!?]{0,50}[.!?]',    # "Wind might whisper."
+                r'[A-Z][a-zA-Z]+ should [a-zA-Z]+[^.!?]{0,50}[.!?]',   # "Love should endure."
+                r'[A-Z][a-zA-Z]+ may [a-zA-Z]+[^.!?]{0,50}[.!?]',      # "Hope may return."
+                r'[A-Z][a-zA-Z]+ must [a-zA-Z]+[^.!?]{0,50}[.!?]',     # "Truth must prevail."
             ]
         }
 
@@ -95,7 +109,6 @@ class ResonantFragmentMiner:
         collection = FragmentCollection()
         seen_fragments = set()  # Deduplication tracking
         initial_texts = num_texts
-        max_texts = target_count // 3  # Maximum texts to try (flexible upper bound)
 
         # Start with initial batch
         print(f"  📚 Retrieving {initial_texts} diverse documents...")
@@ -120,17 +133,26 @@ class ResonantFragmentMiner:
             if collection.total_count() >= target_count:
                 break
 
-        # Adaptive retrieval: if we need more fragments, get more texts
-        while collection.total_count() < target_count and documents_processed < max_texts:
+        # Adaptive retrieval: keep getting more texts until quota is met
+        adaptive_batch_size = 3  # Start with 3 additional docs
+
+        while collection.total_count() < target_count:
             needed = target_count - collection.total_count()
-            additional_texts = min(3, (needed // 5) + 1)  # Get 1-3 more texts based on need
 
-            print(f"  📚 Need {needed} more fragments, retrieving {additional_texts} additional documents...")
+            # Scale batch size based on how many we still need
+            if needed > 50:
+                adaptive_batch_size = 5  # Larger batches for big gaps
+            elif needed > 20:
+                adaptive_batch_size = 3  # Medium batches
+            else:
+                adaptive_batch_size = 2  # Smaller batches when close
 
-            additional_docs = get_diverse_gutenberg_documents(count=additional_texts, min_length=5000)
+            print(f"  📚 Need {needed} more fragments, retrieving {adaptive_batch_size} additional documents...")
+
+            additional_docs = get_diverse_gutenberg_documents(count=adaptive_batch_size, min_length=5000)
 
             if not additional_docs:
-                print("  ⚠ Could not retrieve additional documents")
+                print("  ⚠ Could not retrieve additional documents - network issue or exhausted sources")
                 break
 
             for text in additional_docs:
@@ -287,12 +309,12 @@ class ResonantFragmentMiner:
         if fragment.poetic_score < 0.65:
             return False
 
-        # Reject overly generic fragments
+        # Reject overly generic fragments (relaxed)
         generic_patterns = [
             r'^(What|How|Where|When|Why)\s+(could|would|should|might)',  # "What could it mean?"
-            r'^\w+\s+(said|asked|replied|answered)',  # Dialogue tags
-            r'^(I|We|You|He|She|They)\s+(was|were|am|is|are)',  # Simple statements
-            r'^\w+\s+\w+ed?\.$',  # Two words with simple past tense
+            r'^\w+\s+(said|asked|replied|answered)\s*(to|that)',  # Dialogue tags with continuation
+            r'^(I|We|You)\s+(was|were|am|is|are)\s+\w+\.$',  # Simple self-referential statements
+            r'^\w+\s+\w+\.$',  # Only two words total
         ]
 
         for pattern in generic_patterns:
