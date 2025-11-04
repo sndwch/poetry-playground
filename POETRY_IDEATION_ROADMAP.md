@@ -94,7 +94,7 @@ Based on comprehensive external code review, the following improvements have bee
    - **Files**: `generativepoetry/system_utils.py`, `generativepoetry/pdf.py`, `generativepoetry/utils.py`
    - **Commit**: 299107c
 
-### **Tier 2: Foundation** 🏗️ (2-4 weeks) - 10/17 Complete
+### **Tier 2: Foundation** 🏗️ (2-4 weeks) - 12/17 Complete
 **Medium-High Impact, Medium Effort - Core Infrastructure**
 
 6. **✅ Modern Configuration System** ⚙️ - COMPLETED (2025-11-04)
@@ -162,19 +162,38 @@ Based on comprehensive external code review, the following improvements have bee
    - **Files**: All test files in `tests/` directory - 7 new comprehensive test suites + fixed legacy tests
    - **Commits**: `5a0513b`, `aa57bef`, `9c7b1b9`, `91c64d9`, `dd33490`, `e8232e4`, `061c1f5`, `2e62123`, `693474b`, `5aa9832`, `5e40f65` (COMPLETED)
 
-10. **Observability & Profiling** 📊
-    - Structured logging: procedure name, seed, timing, cache_hits, API_calls
-    - `--profile` flag for per-stage timing table
-    - **Benefit**: Performance optimization, debugging
-    - **Files**: `generativepoetry/logger.py`, all modules
+10. **✅ Observability & Profiling** 📊 - COMPLETED (2025-11-04)
+    - ✅ Complete rewrite of logger.py with Profiler class (53 → 312 lines)
+    - ✅ Implemented timer() context manager and @timed() decorator for function timing
+    - ✅ Added cache hit/miss tracking and API call counting
+    - ✅ Created beautiful formatted console reports with timing statistics
+    - ✅ Global profiler management functions (enable_profiling, disable_profiling, get_profiler)
+    - ✅ Added `--profile` / `-p` CLI flag to config.py
+    - ✅ Integrated profiling into CLI with seed metadata tracking
+    - ✅ Added profiling to cache module (cache hits/misses, API calls)
+    - ✅ Added @timed decorators to poem_from_markov() and poem_from_word_list()
+    - ✅ Created comprehensive test suite (22 tests in test_profiling.py) - ALL PASSING
+    - **Results**: Complete observability infrastructure with zero overhead when disabled
+    - **Benefit**: Performance optimization, debugging, production monitoring capabilities
+    - **Files**: `generativepoetry/logger.py` (complete rewrite), `generativepoetry/config.py`, `generativepoetry/cli.py`, `generativepoetry/cache.py`, `generativepoetry/poemgen.py`, `tests/test_profiling.py` (new)
+    - **Commit**: bb9dd98
 
-11. **Documentation Cleanup** 📝
-    - Create `CONTRIBUTING.md` with one-command dev setup
-    - Consolidate to single README (remove duplicates)
-    - Add copyable example commands in `example_images/`
-    - Pin deps with "known good" lock snapshot
-    - **Benefit**: Easier onboarding, more contributors
-    - **Files**: `CONTRIBUTING.md`, `README.md`, `requirements.lock`
+11. **✅ Documentation Cleanup** 📝 - COMPLETED (2025-11-04)
+    - ✅ Created comprehensive CONTRIBUTING.md with one-command dev setup
+    - ✅ Added detailed development workflow (linting, testing, profiling)
+    - ✅ Documented project structure and key modules
+    - ✅ Included code style guidelines and pre-commit hooks
+    - ✅ Added common tasks and examples for contributors
+    - ✅ Created example_images/README.md with copyable commands
+    - ✅ Included examples for all poem types (markov, futurist, chaotic-concrete, etc.)
+    - ✅ Added advanced usage examples (dry-run, profiling, spaCy models, Docker)
+    - ✅ Created requirements.lock with 121 pinned dependencies
+    - ✅ Added comprehensive header with usage instructions and update procedure
+    - ✅ Simplified Dockerfile to use built-in --setup command (fixes CI error)
+    - **Results**: One-command setup: `pip install -e ".[dev]" && python -m generativepoetry.setup_models && pytest`
+    - **Benefit**: Streamlined onboarding, reproducible builds, professional documentation
+    - **Files**: `CONTRIBUTING.md` (new, 356 lines), `example_images/README.md` (new, 213 lines), `requirements.lock` (new, 142 lines), `Dockerfile` (simplified)
+    - **Commits**: bb9dd98 (CONTRIBUTING.md), 3f77903 (Dockerfile fix), c3326b4 (examples + lock file)
 
 ### **Tier 3: Feature Expansion** 🚀 (4-8 weeks)
 **High Impact, Medium-High Effort - User-Facing Features**
