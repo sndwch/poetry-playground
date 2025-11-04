@@ -5,7 +5,13 @@ import pronouncing
 from datamuse import datamuse
 
 from .cache import cached_api_call
-from .utils import *
+from .utils import (
+    filter_word_list,
+    sort_by_rarity,
+    too_similar,
+    validate_str_or_list_of_str,
+    validate_word,
+)
 from .word_validator import word_validator
 
 

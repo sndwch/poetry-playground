@@ -2,7 +2,7 @@ import os
 import random
 import string
 from os.path import isfile
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from nltk.corpus import stopwords
 from pdf2image import convert_from_path
@@ -10,11 +10,11 @@ from pdf2image.exceptions import PDFInfoNotInstalledError, PDFPageCountError, PD
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.pdfgen import canvas
 
-from generativepoetry.poemgen import *
-
+from .lexigen import phonetically_related_words
+from .poemgen import PoemGenerator
 from .setup_models import lazy_ensure_nltk_data
 from .system_utils import check_poppler_installed, get_poppler_install_instructions
-from .utils import filter_word_list
+from .utils import filter_word_list, get_input_words, get_random_color
 
 rgb_tuple = Tuple[float]
 

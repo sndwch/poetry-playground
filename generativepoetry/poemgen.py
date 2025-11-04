@@ -1,9 +1,10 @@
 import itertools
+import random
 from typing import List, Optional
 
 from .jolastic import StochasticJolasticWordGenerator
-from .lexigen import *
-from .utils import too_similar
+from .lexigen import phonetically_related_words
+from .utils import correct_a_vs_an, too_similar
 
 
 class Poem:

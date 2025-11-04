@@ -1,7 +1,14 @@
 import random
+from typing import List, Optional
 
-from .lexigen import *
-from .utils import *
+from .lexigen import (
+    contextually_linked_word,
+    frequently_following_word,
+    rhyme,
+    similar_meaning_word,
+    similar_sounding_word,
+)
+from .utils import has_invalid_characters, too_similar
 
 
 class StochasticJolasticWordGenerator:
