@@ -89,16 +89,17 @@ class ResonantFragmentMiner:
         # Use shared vocabulary for emotional tone classification
 
     def mine_fragments(self, target_count: int = 50, num_texts: int = 5) -> FragmentCollection:
-        """Mine resonant fragments from classic literature using diverse document library"""
-        print(f"🔍 Mining {target_count} resonant fragments from {num_texts} diverse classic texts...")
+        """Mine resonant fragments using adaptive text retrieval to maintain quality"""
+        print(f"🔍 Mining {target_count} resonant fragments with adaptive text retrieval...")
 
         collection = FragmentCollection()
         seen_fragments = set()  # Deduplication tracking
-        fragments_per_text = max(10, target_count // num_texts + 5)  # More generous distribution
+        initial_texts = num_texts
+        max_texts = target_count // 3  # Maximum texts to try (flexible upper bound)
 
-        # Get diverse documents all at once - this ensures variety
-        print(f"  📚 Retrieving {num_texts} diverse documents...")
-        documents = get_diverse_gutenberg_documents(count=num_texts, min_length=5000)
+        # Start with initial batch
+        print(f"  📚 Retrieving {initial_texts} diverse documents...")
+        documents = get_diverse_gutenberg_documents(count=initial_texts, min_length=5000)
 
         if not documents:
             print("❌ Failed to retrieve any documents. Check internet connection.")
@@ -106,43 +107,76 @@ class ResonantFragmentMiner:
 
         print(f"  ✓ Successfully retrieved {len(documents)} diverse documents")
 
-        # Mine fragments from each document
-        for doc_index, text in enumerate(documents, 1):
-            print(f"  📖 Mining from document {doc_index}/{len(documents)}... (found {collection.total_count()}/{target_count})")
+        # Mine fragments from initial documents
+        documents_processed = 0
+        for text in documents:
+            documents_processed += 1
+            print(f"  📖 Mining from document {documents_processed}... (found {collection.total_count()}/{target_count})")
 
-            try:
-                # Mine fragments from this text
-                fragments = self._extract_fragments_from_text(text)
+            fragments_added = self._mine_fragments_from_single_text(text, collection, seen_fragments, target_count)
+            print(f"    ✓ Added {fragments_added} high-quality fragments")
 
-                # Sort by quality and take best ones from this text
-                fragments.sort(key=lambda f: f.poetic_score, reverse=True)
+            # Check if we've reached our target
+            if collection.total_count() >= target_count:
+                break
 
-                added_from_this_text = 0
-                for fragment in fragments:
-                    if collection.total_count() >= target_count:
-                        break
-                    if added_from_this_text >= fragments_per_text:
-                        break  # Limit per text for diversity
+        # Adaptive retrieval: if we need more fragments, get more texts
+        while collection.total_count() < target_count and documents_processed < max_texts:
+            needed = target_count - collection.total_count()
+            additional_texts = min(3, (needed // 5) + 1)  # Get 1-3 more texts based on need
 
-                    # Check for duplicates (normalize text)
-                    normalized_text = fragment.text.lower().strip()
-                    if normalized_text in seen_fragments:
-                        continue
+            print(f"  📚 Need {needed} more fragments, retrieving {additional_texts} additional documents...")
 
-                    # Additional quality check
-                    if self._is_high_quality_fragment(fragment):
-                        seen_fragments.add(normalized_text)
-                        self._add_fragment_to_collection(fragment, collection)
-                        added_from_this_text += 1
+            additional_docs = get_diverse_gutenberg_documents(count=additional_texts, min_length=5000)
 
-                print(f"    ✓ Added {added_from_this_text} fragments from document {doc_index}")
+            if not additional_docs:
+                print("  ⚠ Could not retrieve additional documents")
+                break
 
-            except Exception as e:
-                print(f"    ⚠ Warning: Error processing document {doc_index}: {e}")
-                continue
+            for text in additional_docs:
+                documents_processed += 1
+                print(f"  📖 Mining from document {documents_processed}... (found {collection.total_count()}/{target_count})")
 
-        print(f"🎉 Successfully mined {collection.total_count()} unique fragments from {len(documents)} diverse texts!")
+                fragments_added = self._mine_fragments_from_single_text(text, collection, seen_fragments, target_count)
+                print(f"    ✓ Added {fragments_added} high-quality fragments")
+
+                if collection.total_count() >= target_count:
+                    break
+
+        print(f"🎉 Successfully mined {collection.total_count()} unique high-quality fragments from {documents_processed} diverse texts!")
         return collection
+
+    def _mine_fragments_from_single_text(self, text: str, collection: FragmentCollection,
+                                       seen_fragments: set, target_count: int) -> int:
+        """Mine fragments from a single text and add to collection"""
+        added_count = 0
+
+        try:
+            # Mine fragments from this text
+            fragments = self._extract_fragments_from_text(text)
+
+            # Sort by quality and take best ones from this text
+            fragments.sort(key=lambda f: f.poetic_score, reverse=True)
+
+            for fragment in fragments:
+                if collection.total_count() >= target_count:
+                    break
+
+                # Check for duplicates (normalize text)
+                normalized_text = fragment.text.lower().strip()
+                if normalized_text in seen_fragments:
+                    continue
+
+                # Additional quality check
+                if self._is_high_quality_fragment(fragment):
+                    seen_fragments.add(normalized_text)
+                    self._add_fragment_to_collection(fragment, collection)
+                    added_count += 1
+
+        except Exception as e:
+            print(f"    ⚠ Warning: Error processing text: {e}")
+
+        return added_count
 
     def _extract_fragments_from_text(self, text: str) -> List[ResonantFragment]:
         """Extract resonant fragments from a single text"""
@@ -249,8 +283,8 @@ class ResonantFragmentMiner:
         text = fragment.text
         words = text.split()
 
-        # Minimum quality score threshold (lowered for better yield)
-        if fragment.poetic_score < 0.55:
+        # Minimum quality score threshold - maintain high standards
+        if fragment.poetic_score < 0.65:
             return False
 
         # Reject overly generic fragments
