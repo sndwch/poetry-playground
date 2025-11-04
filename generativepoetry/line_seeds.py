@@ -122,9 +122,9 @@ class LineSeedGenerator:
             'taste': ['bitter', 'sweet', 'acid', 'iron', 'ash', 'honey', 'brine', 'mint']
         }
 
-        # Enhance with words from shared vocabulary
-        atmospheric_words = vocabulary.atmospheric_nouns[:50]  # Sample from larger set
-        evocative_words = vocabulary.evocative_verbs[:50]     # Sample from larger set
+        # Enhance with words from shared vocabulary (convert sets to lists for slicing)
+        atmospheric_words = list(vocabulary.atmospheric_nouns)[:50]  # Sample from larger set
+        evocative_words = list(vocabulary.evocative_verbs)[:50]     # Sample from larger set
 
         # Add evocative words to appropriate sensory categories based on characteristics
         for word in atmospheric_words + evocative_words:
