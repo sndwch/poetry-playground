@@ -39,3 +39,6 @@ data/*.txt
 POETRY_IDEATION_ROADMAP.md
 development_notes/
 *.plan.md
+
+# Claude Code configuration
+.claude/
