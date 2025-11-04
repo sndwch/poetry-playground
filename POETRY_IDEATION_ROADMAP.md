@@ -143,7 +143,7 @@ Based on comprehensive external code review, the following improvements have bee
    - **Benefit**: Professional dev workflow, prevents regressions, reproducible environments
    - **Files**: `.github/workflows/ci.yml`, `Dockerfile`, `.dockerignore`, `README.md`
    - **Note**: PyPI publishing removed per user request (keeping project private)
-   - **Commit**: Pending
+   - **Commit**: `84c09f4` - Implement CI/CD Pipeline with GitHub Actions and Docker
 
 9. **Comprehensive Test Suite** 🧪
    - Unit tests: rhyme/syllable pickers, deterministic layout with seed
