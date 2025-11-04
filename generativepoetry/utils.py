@@ -15,22 +15,33 @@ except ImportError:
 
 
 def setup_spellchecker():
+    """Set up Hunspell spellchecker if available.
+
+    Returns:
+        HunSpell object if successful, None if unavailable or failed
+    """
     if not HUNSPELL_AVAILABLE:
+        # Silently return None - this is optional
         return None
 
-    if platform.system() == 'Windows':
-        raise Exception('Your OS is not currently supported.')
-    elif platform.system() == 'Darwin':
+    system = platform.system()
+
+    if system == 'Windows':
+        # Hunspell on Windows requires manual setup, skip gracefully
+        return None
+    elif system == 'Darwin':
+        # macOS - try default dictionary location
         try:
             return hunspell.HunSpell('/Library/Spelling/en_US.dic', '/Library/Spelling/en_US.aff')
-        except Exception:
-            print("Warning: Hunspell dictionary not found. Spellchecking disabled.")
+        except Exception as e:
+            # Optional feature, fail gracefully
             return None
     else:
+        # Linux - try default dictionary location
         try:
             return hunspell.HunSpell('/usr/share/hunspell/en_US.dic', '/usr/share/hunspell/en_US.aff')
-        except Exception:
-            print("Warning: Hunspell dictionary not found. Spellchecking disabled.")
+        except Exception as e:
+            # Optional feature, fail gracefully
             return None
 
 

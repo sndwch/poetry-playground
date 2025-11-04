@@ -74,18 +74,51 @@ class PDFGenerator:
         return filename
 
     def generate_png(self, input_filepath=None):
+        """Generate PNG from PDF file.
+
+        Args:
+            input_filepath: Path to input PDF file
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
         if not check_poppler_installed():
-            print(f"Note: PNG generation skipped. {get_poppler_install_instructions()}")
+            from .logger import logger
+            logger.warning("PNG generation skipped - Poppler not installed")
+            logger.info(get_poppler_install_instructions())
             return False
 
         try:
             pages = convert_from_path(input_filepath)
             for page in pages:
                 page.save(f'{input_filepath[:-3]}png', 'PNG')
-            print(f"PNG generated: {input_filepath[:-3]}png")
+            from .logger import logger
+            logger.info(f"PNG generated: {input_filepath[:-3]}png")
             return True
+        except PDFInfoNotInstalledError:
+            from .logger import logger
+            logger.error("Poppler's pdfinfo utility not found in PATH")
+            logger.info("Even though Poppler was detected, pdfinfo is missing")
+            logger.info(get_poppler_install_instructions())
+            return False
+        except PDFPageCountError as e:
+            from .logger import logger
+            logger.error(f"Failed to get PDF page count: {e}")
+            logger.info("The PDF file may be corrupted or invalid")
+            return False
+        except PDFSyntaxError as e:
+            from .logger import logger
+            logger.error(f"PDF syntax error: {e}")
+            logger.info("The PDF file appears to be malformed")
+            return False
+        except FileNotFoundError:
+            from .logger import logger
+            logger.error(f"PDF file not found: {input_filepath}")
+            return False
         except Exception as e:
-            print(f"Error generating PNG: {e}")
+            from .logger import logger
+            logger.error(f"Unexpected error generating PNG: {e}")
+            logger.info("If the problem persists, please report this issue")
             return False
 
 
