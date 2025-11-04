@@ -128,7 +128,7 @@ jobs:
               ssl._create_default_https_context = _create_unverified_https_context
 
           # Download required NLTK data
-          for package in ['punkt', 'words', 'brown', 'wordnet', 'stopwords', 'averaged_perceptron_tagger']:
+          for package in ['punkt', 'punkt_tab', 'words', 'brown', 'wordnet', 'stopwords', 'averaged_perceptron_tagger']:
               try:
                   nltk.download(package, quiet=True)
                   print(f'Downloaded {package}')
