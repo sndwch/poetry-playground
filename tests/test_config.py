@@ -30,8 +30,8 @@ class TestConfigDataModels(unittest.TestCase):
         config = PerformanceConfig()
         self.assertIsInstance(config.MAX_PROCESSING_ATTEMPTS, int)
         self.assertGreater(config.MAX_PROCESSING_ATTEMPTS, 0)
-        self.assertIsInstance(config.TIMEOUT_SECONDS, int)
-        self.assertGreater(config.TIMEOUT_SECONDS, 0)
+        self.assertIsInstance(config.MAX_RETRY_ATTEMPTS, int)
+        self.assertGreater(config.MAX_RETRY_ATTEMPTS, 0)
 
     def test_quality_config_defaults(self):
         """Test QualityConfig default values."""
@@ -52,7 +52,7 @@ class TestMainConfig(unittest.TestCase):
         """Test that Config has cache-related settings."""
         config = Config()
         # Should have cache enabled flag
-        self.assertTrue(hasattr(config, 'cache_enabled'))
+        self.assertTrue(hasattr(config, 'enable_cache'))
 
     def test_config_has_spacy_model(self):
         """Test that Config has spaCy model setting."""
@@ -84,7 +84,7 @@ class TestConfigLoading(unittest.TestCase):
     def test_config_from_environment(self):
         """Test loading config from environment variables."""
         # Set environment variable
-        with patch.dict(os.environ, {"GP_CACHE_ENABLED": "false"}):
+        with patch.dict(os.environ, {"GP_ENABLE_CACHE": "false"}):
             # Would need to reload config module or clear cache
             # For now, just test that env vars don't break loading
             config = get_config()
@@ -114,10 +114,10 @@ generation:
 class TestConfigTypes(unittest.TestCase):
     """Test configuration type constraints."""
 
-    def test_config_cache_enabled_type(self):
-        """Test Config cache_enabled type."""
+    def test_config_enable_cache_type(self):
+        """Test Config enable_cache type."""
         config = Config()
-        self.assertIsInstance(config.cache_enabled, bool)
+        self.assertIsInstance(config.enable_cache, bool)
 
     def test_document_config_types(self):
         """Test DocumentConfig type constraints."""
@@ -128,7 +128,7 @@ class TestConfigTypes(unittest.TestCase):
         """Test PerformanceConfig type constraints."""
         config = PerformanceConfig()
         self.assertIsInstance(config.MAX_PROCESSING_ATTEMPTS, int)
-        self.assertIsInstance(config.TIMEOUT_SECONDS, int)
+        self.assertIsInstance(config.MAX_RETRY_ATTEMPTS, int)
 
 
 class TestConfigModification(unittest.TestCase):
@@ -136,23 +136,23 @@ class TestConfigModification(unittest.TestCase):
 
     def test_config_cache_setting(self):
         """Test Config cache setting."""
-        config = Config(cache_enabled=True)
+        config = Config(enable_cache=True)
         # Verify value is set correctly
-        self.assertTrue(config.cache_enabled)
+        self.assertTrue(config.enable_cache)
 
     def test_config_immutability(self):
         """Test whether configs are immutable or mutable."""
         config = Config()
-        original_cache = config.cache_enabled
+        original_cache = config.enable_cache
 
         # Try to modify (may or may not work depending on Pydantic config)
         try:
-            config.cache_enabled = not original_cache
+            config.enable_cache = not original_cache
             # If modification succeeds, verify it worked
-            self.assertEqual(config.cache_enabled, not original_cache)
+            self.assertEqual(config.enable_cache, not original_cache)
         except Exception:
             # If immutable, should raise exception
-            self.assertEqual(config.cache_enabled, original_cache)
+            self.assertEqual(config.enable_cache, original_cache)
 
 
 class TestConfigDefaults(unittest.TestCase):
@@ -161,15 +161,15 @@ class TestConfigDefaults(unittest.TestCase):
     def test_cache_defaults_are_reasonable(self):
         """Test that cache defaults are reasonable."""
         config = Config()
-        self.assertTrue(config.cache_enabled)  # Cache should be enabled by default
+        self.assertTrue(config.enable_cache)  # Cache should be enabled by default
 
     def test_performance_defaults_are_reasonable(self):
         """Test that performance defaults are reasonable."""
         config = PerformanceConfig()
         self.assertGreater(config.MAX_PROCESSING_ATTEMPTS, 0)
         self.assertLess(config.MAX_PROCESSING_ATTEMPTS, 100)
-        self.assertGreater(config.TIMEOUT_SECONDS, 0)
-        self.assertLess(config.TIMEOUT_SECONDS, 600)  # Less than 10 minutes
+        self.assertGreater(config.MAX_RETRY_ATTEMPTS, 0)
+        self.assertLess(config.MAX_RETRY_ATTEMPTS, 20)
 
 
 class TestConfigConsistency(unittest.TestCase):
@@ -180,7 +180,7 @@ class TestConfigConsistency(unittest.TestCase):
         config = Config()
 
         # Cache should be enabled by default
-        self.assertTrue(config.cache_enabled)
+        self.assertTrue(config.enable_cache)
 
     def test_all_configs_load_successfully(self):
         """Test that all config classes can be instantiated."""
