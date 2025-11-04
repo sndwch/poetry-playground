@@ -215,8 +215,140 @@ path = explorer.find_convergence_path('love', 'mathematics')
 
 ## Advanced Configuration
 
-### Centralized Settings
-The library uses centralized configuration classes for consistent behavior:
+### Configuration System
+
+The library uses a modern, validated configuration system with support for multiple sources and priority-based loading:
+
+#### Configuration Priority (highest to lowest)
+1. **CLI flags** - Command-line arguments override everything
+2. **YAML config file** - Specified with `--config CONFIG.yml`
+3. **pyproject.toml** - `[tool.generativepoetry]` section
+4. **Environment variables** - `GP_*` prefix
+5. **Defaults** - Built-in sensible defaults
+
+#### CLI Configuration
+```bash
+# Basic usage with defaults
+generative-poetry-cli
+
+# Use custom config file
+generative-poetry-cli --config myconfig.yml
+
+# Override specific settings
+generative-poetry-cli --spacy-model lg --seed 42 --format png
+
+# Multiple overrides
+generative-poetry-cli --config myconfig.yml --seed 42 --verbose
+```
+
+Available CLI flags:
+- `--config PATH, -c PATH` - YAML config file path
+- `--spacy-model {sm|md|lg}` - spaCy model size (sm=13MB fast, md=40MB balanced, lg=560MB accurate)
+- `--seed INT` - Random seed for reproducibility
+- `--out PATH, -o PATH` - Output directory
+- `--format {pdf|png|svg|txt}` - Output format
+- `--quiet, -q` / `--verbose, -v` - Output verbosity
+- `--dry-run` - Preview without generating files
+
+#### pyproject.toml Configuration
+Add a `[tool.generativepoetry]` section to your `pyproject.toml`:
+
+```toml
+[tool.generativepoetry]
+# API Settings
+datamuse_api_max = 50
+datamuse_timeout = 10
+
+# Generation Settings
+default_num_lines = 10
+min_line_words = 5
+max_line_words = 9
+max_line_length = 35
+
+# Output Settings
+output_format = "pdf"  # Options: pdf, png, svg, txt
+pdf_orientation = "landscape"  # Options: landscape, portrait
+enable_png_generation = true
+
+# spaCy Model Selection
+spacy_model = "sm"  # Options: sm (small), md (medium), lg (large)
+
+# CLI Behavior
+quiet = false
+verbose = false
+no_color = false
+dry_run = false
+
+# Caching
+enable_cache = true
+
+# Performance
+max_api_retries = 3
+api_retry_delay = 1.0
+```
+
+#### YAML Configuration File
+Create a YAML config file for project-specific settings:
+
+```yaml
+# myconfig.yml
+# Generation Settings
+default_num_lines: 20
+min_line_words: 3
+max_line_words: 12
+
+# Output Settings
+output_format: png
+pdf_orientation: portrait
+spacy_model: lg
+
+# Behavior
+verbose: true
+seed: 42
+```
+
+Use with: `generative-poetry-cli --config myconfig.yml`
+
+#### Environment Variables
+Set configuration via environment variables with `GP_` prefix:
+
+```bash
+export GP_SPACY_MODEL=lg
+export GP_DEFAULT_NUM_LINES=15
+export GP_OUTPUT_FORMAT=png
+export GP_SEED=42
+export GP_VERBOSE=true
+
+generative-poetry-cli
+```
+
+#### Programmatic Configuration
+```python
+from generativepoetry.config import Config, init_config
+from pathlib import Path
+
+# Initialize with defaults
+config = Config.load()
+
+# Load from specific sources
+config = Config.from_yaml(Path("myconfig.yml"))
+config = Config.from_pyproject()
+config = Config.from_env()
+
+# Merge all sources with CLI overrides
+config = Config.load(
+    config_file=Path("myconfig.yml"),
+    cli_overrides={"seed": 42, "verbose": True}
+)
+
+# Access settings
+print(f"Using spaCy model: {config.spacy_model.value}")
+print(f"Output format: {config.output_format.value}")
+```
+
+### Advanced Settings for Processing Modules
+
+The library also provides specialized configuration classes for internal processing:
 
 ```python
 from generativepoetry.config import DocumentConfig, QualityConfig, PerformanceConfig

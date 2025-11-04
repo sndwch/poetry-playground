@@ -8,7 +8,7 @@ from consolemenu.items import FunctionItem
 # Import the pronouncing patch first to suppress pkg_resources warning
 import generativepoetry.pronouncing_patch  # noqa: F401
 from generativepoetry.causal_poetry import ResonantFragmentMiner
-from generativepoetry.config import config
+from generativepoetry.config import init_config
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
 from generativepoetry.idea_generator import IdeaType, PoetryIdeaGenerator
 from generativepoetry.line_seeds import LineSeedGenerator, SeedType
@@ -168,13 +168,13 @@ def metaphor_generator_action():
 
             # Show patterns from different texts
             shown_count = 0
-            for text_key, patterns in text_groups.items():
+            for _text_key, patterns in text_groups.items():
                 if shown_count >= 3:
                     break
                 source, target, sentence = patterns[0]  # Take first pattern from this text
                 print(f"  • {source} like {target}")
                 print(f'    From: "{sentence[:80]}..."')
-                shown_count += 1
+                shown_count += 1  # noqa: SIM113
 
             if len(text_groups) > 1:
                 print(f"    (Patterns from {len(text_groups)} different classic texts)")
@@ -218,13 +218,13 @@ def metaphor_generator_action():
 
                 # Show examples from different texts
                 shown_texts = 0
-                for text_key, group_patterns in text_groups.items():
+                for _text_key, group_patterns in text_groups.items():
                     if shown_texts >= 3:
                         break
                     source, target, sentence = group_patterns[0]
                     print(f"  • {source} like {target}")
                     print(f'    From: "{sentence[:80]}..."')
-                    shown_texts += 1
+                    shown_texts += 1  # noqa: SIM113
 
                 if len(text_groups) > 3:
                     print(f"    (Plus patterns from {len(text_groups) - 3} more texts)")
@@ -734,6 +734,23 @@ def main():
         epilog="For more information, visit: https://github.com/sndwch/generativepoetry-py",
     )
 
+    # Configuration
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=str,
+        metavar="PATH",
+        help="Path to YAML config file (overrides pyproject.toml and environment variables)",
+    )
+
+    parser.add_argument(
+        "--spacy-model",
+        type=str,
+        choices=["sm", "md", "lg"],
+        metavar="MODEL",
+        help="spaCy model size: sm (13MB, fast), md (40MB, balanced), lg (560MB, accurate)",
+    )
+
     # Reproducibility
     parser.add_argument(
         "--seed",
@@ -892,46 +909,69 @@ def main():
             print("  • Try running with sudo (if on Unix/Linux)")
             return 1
 
-    # Apply CLI flags to config
-    if args.out:
-        from pathlib import Path
+    # Build CLI overrides dict from arguments
+    from pathlib import Path
 
-        config.output_dir = Path(args.out).resolve()
-        config.output_dir.mkdir(parents=True, exist_ok=True)
+    cli_overrides = {}
+
+    if args.seed is not None:
+        cli_overrides["seed"] = args.seed
+
+    if args.out:
+        cli_overrides["output_dir"] = Path(args.out).resolve()
 
     if args.format:
-        config.output_format = args.format
+        cli_overrides["output_format"] = args.format
 
-    if args.dry_run:
-        config.dry_run = True
-        print("🔍 Dry-run mode: no files will be generated\n")
+    if args.spacy_model:
+        cli_overrides["spacy_model"] = args.spacy_model
 
-    # Set logging level based on quiet/verbose
-    set_log_level(quiet=args.quiet, verbose=args.verbose)
+    if args.quiet:
+        cli_overrides["quiet"] = True
+
+    if args.verbose:
+        cli_overrides["verbose"] = True
 
     if args.no_color:
-        config.no_color = True
-        # TODO: Implement color suppression in output functions
+        cli_overrides["no_color"] = True
 
-    # Set random seed if provided (via CLI arg or environment variable)
-    seed = args.seed or config.seed
+    if args.dry_run:
+        cli_overrides["dry_run"] = True
+
+    # Initialize config with proper priority: CLI > YAML > pyproject.toml > env > defaults
+    config_file = Path(args.config) if args.config else None
+    config = init_config(config_file=config_file, cli_overrides=cli_overrides)
+
+    # Show dry-run message if enabled
+    if config.dry_run:
+        print("🔍 Dry-run mode: no files will be generated\n")
+
+    # Set logging level based on config
+    set_log_level(quiet=config.quiet, verbose=config.verbose)
+
+    # Set random seed if provided
+    seed = config.seed
     if seed is not None:
         set_global_seed(seed)
-        if not args.quiet:
+        if not config.quiet:
             print(f"\n{format_seed_message()}\n")
     else:
         # Generate and set a random seed for this session
         seed = set_global_seed()
-        if not args.quiet:
+        if not config.quiet:
             print(f"\n{format_seed_message()}\n")
 
     # Show output directory if specified
-    if args.out and not args.quiet:
+    if args.out and not config.quiet:
         print(f"📁 Output directory: {config.output_dir}\n")
 
     # Show output format if specified
-    if args.format and not args.quiet:
+    if args.format and not config.quiet:
         print(f"📄 Output format: {config.output_format}\n")
+
+    # Show spaCy model if specified
+    if args.spacy_model and not config.quiet:
+        print(f"🧠 spaCy model: {config.spacy_model.value}\n")
 
     # Create and configure menu
     menu = ConsoleMenu("Generative Poetry Menu", "What kind of poem would you like to generate?")

@@ -21,7 +21,7 @@ except ImportError:
     DISKCACHE_AVAILABLE = False
     Cache = None
 
-from .config import config
+from .config import get_config
 from .logger import logger
 
 # API version for cache invalidation
@@ -131,12 +131,13 @@ class PersistentAPICache:
             ttl: Time to live in seconds (default: 24 hours)
             offline_mode: If True, never make API calls, only use cache
         """
-        self.cache_dir = cache_dir or config.cache_dir
+        cfg = get_config()
+        self.cache_dir = cache_dir or cfg.cache_dir
         self.ttl = ttl
-        self.enabled = config.enable_cache
+        self.enabled = cfg.enable_cache
         self.offline_mode = offline_mode
         self.retry_strategy = RetryStrategy(
-            max_retries=config.max_api_retries, base_delay=config.api_retry_delay
+            max_retries=cfg.max_api_retries, base_delay=cfg.api_retry_delay
         )
 
         # Initialize cache backend
