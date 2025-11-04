@@ -10,20 +10,18 @@ with open('README.rst') as readme_file:
 
 requirements = [
     'console-menu==0.6.0',
+    'diskcache>=5.6.0',
     'gutenbergpy>=0.3.5',
     'beautifulsoup4>=4.9.0',
     # 'hunspell>=0.5.5',  # Optional - requires system dependencies
     'inflect==4.1.0',
-    'internetarchive==1.8.5',
     'markovify==0.8.0',
     'nltk>=3.8',
     'pdf2image==1.12.1',
-    'rdflib==4.2.2',
     'pronouncing>=0.2.0',
     'python-datamuse>=1.3.0',
     'spacy>=2.2.3',
     'reportlab>=3.5.26',
-    'unittest2==1.1.0',
     'wordfreq>=2.2.2',
 ]
 

@@ -14,10 +14,44 @@ except ImportError:
     INTERNETARCHIVE_AVAILABLE = False
 from urllib.parse import urlsplit
 
+from .setup_models import lazy_ensure_nltk_data, lazy_ensure_spacy_model
 
-sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
-spacy_nlp = spacy.load('en_core_web_sm', disable=['ner'])
-spacy_nlp.remove_pipe("parser")
+
+# Lazy-load NLTK punkt tokenizer
+def _get_sent_detector():
+    """Get sentence detector, downloading if needed."""
+    lazy_ensure_nltk_data('tokenizers/punkt', 'punkt', 'Punkt sentence tokenizer')
+    return nltk.data.load('tokenizers/punkt/english.pickle')
+
+
+# Lazy-load spaCy model
+def _get_spacy_nlp():
+    """Get spaCy NLP model, downloading if needed."""
+    lazy_ensure_spacy_model('en_core_web_sm', 'English language model (small)')
+    nlp = spacy.load('en_core_web_sm', disable=['ner'])
+    nlp.remove_pipe("parser")
+    return nlp
+
+
+# Initialize on first use
+_sent_detector = None
+_spacy_nlp = None
+
+
+def get_sent_detector():
+    """Get cached sentence detector."""
+    global _sent_detector
+    if _sent_detector is None:
+        _sent_detector = _get_sent_detector()
+    return _sent_detector
+
+
+def get_spacy_nlp():
+    """Get cached spaCy NLP model."""
+    global _spacy_nlp
+    if _spacy_nlp is None:
+        _spacy_nlp = _get_spacy_nlp()
+    return _spacy_nlp
 
 inflector = inflect.engine()
 input_type = TypeVar('input_type', str, List[str])  # Must be str or list of strings
@@ -27,7 +61,7 @@ class ParsedText:
 
     def __init__(self, text):
         self.raw_text = text
-        self.sentences = sent_detector.tokenize(text)
+        self.sentences = get_sent_detector().tokenize(text)
         self.paragraphs = self.raw_text.split("\n\n")
 
     def random_sentence(self, minimum_tokens=1) -> str:
@@ -39,7 +73,7 @@ class ParsedText:
         num_tokens = 0
         while num_tokens < minimum_tokens:
             sentence = random.choice(self.sentences)
-            num_tokens = len([token.text for token in spacy_nlp(sentence)])
+            num_tokens = len([token.text for token in get_spacy_nlp()(sentence)])
         return sentence
 
     def random_sentences(self, num=5, minimum_tokens=1) -> list:
@@ -64,7 +98,7 @@ class ParsedText:
         num_sentences = 0
         while num_sentences < minimum_sentences:
             paragraph = random.choice(self.paragraphs)
-            num_sentences = len(sent_detector.tokenize(paragraph))
+            num_sentences = len(get_sent_detector().tokenize(paragraph))
         return paragraph
 
 
@@ -193,8 +227,9 @@ def swap_parts_of_speech(text1, text2, parts_of_speech=['ADJ', 'NOUN']) -> (str,
         parts_of_speech (list) -- list of parts of speech tags to swap out. Must be from the list provided by spaCy:
                                   https://spacy.io/api/annotation#pos-tagging
     """
-    doc1 = spacy_nlp(text1)
-    doc2 = spacy_nlp(text2)
+    nlp = get_spacy_nlp()
+    doc1 = nlp(text1)
+    doc2 = nlp(text2)
     # First build two dictionaries (one for each text) whose keys are parts of speech and values are lists of words
     doc1_words_keyed_by_pos, doc2_words_keyed_by_pos = defaultdict(lambda: []), defaultdict(lambda: [])
     for token in doc1:

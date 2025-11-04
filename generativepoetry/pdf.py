@@ -11,6 +11,7 @@ from reportlab.lib.pagesizes import letter, landscape
 from nltk.corpus import stopwords
 from pdf2image import convert_from_path
 from .system_utils import check_poppler_installed, get_poppler_install_instructions
+from .setup_models import lazy_ensure_nltk_data
 from pdf2image.exceptions import (
     PDFInfoNotInstalledError,
     PDFPageCountError,
@@ -140,6 +141,9 @@ class StopwordSoupPoemPDFGenerator(PDFGenerator):
     default_font_sizes = [6, 16, 24, 32, 48]
 
     def generate_pdf(self):
+        # Ensure stopwords corpus is available
+        lazy_ensure_nltk_data('corpora/stopwords', 'stopwords', 'Stopwords corpus')
+
         c = canvas.Canvas("stopword_soup.pdf")
         punctuation = [char for char in string.punctuation]
         words_to_use = filter_word_list(stopwords.words('english')) + punctuation  # filter removes 1/2s of contractions

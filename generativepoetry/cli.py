@@ -19,6 +19,7 @@ from generativepoetry.causal_poetry import ResonantFragmentMiner
 from generativepoetry.seed_manager import set_global_seed, format_seed_message
 from generativepoetry.config import config
 from generativepoetry.logger import set_log_level
+from generativepoetry.setup_models import setup as setup_models
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -788,6 +789,12 @@ def main():
     )
 
     parser.add_argument(
+        '--setup',
+        action='store_true',
+        help='Download and install all required NLTK data and spaCy models, then exit'
+    )
+
+    parser.add_argument(
         '--version',
         action='version',
         version='generativepoetry 0.3.4'
@@ -845,6 +852,34 @@ def main():
         print("  13. Resonant Fragment Miner - Extract poetic fragments from Gutenberg")
         print("\nUse generative-poetry-cli to access all procedures interactively.")
         return
+
+    # Handle --setup command
+    if args.setup:
+        print("=" * 70)
+        print("Generative Poetry - Model Setup")
+        print("=" * 70)
+        print("\nThis will download and install all required models:")
+        print("  • NLTK data: punkt, words, brown, wordnet, stopwords")
+        print("  • spaCy model: en_core_web_sm (~40MB)")
+        print("\nThis may take a few minutes on first run...\n")
+
+        success = setup_models(quiet=args.quiet)
+
+        if success:
+            print("\n" + "=" * 70)
+            print("✓ Setup complete! All models are installed and ready.")
+            print("=" * 70)
+            print("\nYou can now run generative-poetry-cli to start creating poetry.")
+            return 0
+        else:
+            print("\n" + "=" * 70)
+            print("✗ Setup failed. Please check the errors above.")
+            print("=" * 70)
+            print("\nYou may need to:")
+            print("  • Check your internet connection")
+            print("  • Ensure you have write permissions to Python's site-packages")
+            print("  • Try running with sudo (if on Unix/Linux)")
+            return 1
 
     # Apply CLI flags to config
     if args.out:
