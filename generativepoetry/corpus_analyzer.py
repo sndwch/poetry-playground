@@ -18,8 +18,10 @@ from pathlib import Path
 import nltk
 import spacy
 from wordfreq import word_frequency
+from datamuse import datamuse
 
 from .word_validator import WordValidator
+from .lexigen import similar_meaning_words, contextually_linked_words, similar_sounding_words
 
 
 @dataclass
@@ -69,6 +71,28 @@ class ThematicProfile:
 
 
 @dataclass
+class VocabularyExpansion:
+    """Suggested vocabulary expansions using Datamuse API"""
+    original_word: str
+    similar_meaning: List[str] = field(default_factory=list)
+    contextual_links: List[str] = field(default_factory=list)
+    sound_echoes: List[str] = field(default_factory=list)
+
+    def all_alternatives(self) -> List[str]:
+        """Get all alternative words"""
+        return self.similar_meaning + self.contextual_links + self.sound_echoes
+
+
+@dataclass
+class InspiredStanza:
+    """A generated stanza inspired by corpus patterns"""
+    original_fragments: List[str]
+    expanded_stanza: str
+    substitution_map: Dict[str, str]  # original -> new word
+    inspiration_type: str  # 'semantic', 'contextual', 'sonic'
+
+
+@dataclass
 class StyleFingerprint:
     """Complete style analysis of personal corpus"""
     metrics: PoetryMetrics = field(default_factory=PoetryMetrics)
@@ -79,6 +103,10 @@ class StyleFingerprint:
     opening_patterns: List[str] = field(default_factory=list)
     closing_patterns: List[str] = field(default_factory=list)
     transitional_phrases: List[str] = field(default_factory=list)
+
+    # Inspiration expansions
+    vocabulary_expansions: List[VocabularyExpansion] = field(default_factory=list)
+    inspired_stanzas: List[InspiredStanza] = field(default_factory=list)
 
 
 class PersonalCorpusAnalyzer:
@@ -99,6 +127,8 @@ class PersonalCorpusAnalyzer:
             nltk.download('punkt')
 
         self.word_validator = WordValidator()
+        self.datamuse_api = datamuse.Datamuse()
+
         # Extended stop words including function words and common contractions
         self.stop_words = set([
             'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
@@ -173,6 +203,10 @@ class PersonalCorpusAnalyzer:
 
         # Identify compositional patterns
         self._analyze_compositional_patterns(all_lines, fingerprint)
+
+        # Generate vocabulary expansions and inspired stanzas
+        self._generate_vocabulary_expansions(fingerprint)
+        self._generate_inspired_stanzas(all_lines, fingerprint)
 
         return fingerprint
 
@@ -277,6 +311,39 @@ class PersonalCorpusAnalyzer:
 
         # Skip words that are mostly punctuation or numbers
         if not word.isalpha():
+            return False
+
+        return True
+
+    def _is_poetry_appropriate(self, word: str) -> bool:
+        """Filter out words that might not be appropriate for poetry inspiration"""
+        word_lower = word.lower()
+
+        # Filter out crude slang and inappropriate terms
+        inappropriate_words = {
+            'marijuana', 'cannabis', 'pot', 'weed', 'dope', 'drug', 'drugs',
+            'shit', 'crap', 'damn', 'hell', 'bitch', 'piss', 'fuck',
+            'sex', 'sexual', 'porn', 'naked', 'rape',
+            'kill', 'murder', 'death', 'dead', 'corpse', 'suicide',
+            'money', 'cash', 'dollar', 'profit', 'business', 'corporate',
+            'internet', 'website', 'computer', 'software', 'app',
+            'covid', 'pandemic', 'virus', 'disease', 'cancer'
+        }
+
+        if word_lower in inappropriate_words:
+            return False
+
+        # Filter out words that are too technical or modern
+        if len(word) > 12:  # Very long words are often technical
+            return False
+
+        # Filter out words with numbers or special characters
+        if not word.isalpha():
+            return False
+
+        # Prefer words that are reasonably common but not too mundane
+        freq = word_frequency(word_lower, 'en')
+        if freq < 1e-7 or freq > 1e-3:  # Too rare or too common
             return False
 
         return True
@@ -698,3 +765,167 @@ class PersonalCorpusAnalyzer:
             suggestions.append("Ground abstract ideas with more sensory, concrete details")
 
         return suggestions
+
+    def _generate_vocabulary_expansions(self, fingerprint: StyleFingerprint):
+        """Generate vocabulary expansions using Datamuse API for signature words"""
+        print("Generating vocabulary expansions...")
+
+        # Take top signature words for expansion
+        top_words = [word for word, _ in fingerprint.vocabulary.signature_words[:12]]
+
+        for word in top_words:
+            try:
+                expansion = VocabularyExpansion(original_word=word)
+
+                # Get similar meaning words
+                similar = similar_meaning_words(word, sample_size=6, datamuse_api_max=20)
+                expansion.similar_meaning = [w for w in similar if w != word and self._is_poetry_appropriate(w)][:4]
+
+                # Get contextually linked words
+                contextual = contextually_linked_words(word, sample_size=6, datamuse_api_max=20)
+                expansion.contextual_links = [w for w in contextual if w != word and self._is_poetry_appropriate(w)][:4]
+
+                # Get sound echoes (similar sounding)
+                sonic = similar_sounding_words(word, sample_size=5, datamuse_api_max=15)
+                expansion.sound_echoes = [w for w in sonic if w != word and self._is_poetry_appropriate(w)][:3]
+
+                # Only add if we found some alternatives
+                if expansion.all_alternatives():
+                    fingerprint.vocabulary_expansions.append(expansion)
+
+            except Exception as e:
+                print(f"Could not expand '{word}': {e}")
+                continue
+
+    def _generate_inspired_stanzas(self, all_lines: List[str], fingerprint: StyleFingerprint):
+        """Generate sample stanzas using vocabulary expansions"""
+        print("Generating inspired stanzas...")
+
+        if not fingerprint.vocabulary_expansions:
+            return
+
+        # Find interesting source lines with signature words
+        source_lines = []
+        signature_words = set(word for word, _ in fingerprint.vocabulary.signature_words[:15])
+
+        for line in all_lines:
+            line_words = set(re.findall(r'\b[a-zA-Z]+\b', line.lower()))
+            if signature_words & line_words and len(line.split()) >= 4:
+                source_lines.append(line)
+
+        # Generate different types of inspired stanzas
+        for inspiration_type in ['semantic', 'contextual', 'sonic']:
+            try:
+                stanza = self._create_inspired_stanza(source_lines, fingerprint, inspiration_type)
+                if stanza:
+                    fingerprint.inspired_stanzas.append(stanza)
+            except Exception as e:
+                print(f"Could not generate {inspiration_type} stanza: {e}")
+
+    def _create_inspired_stanza(self, source_lines: List[str], fingerprint: StyleFingerprint,
+                               inspiration_type: str) -> Optional[InspiredStanza]:
+        """Create a single inspired stanza using vocabulary substitutions"""
+        import random
+
+        if len(source_lines) < 3:
+            return None
+
+        # Pick 3-4 random source lines for the stanza
+        selected_lines = random.sample(source_lines, min(4, len(source_lines)))
+        original_fragments = selected_lines.copy()
+
+        # Build substitution map based on inspiration type
+        substitution_map = {}
+
+        for expansion in fingerprint.vocabulary_expansions[:8]:  # Use top expansions
+            original_word = expansion.original_word
+
+            # Choose replacement based on inspiration type
+            if inspiration_type == 'semantic' and expansion.similar_meaning:
+                replacement = random.choice(expansion.similar_meaning)
+            elif inspiration_type == 'contextual' and expansion.contextual_links:
+                replacement = random.choice(expansion.contextual_links)
+            elif inspiration_type == 'sonic' and expansion.sound_echoes:
+                replacement = random.choice(expansion.sound_echoes)
+            else:
+                continue
+
+            substitution_map[original_word] = replacement
+
+        if not substitution_map:
+            return None
+
+        # Apply substitutions to create new stanza
+        new_lines = []
+        for line in selected_lines:
+            new_line = line
+            for original, replacement in substitution_map.items():
+                # Case-sensitive replacement
+                new_line = re.sub(r'\b' + re.escape(original) + r'\b', replacement, new_line, flags=re.IGNORECASE)
+                # Handle capitalization
+                new_line = re.sub(r'\b' + re.escape(original.capitalize()) + r'\b', replacement.capitalize(), new_line)
+
+            new_lines.append(new_line)
+
+        expanded_stanza = '\n'.join(new_lines)
+
+        return InspiredStanza(
+            original_fragments=original_fragments,
+            expanded_stanza=expanded_stanza,
+            substitution_map=substitution_map,
+            inspiration_type=inspiration_type
+        )
+
+    def generate_inspiration_report(self, fingerprint: StyleFingerprint) -> str:
+        """Generate a report focused on creative inspiration and vocabulary expansion"""
+        report = []
+
+        report.append("CREATIVE INSPIRATION GENERATOR")
+        report.append("=" * 60)
+
+        # Vocabulary expansions
+        if fingerprint.vocabulary_expansions:
+            report.append(f"\nVOCABULARY EXPANSIONS:")
+            report.append("Explore these alternatives to your signature words:")
+
+            for expansion in fingerprint.vocabulary_expansions[:8]:
+                report.append(f"\n• '{expansion.original_word}' →")
+
+                if expansion.similar_meaning:
+                    report.append(f"    Similar meaning: {', '.join(expansion.similar_meaning)}")
+
+                if expansion.contextual_links:
+                    report.append(f"    Contextually linked: {', '.join(expansion.contextual_links)}")
+
+                if expansion.sound_echoes:
+                    report.append(f"    Sound echoes: {', '.join(expansion.sound_echoes)}")
+
+        # Inspired stanzas
+        if fingerprint.inspired_stanzas:
+            report.append(f"\n\nINSPIRED STANZA VARIATIONS:")
+            report.append("Sample stanzas reimagined with expanded vocabulary:")
+
+            for i, stanza in enumerate(fingerprint.inspired_stanzas, 1):
+                report.append(f"\n{i}. {stanza.inspiration_type.title()} Variation:")
+                report.append("-" * 40)
+                report.append(stanza.expanded_stanza)
+
+                if stanza.substitution_map:
+                    subs = [f"{k}→{v}" for k, v in list(stanza.substitution_map.items())[:3]]
+                    report.append(f"    Substitutions: {', '.join(subs)}")
+
+        # Creative prompts
+        report.append(f"\n\nCREATIVE PROMPTS:")
+        report.append("-" * 30)
+
+        if fingerprint.vocabulary.signature_words:
+            top_words = [word for word, _ in fingerprint.vocabulary.signature_words[:5]]
+            report.append(f"• Write a poem replacing '{top_words[0]}' with its alternatives")
+            report.append(f"• Combine '{top_words[1]}' with contextually distant words")
+            report.append(f"• Echo the sound of '{top_words[2]}' throughout a piece")
+
+        if fingerprint.themes.semantic_clusters:
+            clusters = fingerprint.themes.semantic_clusters[:2]
+            report.append(f"• Cross-pollinate word groups: {clusters[0][0]} + {clusters[1][0] if len(clusters) > 1 else 'new territory'}")
+
+        return "\n".join(report)

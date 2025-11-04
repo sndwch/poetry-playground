@@ -289,6 +289,13 @@ def corpus_analyzer_action():
         report = analyzer.generate_style_report(fingerprint)
         print(report)
 
+        # Generate inspiration report
+        print("\n" + "="*60)
+        print("GENERATING CREATIVE INSPIRATIONS...")
+        print("="*60)
+        inspiration_report = analyzer.generate_inspiration_report(fingerprint)
+        print(inspiration_report)
+
         # Provide expansion suggestions
         print("\n" + "="*60)
         print("CREATIVE EXPANSION SUGGESTIONS")
