@@ -1,127 +1,283 @@
-"""Caching utilities for API calls."""
+"""Enhanced caching utilities for API calls with persistent storage.
+
+Uses diskcache for efficient persistent caching of Datamuse API and CMU
+pronouncing dictionary lookups. Includes exponential backoff, retry logic,
+and offline mode support.
+"""
 
 import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Any, Optional, Callable
+from typing import Any, Optional, Callable, Tuple
 from functools import wraps
+import random
+
+try:
+    from diskcache import Cache
+    DISKCACHE_AVAILABLE = True
+except ImportError:
+    DISKCACHE_AVAILABLE = False
+    Cache = None
 
 from .config import config
 from .logger import logger
 
 
-class APICache:
-    """Simple file-based cache for API responses."""
+# API version for cache invalidation
+API_VERSION = "1.0"
 
-    def __init__(self, cache_dir: Optional[Path] = None, ttl: int = 86400):
-        """Initialize cache.
+
+class CacheKeyGenerator:
+    """Generate consistent cache keys for API calls."""
+
+    @staticmethod
+    def generate(endpoint: str, params: dict, version: str = API_VERSION) -> str:
+        """Generate cache key from endpoint, params, and version.
 
         Args:
-            cache_dir: Directory to store cache files
+            endpoint: API endpoint or function name
+            params: Parameters passed to the API
+            version: API version for cache invalidation
+
+        Returns:
+            MD5 hash of the key components
+        """
+        key_data = {
+            'endpoint': endpoint,
+            'params': sorted(params.items()) if isinstance(params, dict) else params,
+            'version': version
+        }
+        key_str = json.dumps(key_data, sort_keys=True, default=str)
+        return hashlib.md5(key_str.encode()).hexdigest()
+
+
+class RetryStrategy:
+    """Exponential backoff retry strategy for API calls."""
+
+    def __init__(self, max_retries: int = 3, base_delay: float = 1.0, max_delay: float = 30.0):
+        """Initialize retry strategy.
+
+        Args:
+            max_retries: Maximum number of retry attempts
+            base_delay: Initial delay in seconds
+            max_delay: Maximum delay in seconds
+        """
+        self.max_retries = max_retries
+        self.base_delay = base_delay
+        self.max_delay = max_delay
+
+    def wait(self, attempt: int) -> float:
+        """Calculate exponential backoff delay with jitter.
+
+        Args:
+            attempt: Current attempt number (0-indexed)
+
+        Returns:
+            Delay in seconds
+        """
+        # Exponential backoff: base * 2^attempt
+        delay = min(self.base_delay * (2 ** attempt), self.max_delay)
+
+        # Add jitter (±20%) to prevent thundering herd
+        jitter = delay * 0.2 * (random.random() * 2 - 1)
+
+        return max(0, delay + jitter)
+
+    def execute(self, func: Callable, *args, **kwargs) -> Any:
+        """Execute function with exponential backoff retry.
+
+        Args:
+            func: Function to execute
+            *args, **kwargs: Arguments to pass to function
+
+        Returns:
+            Function result
+
+        Raises:
+            Last exception if all retries fail
+        """
+        last_exception = None
+
+        for attempt in range(self.max_retries + 1):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                last_exception = e
+
+                if attempt < self.max_retries:
+                    delay = self.wait(attempt)
+                    logger.warning(
+                        f"Attempt {attempt + 1}/{self.max_retries + 1} failed: {e}. "
+                        f"Retrying in {delay:.2f}s..."
+                    )
+                    time.sleep(delay)
+                else:
+                    logger.error(f"All {self.max_retries + 1} attempts failed: {e}")
+
+        raise last_exception
+
+
+class PersistentAPICache:
+    """Persistent API cache using diskcache with offline mode support."""
+
+    def __init__(
+        self,
+        cache_dir: Optional[Path] = None,
+        ttl: int = 86400,
+        offline_mode: bool = False
+    ):
+        """Initialize persistent cache.
+
+        Args:
+            cache_dir: Directory to store cache
             ttl: Time to live in seconds (default: 24 hours)
+            offline_mode: If True, never make API calls, only use cache
         """
         self.cache_dir = cache_dir or config.cache_dir
         self.ttl = ttl
         self.enabled = config.enable_cache
+        self.offline_mode = offline_mode
+        self.retry_strategy = RetryStrategy(
+            max_retries=config.max_api_retries,
+            base_delay=config.api_retry_delay
+        )
 
-        if self.enabled:
+        # Initialize cache backend
+        if self.enabled and DISKCACHE_AVAILABLE:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
+            self.cache = Cache(str(self.cache_dir))
+            self._backend = 'diskcache'
+            logger.debug(f"Initialized diskcache at {self.cache_dir}")
+        else:
+            if self.enabled and not DISKCACHE_AVAILABLE:
+                logger.warning("diskcache not available, caching disabled. Install with: pip install diskcache")
+            self.cache = None
+            self._backend = 'none'
 
-    def _get_cache_key(self, func_name: str, args: tuple, kwargs: dict) -> str:
-        """Generate a cache key from function name and arguments."""
-        key_data = {
-            'func': func_name,
-            'args': args,
-            'kwargs': kwargs
-        }
-        key_str = json.dumps(key_data, sort_keys=True)
-        return hashlib.md5(key_str.encode()).hexdigest()
+    def get(self, key: str) -> Optional[Any]:
+        """Get value from cache if it exists and is not expired.
 
-    def _get_cache_path(self, cache_key: str) -> Path:
-        """Get the file path for a cache key."""
-        return self.cache_dir / f"{cache_key}.json"
+        Args:
+            key: Cache key
 
-    def get(self, cache_key: str) -> Optional[Any]:
-        """Get value from cache if it exists and is not expired."""
-        if not self.enabled:
-            return None
-
-        cache_path = self._get_cache_path(cache_key)
-
-        if not cache_path.exists():
+        Returns:
+            Cached value or None if not found/expired
+        """
+        if not self.enabled or self.cache is None:
             return None
 
         try:
-            with open(cache_path, 'r') as f:
-                cached_data = json.load(f)
-
-            # Check if cache is expired
-            if time.time() - cached_data['timestamp'] > self.ttl:
-                cache_path.unlink()  # Delete expired cache
+            value = self.cache.get(key)
+            if value is not None:
+                logger.debug(f"Cache hit: {key[:16]}...")
+                return value
+            else:
+                logger.debug(f"Cache miss: {key[:16]}...")
                 return None
-
-            logger.debug(f"Cache hit for {cache_key}")
-            return cached_data['data']
-
-        except (json.JSONDecodeError, KeyError, IOError):
-            # Corrupted cache file, remove it
-            cache_path.unlink(missing_ok=True)
+        except Exception as e:
+            logger.warning(f"Cache read error: {e}")
             return None
 
-    def set(self, cache_key: str, value: Any) -> None:
-        """Store value in cache."""
-        if not self.enabled:
+    def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        """Store value in cache with TTL.
+
+        Args:
+            key: Cache key
+            value: Value to cache
+            ttl: Time to live in seconds (uses default if not specified)
+        """
+        if not self.enabled or self.cache is None:
             return
 
-        cache_path = self._get_cache_path(cache_key)
-        cached_data = {
-            'timestamp': time.time(),
-            'data': value
-        }
-
         try:
-            with open(cache_path, 'w') as f:
-                json.dump(cached_data, f)
-            logger.debug(f"Cached {cache_key}")
-        except (IOError, TypeError) as e:
-            logger.warning(f"Failed to cache {cache_key}: {e}")
+            expire_time = ttl or self.ttl
+            self.cache.set(key, value, expire=expire_time)
+            logger.debug(f"Cached: {key[:16]}... (TTL: {expire_time}s)")
+        except Exception as e:
+            logger.warning(f"Cache write error: {e}")
 
     def clear(self) -> None:
-        """Clear all cache files."""
-        if self.enabled and self.cache_dir.exists():
-            for cache_file in self.cache_dir.glob("*.json"):
-                cache_file.unlink()
-            logger.info("Cache cleared")
+        """Clear all cache entries."""
+        if self.enabled and self.cache is not None:
+            try:
+                self.cache.clear()
+                logger.info("Cache cleared")
+            except Exception as e:
+                logger.warning(f"Cache clear error: {e}")
+
+    def stats(self) -> dict:
+        """Get cache statistics.
+
+        Returns:
+            Dictionary with cache stats
+        """
+        if not self.enabled or self.cache is None:
+            return {'enabled': False, 'backend': self._backend}
+
+        try:
+            volume = self.cache.volume()
+            size = len(self.cache)
+            return {
+                'enabled': True,
+                'backend': self._backend,
+                'size': size,
+                'volume_bytes': volume,
+                'offline_mode': self.offline_mode
+            }
+        except Exception as e:
+            logger.warning(f"Cache stats error: {e}")
+            return {'enabled': True, 'backend': self._backend, 'error': str(e)}
 
 
-def cached_api_call(ttl: int = 3600):
-    """Decorator to cache API call results.
+def cached_api_call(
+    endpoint: str,
+    ttl: int = 3600,
+    offline_mode: bool = False
+):
+    """Decorator to cache API call results with retry logic.
 
     Args:
+        endpoint: Name of the API endpoint (for cache key)
         ttl: Time to live in seconds (default: 1 hour)
+        offline_mode: If True, only use cache, never make API calls
+
+    Example:
+        @cached_api_call(endpoint='datamuse.words', ttl=86400)
+        def get_similar_words(word, max_results=20):
+            return datamuse_api.words(ml=word, max=max_results)
     """
-    cache = APICache(ttl=ttl)
+    cache = PersistentAPICache(ttl=ttl, offline_mode=offline_mode)
 
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            # Generate cache key
-            cache_key = cache._get_cache_key(func.__name__, args, kwargs)
+            # Generate cache key from endpoint and parameters
+            params = {'args': args, 'kwargs': kwargs}
+            cache_key = CacheKeyGenerator.generate(endpoint, params)
 
             # Try to get from cache
             cached_result = cache.get(cache_key)
             if cached_result is not None:
                 return cached_result
 
-            # Call the function
-            result = func(*args, **kwargs)
+            # If offline mode and no cache hit, raise error
+            if offline_mode:
+                logger.error(f"Offline mode: no cache entry for {endpoint}")
+                return None  # Could raise exception instead
 
-            # Cache the result
-            if result is not None:
-                cache.set(cache_key, result)
+            # Call the function with retry logic
+            try:
+                result = cache.retry_strategy.execute(func, *args, **kwargs)
 
-            return result
+                # Cache the result if successful
+                if result is not None:
+                    cache.set(cache_key, result, ttl=ttl)
+
+                return result
+            except Exception as e:
+                logger.error(f"API call failed after retries: {endpoint} - {e}")
+                raise
 
         return wrapper
 
@@ -129,4 +285,18 @@ def cached_api_call(ttl: int = 3600):
 
 
 # Global cache instance
-api_cache = APICache()
+api_cache = PersistentAPICache()
+
+
+def get_cache_stats() -> dict:
+    """Get global cache statistics.
+
+    Returns:
+        Dictionary with cache statistics
+    """
+    return api_cache.stats()
+
+
+def clear_cache() -> None:
+    """Clear global cache."""
+    api_cache.clear()

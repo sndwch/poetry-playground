@@ -4,6 +4,7 @@ import pronouncing
 from datamuse import datamuse
 from .utils import *
 from .word_validator import word_validator
+from .cache import cached_api_call
 
 
 def clean_api_results(word_list, exclude_words=None, use_validator=True):
@@ -33,6 +34,39 @@ api = datamuse.Datamuse()
 str_or_list_of_str = TypeVar('str_or_list_of_str', str, List[str])
 
 
+# Cached API wrapper functions with 24-hour TTL for stability
+@cached_api_call(endpoint='cmu.pronouncing.rhymes', ttl=86400)
+def _cached_pronouncing_rhymes(word: str) -> List[str]:
+    """Cached wrapper for CMU pronouncing dictionary rhyme lookups."""
+    return pronouncing.rhymes(word)
+
+
+@cached_api_call(endpoint='datamuse.similar_sounding', ttl=86400)
+def _cached_datamuse_similar_sounding(word: str, max_results: int) -> List[dict]:
+    """Cached wrapper for Datamuse similar sounding (sl) API calls."""
+    return api.words(sl=word, max=max_results)
+
+
+@cached_api_call(endpoint='datamuse.similar_meaning', ttl=86400)
+def _cached_datamuse_similar_meaning(word: str, max_results: int) -> List[dict]:
+    """Cached wrapper for Datamuse similar meaning (ml) API calls."""
+    return api.words(ml=word, max=max_results)
+
+
+@cached_api_call(endpoint='datamuse.contextually_linked', ttl=86400)
+def _cached_datamuse_contextually_linked(word: str, max_results: int) -> List[dict]:
+    """Cached wrapper for Datamuse contextually linked (rel_trg) API calls."""
+    return api.words(rel_trg=word, max=max_results)
+
+
+@cached_api_call(endpoint='datamuse.frequently_following', ttl=86400)
+def _cached_datamuse_frequently_following(word: str, max_results: Optional[int]) -> List[dict]:
+    """Cached wrapper for Datamuse frequently following (lc) API calls."""
+    if max_results:
+        return api.words(lc=word, max=max_results)
+    return api.words(lc=word)
+
+
 def rhymes(input_val: str_or_list_of_str, sample_size=None) -> List[str]:
     """Return a list of rhymes in randomized order for a given word if at least one can be found using the pronouncing
     module (which uses the CMU rhyming dictionary).
@@ -44,7 +78,9 @@ def rhymes(input_val: str_or_list_of_str, sample_size=None) -> List[str]:
     input_words = validate_str_or_list_of_str(input_val)
     rhyme_words: List[str] = []
     for input_word in input_words:
-        rhyme_words.extend(filter_word_list([word for word in set(pronouncing.rhymes(input_word))]))
+        # Use cached wrapper for CMU lookups
+        cached_rhymes = _cached_pronouncing_rhymes(input_word)
+        rhyme_words.extend(filter_word_list([word for word in set(cached_rhymes)]))
     return extract_sample(rhyme_words, sample_size=sample_size)
 
 
@@ -95,7 +131,8 @@ def similar_sounding_words(input_val: str_or_list_of_str, sample_size: Optional[
     input_words = validate_str_or_list_of_str(input_val)
     ss_words: List[str] = []
     for input_word in input_words:
-        response = api.words(sl=input_word, max=datamuse_api_max) if datamuse_api_max else api.words(sl=input_word)
+        # Use cached wrapper for Datamuse API
+        response = _cached_datamuse_similar_sounding(input_word, datamuse_api_max or 50)
         exclude_words = input_words + ss_words
         ss_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
     return extract_sample(ss_words, sample_size=sample_size)
@@ -128,7 +165,8 @@ def similar_meaning_words(input_val: str_or_list_of_str, sample_size: Optional[i
     input_words = validate_str_or_list_of_str(input_val)
     sm_words: List[str] = []
     for input_word in input_words:
-        response = api.words(ml=input_word, max=datamuse_api_max) if datamuse_api_max else api.words(ml=input_word)
+        # Use cached wrapper for Datamuse API
+        response = _cached_datamuse_similar_meaning(input_word, datamuse_api_max or 20)
         exclude_words = sm_words.copy()
         sm_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
     return extract_sample(sm_words, sample_size=sample_size)
@@ -162,8 +200,8 @@ def contextually_linked_words(input_val: str_or_list_of_str, sample_size: Option
     cl_words: List[str] = []
     for input_word in input_words:
         validate_word(input_word)
-        response = api.words(rel_trg=input_word, max=datamuse_api_max) if datamuse_api_max else \
-            api.words(rel_trg=input_word)
+        # Use cached wrapper for Datamuse API
+        response = _cached_datamuse_contextually_linked(input_word, datamuse_api_max or 20)
         exclude_words = cl_words.copy()
         cl_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
     return extract_sample(cl_words, sample_size=sample_size)
@@ -198,7 +236,8 @@ def frequently_following_words(input_val: str_or_list_of_str, sample_size: Optio
     input_words = validate_str_or_list_of_str(input_val)
     ff_words: List[str] = []
     for input_word in input_words:
-        response = api.words(lc=input_word, max=datamuse_api_max) if datamuse_api_max else api.words(lc=input_word)
+        # Use cached wrapper for Datamuse API
+        response = _cached_datamuse_frequently_following(input_word, datamuse_api_max)
         exclude_words = ff_words.copy()
         ff_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
         random.shuffle(ff_words)

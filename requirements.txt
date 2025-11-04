@@ -11,6 +11,7 @@ python-datamuse>=1.3.0
 spacy>=2.2.3
 reportlab>=3.5.26
 wordfreq>=2.2.2
+diskcache>=5.6.0
 # Optional system dependencies (not Python packages):
 # - hunspell: For enhanced spellchecking (brew install hunspell on macOS)
 # - poppler-utils: For PDF to PNG conversion (brew install poppler on macOS)
