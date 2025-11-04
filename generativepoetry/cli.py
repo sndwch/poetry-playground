@@ -90,7 +90,7 @@ def metaphor_generator_action():
 
         # Try to extract some patterns from multiple Gutenberg texts
         print("Mining literary patterns from diverse sources...")
-        gutenberg_patterns = generator.extract_metaphor_patterns(num_texts=3)
+        gutenberg_patterns = generator.extract_metaphor_patterns(num_texts=5)
 
         # Group by type
         by_type = {}
@@ -186,7 +186,7 @@ def metaphor_generator_action():
             input_words = get_input_words()  # Get new words
         elif choice == '3':
             print("\nMining additional Gutenberg texts...")
-            patterns = generator.extract_metaphor_patterns(num_texts=5)
+            patterns = generator.extract_metaphor_patterns(num_texts=8)
             if patterns:
                 # Group by text source to show diversity
                 text_groups = {}

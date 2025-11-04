@@ -144,9 +144,11 @@ class MetaphorGenerator:
         used_text_signatures = set()  # Track texts we've already used
 
         attempts = 0
-        max_attempts = num_texts * 3  # Allow multiple attempts to find diverse texts
+        max_attempts = num_texts * 5  # Allow more attempts to find diverse texts
+        successful_texts = 0
+        target_texts = num_texts
 
-        while len(all_metaphors) < num_texts * 10 and attempts < max_attempts:
+        while successful_texts < target_texts and attempts < max_attempts:
             attempts += 1
             try:
                 text = random_gutenberg_document()
@@ -194,6 +196,7 @@ class MetaphorGenerator:
                     # Add text info to metaphors for tracking source diversity
                     text_preview = text[:100].replace('\n', ' ')
                     logger.debug(f"Extracted {len(found_metaphors)} metaphors from: {text_preview}...")
+                    successful_texts += 1
 
             except Exception as e:
                 logger.debug(f"Error extracting from Gutenberg text: {e}")
