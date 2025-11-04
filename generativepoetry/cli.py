@@ -18,6 +18,7 @@ from generativepoetry.six_degrees import SixDegrees
 from generativepoetry.causal_poetry import ResonantFragmentMiner
 from generativepoetry.seed_manager import set_global_seed, format_seed_message
 from generativepoetry.config import config
+from generativepoetry.logger import set_log_level
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -724,11 +725,66 @@ def main():
         epilog='For more information, visit: https://github.com/sndwch/generativepoetry-py'
     )
 
+    # Reproducibility
     parser.add_argument(
         '--seed',
         type=int,
         metavar='INT',
         help='Random seed for deterministic/reproducible generation (example: --seed 42)'
+    )
+
+    # Output control
+    parser.add_argument(
+        '--out', '-o',
+        type=str,
+        metavar='PATH',
+        help='Output directory for generated files (default: current directory)'
+    )
+
+    parser.add_argument(
+        '--format', '-f',
+        type=str,
+        choices=['png', 'pdf', 'svg', 'txt'],
+        metavar='FORMAT',
+        help='Output format: png, pdf, svg, or txt (default: pdf)'
+    )
+
+    # CLI behavior
+    parser.add_argument(
+        '--quiet', '-q',
+        action='store_true',
+        help='Suppress non-essential output (show only warnings and errors)'
+    )
+
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Show detailed output including debug information'
+    )
+
+    parser.add_argument(
+        '--no-color',
+        action='store_true',
+        help='Disable colored output for better compatibility'
+    )
+
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Preview actions without generating files'
+    )
+
+    # Utility commands
+    parser.add_argument(
+        '--list-fonts',
+        action='store_true',
+        help='List available fonts and exit'
+    )
+
+    parser.add_argument(
+        '--list-procedures',
+        action='store_true',
+        help='List available poem generation procedures and exit'
     )
 
     parser.add_argument(
@@ -739,15 +795,96 @@ def main():
 
     args = parser.parse_args()
 
+    # Handle --list-fonts command
+    if args.list_fonts:
+        print("Available fonts for PDF generation:\n")
+        # List standard PDF fonts (always available with reportlab)
+        standard_fonts = [
+            'Courier', 'Courier-Bold', 'Courier-BoldOblique', 'Courier-Oblique',
+            'Helvetica', 'Helvetica-Bold', 'Helvetica-BoldOblique', 'Helvetica-Oblique',
+            'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic',
+            'Symbol', 'ZapfDingbats'
+        ]
+
+        print("Standard PostScript Fonts (always available):")
+        for i, font in enumerate(standard_fonts, 1):
+            print(f"  {i:2}. {font}")
+
+        # Try to list registered fonts from pdfmetrics
+        try:
+            from reportlab.pdfbase import pdfmetrics
+            registered = pdfmetrics.getRegisteredFontNames()
+            if registered and len(registered) > len(standard_fonts):
+                print("\nAdditionally Registered Fonts:")
+                custom = [f for f in registered if f not in standard_fonts]
+                for i, font in enumerate(sorted(custom), 1):
+                    print(f"  {i:2}. {font}")
+        except:
+            pass
+
+        print("\nNote: Custom fonts can be registered using reportlab.pdfbase.pdfmetrics")
+        return
+
+    # Handle --list-procedures command
+    if args.list_procedures:
+        print("Available poem generation procedures:\n")
+        print("Visual/Concrete Poetry:")
+        print("  1. Futurist Poem - Marinetti-inspired mathematical word connections")
+        print("  2. Stochastic Jolastic (Markov) - Joyce-like wordplay with rhyme schemes")
+        print("  3. Chaotic Concrete - Abstract spatial arrangements")
+        print("  4. Character Soup - Pure visual typographic experiments")
+        print("  5. Stop Word Soup - Minimalist word placement")
+        print("  6. Visual Puzzle - Interactive terminal-based concrete poetry")
+        print("\nPoetry Ideation Tools:")
+        print("  7. Line Seeds Generator - Opening lines and pivotal fragments")
+        print("  8. Metaphor Generator - AI-assisted metaphor creation")
+        print("  9. Corpus Analyzer - Analyze personal poetry collection")
+        print("  10. Ship of Theseus - Transform existing poems")
+        print("  11. Poetry Idea Generator - Mine classic literature for creative seeds")
+        print("  12. Six Degrees - Explore connections between concepts")
+        print("  13. Resonant Fragment Miner - Extract poetic fragments from Gutenberg")
+        print("\nUse generative-poetry-cli to access all procedures interactively.")
+        return
+
+    # Apply CLI flags to config
+    if args.out:
+        from pathlib import Path
+        config.output_dir = Path(args.out).resolve()
+        config.output_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.format:
+        config.output_format = args.format
+
+    if args.dry_run:
+        config.dry_run = True
+        print("🔍 Dry-run mode: no files will be generated\n")
+
+    # Set logging level based on quiet/verbose
+    set_log_level(quiet=args.quiet, verbose=args.verbose)
+
+    if args.no_color:
+        config.no_color = True
+        # TODO: Implement color suppression in output functions
+
     # Set random seed if provided (via CLI arg or environment variable)
     seed = args.seed or config.seed
     if seed is not None:
         set_global_seed(seed)
-        print(f"\n{format_seed_message()}\n")
+        if not args.quiet:
+            print(f"\n{format_seed_message()}\n")
     else:
         # Generate and set a random seed for this session
         seed = set_global_seed()
-        print(f"\n{format_seed_message()}\n")
+        if not args.quiet:
+            print(f"\n{format_seed_message()}\n")
+
+    # Show output directory if specified
+    if args.out and not args.quiet:
+        print(f"📁 Output directory: {config.output_dir}\n")
+
+    # Show output format if specified
+    if args.format and not args.quiet:
+        print(f"📄 Output format: {config.output_format}\n")
 
     # Create and configure menu
     menu = ConsoleMenu("Generative Poetry Menu", "What kind of poem would you like to generate?")

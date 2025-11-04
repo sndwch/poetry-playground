@@ -28,3 +28,26 @@ def setup_logger(name='generativepoetry', level=logging.INFO):
 
 # Create a default logger instance
 logger = setup_logger()
+
+
+def set_log_level(quiet: bool = False, verbose: bool = False) -> None:
+    """Set logging level based on quiet/verbose flags.
+
+    Args:
+        quiet: If True, set to WARNING (suppress INFO)
+        verbose: If True, set to DEBUG (show all details)
+
+    Note: quiet takes precedence over verbose
+    """
+    if quiet:
+        logger.setLevel(logging.WARNING)
+        for handler in logger.handlers:
+            handler.setLevel(logging.WARNING)
+    elif verbose:
+        logger.setLevel(logging.DEBUG)
+        for handler in logger.handlers:
+            handler.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+        for handler in logger.handlers:
+            handler.setLevel(logging.INFO)

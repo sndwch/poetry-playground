@@ -25,8 +25,15 @@ class Config:
 
     # Output Settings
     output_dir: Path = Path.cwd()
+    output_format: str = 'pdf'  # Output format: png, svg, pdf, txt
     pdf_orientation: str = 'landscape'
     enable_png_generation: bool = True
+
+    # CLI Behavior
+    quiet: bool = False  # Suppress non-essential output
+    verbose: bool = False  # Show detailed output
+    no_color: bool = False  # Disable colored output
+    dry_run: bool = False  # Preview without generating files
 
     # Caching
     enable_cache: bool = True
@@ -58,6 +65,10 @@ class Config:
             'GP_DATAMUSE_API_MAX': ('datamuse_api_max', int),
             'GP_SEED': ('seed', int),
             'GP_OUTPUT_DIR': ('output_dir', Path),
+            'GP_OUTPUT_FORMAT': ('output_format', str),
+            'GP_QUIET': ('quiet', lambda x: x.lower() == 'true'),
+            'GP_VERBOSE': ('verbose', lambda x: x.lower() == 'true'),
+            'GP_NO_COLOR': ('no_color', lambda x: x.lower() == 'true'),
             'GP_ENABLE_CACHE': ('enable_cache', lambda x: x.lower() == 'true'),
             'GP_CACHE_DIR': ('cache_dir', Path),
         }
