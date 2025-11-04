@@ -18,6 +18,7 @@ from collections import defaultdict
 from .word_validator import WordValidator
 from .document_library import get_diverse_gutenberg_documents
 from .vocabulary import vocabulary
+from .config import DocumentConfig, QualityConfig
 
 
 @dataclass
@@ -112,7 +113,7 @@ class ResonantFragmentMiner:
 
         # Start with initial batch
         print(f"  📚 Retrieving {initial_texts} diverse documents...")
-        documents = get_diverse_gutenberg_documents(count=initial_texts, min_length=5000)
+        documents = get_diverse_gutenberg_documents(count=initial_texts, min_length=DocumentConfig.MIN_LENGTH_FRAGMENTS)
 
         if not documents:
             print("❌ Failed to retrieve any documents. Check internet connection.")
@@ -149,7 +150,7 @@ class ResonantFragmentMiner:
 
             print(f"  📚 Need {needed} more fragments, retrieving {adaptive_batch_size} additional documents...")
 
-            additional_docs = get_diverse_gutenberg_documents(count=adaptive_batch_size, min_length=5000)
+            additional_docs = get_diverse_gutenberg_documents(count=adaptive_batch_size, min_length=DocumentConfig.MIN_LENGTH_FRAGMENTS)
 
             if not additional_docs:
                 print("  ⚠ Could not retrieve additional documents - network issue or exhausted sources")
@@ -306,7 +307,7 @@ class ResonantFragmentMiner:
         words = text.split()
 
         # Minimum quality score threshold - maintain high standards
-        if fragment.poetic_score < 0.65:
+        if fragment.poetic_score < QualityConfig.FRAGMENT_QUALITY_THRESHOLD:
             return False
 
         # Reject overly generic fragments (relaxed)
@@ -377,7 +378,9 @@ class ResonantFragmentMiner:
             # Sort by poetic score (best first)
             sorted_fragments = sorted(fragments, key=lambda f: f.poetic_score, reverse=True)
 
-            for i, fragment in enumerate(sorted_fragments[:12], 1):  # Show top 12 per category
+            # Show all fragments if total count > 50, otherwise limit to top 12 per category
+            display_limit = len(sorted_fragments) if collection.total_count() > 50 else min(12, len(sorted_fragments))
+            for i, fragment in enumerate(sorted_fragments[:display_limit], 1):
                 tone_emoji = {
                     'dark': '🌑', 'light': '☀️', 'dynamic': '⚡',
                     'quiet': '🌙', 'mysterious': '🔮', 'neutral': '📝'

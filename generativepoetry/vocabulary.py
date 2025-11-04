@@ -107,6 +107,32 @@ class SharedVocabulary:
         }
 
     @property
+    def concept_domains(self):
+        """Thematic domain categories for metaphor generation"""
+        return {
+            'nature': ['ocean', 'forest', 'storm', 'garden', 'river', 'mountain',
+                      'desert', 'rain', 'snow', 'tree', 'flower', 'sky'],
+            'architecture': ['cathedral', 'bridge', 'tower', 'ruins', 'door',
+                           'window', 'wall', 'foundation', 'arch', 'castle'],
+            'time': ['clock', 'season', 'dawn', 'century', 'moment', 'hour',
+                    'twilight', 'midnight', 'autumn', 'eternity'],
+            'body': ['heart', 'bones', 'blood', 'breath', 'skin', 'eyes',
+                    'hands', 'pulse', 'nerves', 'spine'],
+            'cosmos': ['stars', 'void', 'orbit', 'constellation', 'moon',
+                      'comet', 'galaxy', 'nebula', 'eclipse', 'gravity'],
+            'technology': ['engine', 'wire', 'signal', 'machine', 'circuit',
+                          'network', 'code', 'algorithm', 'data', 'static'],
+            'textiles': ['thread', 'weave', 'fray', 'pattern', 'fabric',
+                        'silk', 'tapestry', 'knot', 'stitch', 'loom'],
+            'music': ['symphony', 'discord', 'rhythm', 'silence', 'melody',
+                     'harmony', 'crescendo', 'note', 'chord', 'echo'],
+            'light': ['shadow', 'glow', 'gleam', 'flicker', 'radiance',
+                     'twilight', 'beam', 'reflection', 'prism', 'darkness'],
+            'container': ['vessel', 'bowl', 'cage', 'box', 'envelope',
+                         'bottle', 'frame', 'shell', 'cocoon', 'womb']
+        }
+
+    @property
     def enhanced_sensory_domains(self):
         """Enhanced sensory word collections for synesthetic metaphors"""
         return {

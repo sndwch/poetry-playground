@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from gutenbergpy.textget import get_text_by_id, strip_headers
 import logging
 
+from .config import DocumentConfig, PerformanceConfig
+
 # Configure logging to be less verbose
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)  # Only show warnings and errors
@@ -52,10 +54,10 @@ class DocumentLibrary:
             (50000, 55000)  # Contemporary
         ]
 
-        self.max_recent = 50  # Track last 50 used documents
-        self.max_cache = 20   # Cache up to 20 documents
+        self.max_recent = PerformanceConfig.MAX_RECENT_TRACKING
+        self.max_cache = PerformanceConfig.MAX_DOCUMENT_CACHE
 
-    def get_diverse_documents(self, count: int = 5, min_length: int = 5000) -> List[str]:
+    def get_diverse_documents(self, count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT) -> List[str]:
         """Get multiple diverse documents, ensuring variety"""
         documents = []
         attempts = 0
@@ -71,15 +73,15 @@ class DocumentLibrary:
                 documents.append(doc)
 
             # Brief pause to avoid overwhelming the API
-            time.sleep(0.2)
+            time.sleep(PerformanceConfig.API_DELAY_SECONDS)
         return documents
 
-    def get_single_document(self, min_length: int = 1000,
+    def get_single_document(self, min_length: int = DocumentConfig.MIN_LENGTH_GENERAL,
                           avoid_recent: bool = True,
                           force_different: bool = False) -> Optional[str]:
         """Get a single document with anti-repetition measures"""
 
-        for attempt in range(20):  # More attempts than original
+        for attempt in range(PerformanceConfig.MAX_PROCESSING_ATTEMPTS):
             try:
                 # Choose from quality ranges for better content
                 range_start, range_end = random.choice(self.quality_ranges)
@@ -220,10 +222,10 @@ document_library = DocumentLibrary()
 # Backwards-compatible functions for existing code
 def random_gutenberg_document(language_filter='en') -> str:
     """Backwards-compatible function using the new document library"""
-    return document_library.get_single_document(min_length=1000) or ""
+    return document_library.get_single_document(min_length=DocumentConfig.MIN_LENGTH_GENERAL) or ""
 
 
-def get_diverse_gutenberg_documents(count: int = 5, min_length: int = 5000) -> List[str]:
+def get_diverse_gutenberg_documents(count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT) -> List[str]:
     """Get multiple diverse documents - use this instead of calling random_gutenberg_document in loops"""
     return document_library.get_diverse_documents(count=count, min_length=min_length)
 

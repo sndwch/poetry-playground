@@ -66,5 +66,68 @@ class Config:
         return cls(**kwargs)
 
 
+# Document retrieval configuration
+class DocumentConfig:
+    """Document length requirements for different extraction types"""
+
+    # Minimum document lengths for different purposes
+    MIN_LENGTH_GENERAL = 1000          # General single document retrieval
+    MIN_LENGTH_IDEAS = 2000            # Poetry idea extraction
+    MIN_LENGTH_METAPHORS = 3000        # Metaphor pattern extraction
+    MIN_LENGTH_FRAGMENTS = 5000        # Fragment mining and resonant patterns
+    MIN_LENGTH_LIBRARY_DEFAULT = 5000  # Default for document library diverse retrieval
+
+    # Batch sizes for adaptive scaling
+    INITIAL_BATCH_SIZE_SMALL = 2       # Conservative starting batch
+    INITIAL_BATCH_SIZE_MEDIUM = 3      # Standard starting batch
+    INITIAL_BATCH_SIZE_LARGE = 5       # Aggressive starting batch
+
+    MAX_ADAPTIVE_BATCH = 5             # Maximum documents in adaptive scaling batch
+    MIN_ADAPTIVE_BATCH = 2             # Minimum documents in adaptive scaling batch
+
+
+class QualityConfig:
+    """Quality thresholds and scoring parameters"""
+
+    # Fragment quality thresholds
+    FRAGMENT_QUALITY_THRESHOLD = 0.65  # Minimum quality score for fragments
+
+    # Metaphor quality thresholds
+    METAPHOR_BASE_SCORE = 0.5          # Base metaphor quality score
+    METAPHOR_MAX_SCORE = 1.0           # Maximum metaphor quality score
+
+    # Text processing limits
+    MAX_SENTENCES_PER_TEXT = 100       # Maximum sentences to process per document
+    MAX_FRAGMENTS_PER_TEXT = 10        # Maximum fragments to extract per document
+    MAX_METAPHORS_PER_TEXT = 10        # Maximum metaphors to extract per document
+    MAX_IDEAS_PER_TEXT = 8             # Maximum ideas to extract per document
+
+
+class PerformanceConfig:
+    """Performance-related settings"""
+
+    # API rate limiting
+    API_DELAY_SECONDS = 0.2            # Delay between API calls
+    API_DELAY_IDEAS = 0.3              # Longer delay for idea generation
+
+    # Cache settings
+    MAX_DOCUMENT_CACHE = 20            # Maximum cached documents in memory
+    MAX_RECENT_TRACKING = 50           # Maximum recently used documents to track
+
+    # Processing limits
+    MAX_PROCESSING_ATTEMPTS = 20       # Maximum attempts for document processing
+    MAX_RETRY_ATTEMPTS = 5             # Maximum retries for failed operations
+
+
+# Quick access to commonly used values
+DEFAULT_FRAGMENT_COUNT = 100
+DEFAULT_METAPHOR_COUNT = 15
+DEFAULT_IDEA_COUNT = 20
+
+# Common batch multipliers for adaptive scaling
+SCALING_FACTOR_CONSERVATIVE = 3      # remaining_needed // 3
+SCALING_FACTOR_AGGRESSIVE = 5        # remaining_needed // 5
+
+
 # Global config instance
 config = Config.from_env()

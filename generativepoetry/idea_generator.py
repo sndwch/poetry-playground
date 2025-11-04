@@ -16,6 +16,7 @@ from enum import Enum
 from .decomposer import ParsedText
 from .document_library import get_diverse_gutenberg_documents
 from .word_validator import WordValidator
+from .config import DocumentConfig, QualityConfig, PerformanceConfig
 
 
 class IdeaType(Enum):
@@ -108,7 +109,6 @@ class PoetryIdeaGenerator:
 
     def __init__(self):
         self.word_validator = WordValidator()
-        self.used_text_signatures = set()
 
         # Patterns for different types of creative seeds
         self.patterns = {
@@ -224,64 +224,82 @@ class PoetryIdeaGenerator:
         }
 
     def generate_ideas(self, num_ideas: int = 20, preferred_types: Optional[List[IdeaType]] = None) -> IdeaCollection:
-        """Generate a collection of poetry ideas from classic literature"""
+        """Generate a collection of poetry ideas from classic literature using adaptive scaling"""
         print(f"Generating {num_ideas} poetry ideas from classic literature...")
 
         collection = IdeaCollection()
-        attempts = 0
-        max_attempts = num_ideas * 2  # Allow plenty of attempts
-
         target_types = preferred_types or list(IdeaType)
 
-        while collection.total_count() < num_ideas and attempts < max_attempts:
-            attempts += 1
+        # Start with initial batch of documents
+        initial_batch_size = max(3, num_ideas // 10)  # Start with reasonable batch
+        print(f"📚 Retrieving {initial_batch_size} diverse documents for idea extraction...")
+
+        documents = get_diverse_gutenberg_documents(count=initial_batch_size, min_length=DocumentConfig.MIN_LENGTH_IDEAS)
+        if not documents:
+            print("❌ Failed to retrieve documents for idea extraction")
+            return collection
+
+        print(f"✓ Successfully retrieved {len(documents)} diverse documents")
+
+        # Process initial documents
+        documents_processed = 0
+        for doc_index, text in enumerate(documents, 1):
+            print(f"  🔍 Extracting ideas from document {doc_index}/{len(documents)}...")
+            documents_processed += 1
 
             try:
-                # Get a fresh text
-                text = self._get_unique_text()
-                if not text:
-                    continue
-
-                # Extract ideas from this text
                 ideas = self._extract_ideas_from_text(text, target_types)
-
-                # Add the best ideas to our collection
                 for idea in ideas:
                     if collection.total_count() >= num_ideas:
                         break
                     collection.add_idea(idea)
 
-                # Brief pause to avoid API rate limits
-                time.sleep(0.3)
+                print(f"    ✓ Found {len(ideas)} potential ideas, collection now has {collection.total_count()}")
+
+                if collection.total_count() >= num_ideas:
+                    break
 
             except Exception as e:
-                print(f"Error processing text: {e}")
+                print(f"    ⚠ Error processing document {doc_index}: {e}")
                 continue
 
-        print(f"Successfully generated {collection.total_count()} ideas from {len(self.used_text_signatures)} different texts")
+        # Apply adaptive scaling: get more documents if yield is low
+        min_target = num_ideas
+        while collection.total_count() < min_target:
+            remaining_needed = min_target - collection.total_count()
+            additional_batch = min(DocumentConfig.MAX_ADAPTIVE_BATCH, max(DocumentConfig.MIN_ADAPTIVE_BATCH, remaining_needed // 5))
+
+            print(f"  📚 Found {collection.total_count()} ideas, need {remaining_needed} more. Retrieving {additional_batch} additional documents...")
+
+            additional_docs = get_diverse_gutenberg_documents(count=additional_batch, min_length=DocumentConfig.MIN_LENGTH_IDEAS)
+
+            if not additional_docs:
+                print("  ⚠ Could not retrieve additional documents")
+                break
+
+            for text in additional_docs:
+                documents_processed += 1
+                print(f"  🔍 Extracting ideas from additional document {documents_processed}...")
+
+                try:
+                    ideas = self._extract_ideas_from_text(text, target_types)
+                    for idea in ideas:
+                        if collection.total_count() >= min_target:
+                            break
+                        collection.add_idea(idea)
+
+                    print(f"    ✓ Found {len(ideas)} additional ideas, collection now has {collection.total_count()}")
+
+                    if collection.total_count() >= min_target:
+                        break
+
+                except Exception as e:
+                    print(f"    ⚠ Error processing additional document {documents_processed}: {e}")
+                    continue
+
+        print(f"🎉 Successfully generated {collection.total_count()} ideas from {documents_processed} diverse texts!")
         return collection
 
-    def _get_unique_text(self) -> Optional[str]:
-        """Get a text we haven't used before"""
-        max_retries = 5
-        for _ in range(max_retries):
-            try:
-                text = random_gutenberg_document()
-                if not text:
-                    continue
-
-                # Create signature
-                signature = text[:200].replace('\n', ' ').strip()
-                if signature in self.used_text_signatures:
-                    continue
-
-                self.used_text_signatures.add(signature)
-                return text
-
-            except Exception:
-                continue
-
-        return None
 
     def _extract_ideas_from_text(self, text: str, target_types: List[IdeaType]) -> List[PoetryIdea]:
         """Extract creative ideas from a single text"""
