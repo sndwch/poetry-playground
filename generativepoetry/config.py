@@ -20,6 +20,9 @@ class Config:
     max_line_words: int = 9
     max_line_length: int = 35
 
+    # Reproducibility
+    seed: Optional[int] = None  # Random seed for deterministic generation
+
     # Output Settings
     output_dir: Path = Path.cwd()
     pdf_orientation: str = 'landscape'
@@ -53,6 +56,7 @@ class Config:
         # Read environment variables with GP_ prefix
         env_mappings = {
             'GP_DATAMUSE_API_MAX': ('datamuse_api_max', int),
+            'GP_SEED': ('seed', int),
             'GP_OUTPUT_DIR': ('output_dir', Path),
             'GP_ENABLE_CACHE': ('enable_cache', lambda x: x.lower() == 'true'),
             'GP_CACHE_DIR': ('cache_dir', Path),

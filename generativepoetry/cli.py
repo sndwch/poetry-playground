@@ -2,6 +2,7 @@
 # Import the patch first to suppress pkg_resources warning before pronouncing is loaded
 from generativepoetry.pronouncing_patch import *
 
+import argparse
 from consolemenu import ConsoleMenu
 from consolemenu.items import FunctionItem
 from generativepoetry.pdf import *
@@ -15,6 +16,8 @@ from generativepoetry.poem_transformer import PoemTransformer
 from generativepoetry.idea_generator import PoetryIdeaGenerator, IdeaType
 from generativepoetry.six_degrees import SixDegrees
 from generativepoetry.causal_poetry import ResonantFragmentMiner
+from generativepoetry.seed_manager import set_global_seed, format_seed_message
+from generativepoetry.config import config
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -711,6 +714,42 @@ def causal_poetry_action():
 
 
 def main():
+    """Main entry point for the generative poetry CLI.
+
+    Parses command-line arguments and launches the interactive menu.
+    """
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description='Generative Poetry - Procedural poetry generation and ideation tools',
+        epilog='For more information, visit: https://github.com/sndwch/generativepoetry-py'
+    )
+
+    parser.add_argument(
+        '--seed',
+        type=int,
+        metavar='INT',
+        help='Random seed for deterministic/reproducible generation (example: --seed 42)'
+    )
+
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='generativepoetry 0.3.4'
+    )
+
+    args = parser.parse_args()
+
+    # Set random seed if provided (via CLI arg or environment variable)
+    seed = args.seed or config.seed
+    if seed is not None:
+        set_global_seed(seed)
+        print(f"\n{format_seed_message()}\n")
+    else:
+        # Generate and set a random seed for this session
+        seed = set_global_seed()
+        print(f"\n{format_seed_message()}\n")
+
+    # Create and configure menu
     menu = ConsoleMenu("Generative Poetry Menu", "What kind of poem would you like to generate?")
 
     # Original generation items
@@ -750,6 +789,10 @@ def main():
 
     menu.start()
     menu.join()
+
+    # Echo seed at exit
+    print(f"\n{format_seed_message()}")
+    print("Session complete.\n")
 
 
 if __name__ == '__main__':
