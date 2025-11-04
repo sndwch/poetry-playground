@@ -6,19 +6,19 @@ from wordfreq import word_frequency
 
 # Try to ensure NLTK data is available
 try:
-    nltk.data.find('corpora/words')
+    nltk.data.find("corpora/words")
 except LookupError:
-    nltk.download('words', quiet=True)
+    nltk.download("words", quiet=True)
 
 try:
-    nltk.data.find('corpora/brown')
+    nltk.data.find("corpora/brown")
 except LookupError:
-    nltk.download('brown', quiet=True)
+    nltk.download("brown", quiet=True)
 
 try:
-    nltk.data.find('corpora/wordnet')
+    nltk.data.find("corpora/wordnet")
 except LookupError:
-    nltk.download('wordnet', quiet=True)
+    nltk.download("wordnet", quiet=True)
 
 
 class WordValidator:
@@ -34,30 +34,94 @@ class WordValidator:
 
         try:
             # Get common words from Brown corpus
-            self._brown_words = {word.lower() for word in brown.words()
-                                   if word.isalpha() and len(word) > 2}
+            self._brown_words = {
+                word.lower() for word in brown.words() if word.isalpha() and len(word) > 2
+            }
         except Exception:
             self._brown_words = set()
 
         # Common proper nouns and names to exclude
         self._proper_nouns = {
-            'allen', 'connor', 'connors', 'fischer', 'fisher', 'fraser', 'frasier',
-            'bamburgh', 'billingham', 'bellingham', 'dublin', 'hamburg',
-            'darcy', 'fenner', 'feiner', 'fancher', 'fleischer', 'fluker',
-            'chevalier', 'marcell', 'eakin', 'cole', 'ayer',
-            'albion', 'cambs', 'gms', 'fuehrer', 'futur', 'knut', 'nair',
-            'amma', 'mani', 'nere', 'narc', 'nare', 'lublin', 'vale',
-            'fletcher', 'griff', 'tennent', 'tenant', 'tope', 'swope',
-            'fuser'
+            "allen",
+            "connor",
+            "connors",
+            "fischer",
+            "fisher",
+            "fraser",
+            "frasier",
+            "bamburgh",
+            "billingham",
+            "bellingham",
+            "dublin",
+            "hamburg",
+            "darcy",
+            "fenner",
+            "feiner",
+            "fancher",
+            "fleischer",
+            "fluker",
+            "chevalier",
+            "marcell",
+            "eakin",
+            "cole",
+            "ayer",
+            "albion",
+            "cambs",
+            "gms",
+            "fuehrer",
+            "futur",
+            "knut",
+            "nair",
+            "amma",
+            "mani",
+            "nere",
+            "narc",
+            "nare",
+            "lublin",
+            "vale",
+            "fletcher",
+            "griff",
+            "tennent",
+            "tenant",
+            "tope",
+            "swope",
+            "fuser",
         }
 
         # Non-English or problematic words
         self._excluded_words = {
-            'knut', 'fuehrer', 'futur', 'witte', 'wayde', 'thay', 'wid',
-            'geet', 'girt', 'dern', 'jut', 'comers', 'conners', 'spew',
-            'spat', 'shutt', 'kut', 'nir', 'gms', 'bratt', 'brat',
-            'doesnt', 'dont', 'cant', 'wont', 'shouldnt', 'couldnt',  # Missing apostrophes
-            'tope', 'hap', 'amma', 'nare', 'narc'
+            "knut",
+            "fuehrer",
+            "futur",
+            "witte",
+            "wayde",
+            "thay",
+            "wid",
+            "geet",
+            "girt",
+            "dern",
+            "jut",
+            "comers",
+            "conners",
+            "spew",
+            "spat",
+            "shutt",
+            "kut",
+            "nir",
+            "gms",
+            "bratt",
+            "brat",
+            "doesnt",
+            "dont",
+            "cant",
+            "wont",
+            "shouldnt",
+            "couldnt",  # Missing apostrophes
+            "tope",
+            "hap",
+            "amma",
+            "nare",
+            "narc",
         }
 
         # Minimum word frequency for common words (more restrictive)
@@ -97,12 +161,12 @@ class WordValidator:
                     return False
 
         # Check word frequency
-        freq = word_frequency(word_lower, 'en')
+        freq = word_frequency(word_lower, "en")
         if freq < self.min_frequency and not allow_rare:
             return False
 
         # Additional check: must start with a common letter pattern
-        return word_lower[:2] not in ['xz', 'qx', 'qz', 'zx', 'vx']
+        return word_lower[:2] not in ["xz", "qx", "qz", "zx", "vx"]
 
     def is_proper_noun(self, word: str) -> bool:
         """Check if word is likely a proper noun."""
@@ -139,12 +203,13 @@ class WordValidator:
             return 0.0
 
         # Base score on frequency
-        freq = word_frequency(word.lower(), 'en')
+        freq = word_frequency(word.lower(), "en")
 
         # Convert frequency to 0-1 scale (log scale)
         # Most common words have frequency ~1e-3, very rare ~1e-8
         if freq > 0:
             import math
+
             # Map log frequency from [-8, -3] to [0, 1]
             log_freq = math.log10(freq)
             score = (log_freq + 8) / 5  # Normalize to 0-1

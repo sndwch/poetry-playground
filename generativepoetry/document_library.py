@@ -24,6 +24,7 @@ logger.setLevel(logging.WARNING)  # Only show warnings and errors
 @dataclass
 class DocumentInfo:
     """Information about a retrieved document"""
+
     id: int
     title: str
     author: str
@@ -45,20 +46,22 @@ class DocumentLibrary:
 
         # Curated list of known good document ranges
         self.quality_ranges = [
-            (1, 1000),      # Early classics
-            (2000, 3000),   # Literature
-            (5000, 6000),   # Fiction
-            (10000, 15000), # More literature
-            (20000, 25000), # Poetry and drama
-            (30000, 35000), # Modern classics
-            (40000, 45000), # 20th century
-            (50000, 55000)  # Contemporary
+            (1, 1000),  # Early classics
+            (2000, 3000),  # Literature
+            (5000, 6000),  # Fiction
+            (10000, 15000),  # More literature
+            (20000, 25000),  # Poetry and drama
+            (30000, 35000),  # Modern classics
+            (40000, 45000),  # 20th century
+            (50000, 55000),  # Contemporary
         ]
 
         self.max_recent = PerformanceConfig.MAX_RECENT_TRACKING
         self.max_cache = PerformanceConfig.MAX_DOCUMENT_CACHE
 
-    def get_diverse_documents(self, count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT) -> List[str]:
+    def get_diverse_documents(
+        self, count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT
+    ) -> List[str]:
         """Get multiple diverse documents, ensuring variety"""
         documents = []
         attempts = 0
@@ -67,9 +70,9 @@ class DocumentLibrary:
         while len(documents) < count and attempts < max_attempts:
             attempts += 1
 
-            doc = self.get_single_document(min_length=min_length,
-                                         avoid_recent=True,
-                                         force_different=True)
+            doc = self.get_single_document(
+                min_length=min_length, avoid_recent=True, force_different=True
+            )
             if doc and len(doc) >= min_length:
                 documents.append(doc)
 
@@ -77,9 +80,12 @@ class DocumentLibrary:
             time.sleep(PerformanceConfig.API_DELAY_SECONDS)
         return documents
 
-    def get_single_document(self, min_length: int = DocumentConfig.MIN_LENGTH_GENERAL,
-                          avoid_recent: bool = True,
-                          force_different: bool = False) -> Optional[str]:
+    def get_single_document(
+        self,
+        min_length: int = DocumentConfig.MIN_LENGTH_GENERAL,
+        avoid_recent: bool = True,
+        force_different: bool = False,
+    ) -> Optional[str]:
         """Get a single document with anti-repetition measures"""
 
         for attempt in range(PerformanceConfig.MAX_PROCESSING_ATTEMPTS):
@@ -112,7 +118,7 @@ class DocumentLibrary:
                 # Process the text
                 text = strip_headers(raw_text)
                 if isinstance(text, bytes):
-                    text = text.decode('utf-8', errors='ignore')
+                    text = text.decode("utf-8", errors="ignore")
 
                 # Clean and validate
                 text = self._clean_text(text)
@@ -134,7 +140,7 @@ class DocumentLibrary:
                 return text
 
             except Exception:
-                if 'document_id' in locals():
+                if "document_id" in locals():
                     self.bad_document_ids.add(document_id)
                 continue
         return None
@@ -142,11 +148,11 @@ class DocumentLibrary:
     def _clean_text(self, text: str) -> str:
         """Clean and normalize text"""
         # Remove excessive whitespace
-        text = re.sub(r'\n\n+', '\n\n', text)
-        text = re.sub(r'[ \t]+', ' ', text)
+        text = re.sub(r"\n\n+", "\n\n", text)
+        text = re.sub(r"[ \t]+", " ", text)
 
         # Remove control characters but keep basic punctuation
-        text = re.sub(r'[^\w\s.!?,:;\'"-]', ' ', text)
+        text = re.sub(r'[^\w\s.!?,:;\'"-]', " ", text)
 
         return text.strip()
 
@@ -157,7 +163,7 @@ class DocumentLibrary:
             return False
 
         # Must have paragraphs (not just lists or tables)
-        paragraph_count = len(re.findall(r'\n\n', text))
+        paragraph_count = len(re.findall(r"\n\n", text))
         if paragraph_count < 5:
             return False
 
@@ -172,7 +178,7 @@ class DocumentLibrary:
             return False
 
         # Must have reasonable sentence structure
-        sentences = re.split(r'[.!?]+', text[:2000])
+        sentences = re.split(r"[.!?]+", text[:2000])
         avg_sentence_length = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
         return not (avg_sentence_length < 5 or avg_sentence_length > 50)
 
@@ -199,11 +205,11 @@ class DocumentLibrary:
     def get_stats(self) -> dict:
         """Get statistics about the document library"""
         return {
-            'good_documents': len(self.good_document_ids),
-            'bad_documents': len(self.bad_document_ids),
-            'cached_documents': len(self.document_cache),
-            'recently_used': len(self.recently_used),
-            'cache_size_mb': sum(len(text) for text in self.document_cache.values()) / 1024 / 1024
+            "good_documents": len(self.good_document_ids),
+            "bad_documents": len(self.bad_document_ids),
+            "cached_documents": len(self.document_cache),
+            "recently_used": len(self.recently_used),
+            "cache_size_mb": sum(len(text) for text in self.document_cache.values()) / 1024 / 1024,
         }
 
     def clear_cache(self):
@@ -218,12 +224,14 @@ document_library = DocumentLibrary()
 
 
 # Backwards-compatible functions for existing code
-def random_gutenberg_document(language_filter='en') -> str:
+def random_gutenberg_document(language_filter="en") -> str:
     """Backwards-compatible function using the new document library"""
     return document_library.get_single_document(min_length=DocumentConfig.MIN_LENGTH_GENERAL) or ""
 
 
-def get_diverse_gutenberg_documents(count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT) -> List[str]:
+def get_diverse_gutenberg_documents(
+    count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT
+) -> List[str]:
     """Get multiple diverse documents - use this instead of calling random_gutenberg_document in loops"""
     return document_library.get_diverse_documents(count=count, min_length=min_length)
 

@@ -43,7 +43,7 @@ def interactive_loop(poetry_generator):
         else:
             print(f"Generated: {poetry_generator.pdf_filepath}")
         print(reuse_words_prompt)
-        if input() != 'yes':
+        if input() != "yes":
             exit_loop = True
 
 
@@ -79,7 +79,7 @@ def visual_puzzle_poem_action():
     while not exit_loop:
         print_poem(pg.poem_from_word_list(input_words))
         print(reuse_words_prompt)
-        if input() != 'yes':
+        if input() != "yes":
             exit_loop = True
 
 
@@ -96,9 +96,9 @@ def metaphor_generator_action():
     input_words = get_input_words()
 
     while not exit_loop:
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print(f"Metaphor Generation for: {', '.join(input_words)}")
-        print("="*60 + "\n")
+        print("=" * 60 + "\n")
 
         # Generate metaphors
         print("Generating metaphors...")
@@ -150,7 +150,7 @@ def metaphor_generator_action():
             targets = generator._find_target_domains(input_words[0])
             if targets:
                 extended = generator.generate_extended_metaphor(input_words[0], targets[0])
-                for line in extended.text.split('\n'):
+                for line in extended.text.split("\n"):
                     print(f"  {line}")
 
         # Show some Gutenberg-inspired patterns if found
@@ -173,7 +173,7 @@ def metaphor_generator_action():
                     break
                 source, target, sentence = patterns[0]  # Take first pattern from this text
                 print(f"  • {source} like {target}")
-                print(f"    From: \"{sentence[:80]}...\"")
+                print(f'    From: "{sentence[:80]}..."')
                 shown_count += 1
 
             if len(text_groups) > 1:
@@ -187,7 +187,7 @@ def metaphor_generator_action():
             if synesthetic:
                 print(f"  • {synesthetic.text}")
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("\nOptions:")
         print("  1. Generate new metaphors with same words")
         print("  2. Use different words")
@@ -196,11 +196,11 @@ def metaphor_generator_action():
 
         choice = input("\nYour choice (1-4): ").strip()
 
-        if choice == '1':
+        if choice == "1":
             continue  # Regenerate with same words
-        elif choice == '2':
+        elif choice == "2":
             input_words = get_input_words()  # Get new words
-        elif choice == '3':
+        elif choice == "3":
             print("\nMining additional Gutenberg texts...")
             patterns = generator.extract_metaphor_patterns(num_texts=8)
             if patterns:
@@ -212,7 +212,9 @@ def metaphor_generator_action():
                         text_groups[text_key] = []
                     text_groups[text_key].append((source, target, sentence))
 
-                print(f"Found {len(patterns)} metaphorical patterns from {len(text_groups)} different texts")
+                print(
+                    f"Found {len(patterns)} metaphorical patterns from {len(text_groups)} different texts"
+                )
 
                 # Show examples from different texts
                 shown_texts = 0
@@ -221,7 +223,7 @@ def metaphor_generator_action():
                         break
                     source, target, sentence = group_patterns[0]
                     print(f"  • {source} like {target}")
-                    print(f"    From: \"{sentence[:80]}...\"")
+                    print(f'    From: "{sentence[:80]}..."')
                     shown_texts += 1
 
                 if len(text_groups) > 3:
@@ -239,9 +241,9 @@ def line_seeds_action():
     input_words = get_input_words()
 
     while not exit_loop:
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print(f"Line Seeds for: {', '.join(input_words)}")
-        print("="*50 + "\n")
+        print("=" * 50 + "\n")
 
         # Generate a collection of seeds
         seeds = generator.generate_seed_collection(input_words, num_seeds=10)
@@ -293,7 +295,7 @@ def line_seeds_action():
             if seed.notes:
                 print(f"    ({seed.notes})")
 
-        print("\n" + "="*50)
+        print("\n" + "=" * 50)
         print("\nOptions:")
         print("  1. Generate new seeds with same words")
         print("  2. Use different words")
@@ -301,9 +303,9 @@ def line_seeds_action():
 
         choice = input("\nYour choice (1-3): ").strip()
 
-        if choice == '1':
+        if choice == "1":
             continue  # Loop with same words
-        elif choice == '2':
+        elif choice == "2":
             input_words = get_input_words()  # Get new words
         else:
             exit_loop = True  # Exit
@@ -313,9 +315,9 @@ def corpus_analyzer_action():
     """Analyze a personal poetry corpus for style insights."""
     analyzer = PersonalCorpusAnalyzer()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("PERSONAL CORPUS ANALYZER")
-    print("="*60)
+    print("=" * 60)
     print("\nThis will analyze your personal poetry collection to identify")
     print("stylistic patterns, vocabulary preferences, and suggest expansions.")
 
@@ -333,25 +335,25 @@ def corpus_analyzer_action():
 
         fingerprint = analyzer.analyze_directory(directory)
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("ANALYSIS COMPLETE")
-        print("="*60)
+        print("=" * 60)
 
         # Generate and display the style report
         report = analyzer.generate_style_report(fingerprint)
         print(report)
 
         # Generate inspiration report
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("GENERATING CREATIVE INSPIRATIONS...")
-        print("="*60)
+        print("=" * 60)
         inspiration_report = analyzer.generate_inspiration_report(fingerprint)
         print(inspiration_report)
 
         # Provide expansion suggestions
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("CREATIVE EXPANSION SUGGESTIONS")
-        print("="*60)
+        print("=" * 60)
         suggestions = analyzer.suggest_expansions(fingerprint)
 
         if suggestions:
@@ -362,9 +364,9 @@ def corpus_analyzer_action():
             print("Your style shows good balance and variety!")
 
         # Vocabulary insights for ideation
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("IDEATION INSIGHTS")
-        print("="*60)
+        print("=" * 60)
 
         if fingerprint.vocabulary.signature_words:
             print("\nYour most distinctive words:")
@@ -378,7 +380,7 @@ def corpus_analyzer_action():
                 print(f"  • {theme}: {', '.join(words[:4])}")
             print("\nConsider cross-pollinating between these groups")
 
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("\nAnalysis saved. You can use these insights with other")
         print("generative poetry tools to maintain your authentic voice")
         print("while exploring new creative directions.")
@@ -398,9 +400,9 @@ def poem_transformer_action():
     """Transform a poem through Ship of Theseus style replacements"""
     transformer = PoemTransformer()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("SHIP OF THESEUS POEM TRANSFORMER")
-    print("="*60)
+    print("=" * 60)
     print("\nThis will gradually transform a poem through multiple passes,")
     print("replacing words with similar meaning, contextual, or sound-alike")
     print("alternatives, like the old Google Translate telephone game!")
@@ -471,27 +473,25 @@ def poem_transformer_action():
 
         # Perform the transformation
         transformations = transformer.transform_poem_iteratively(
-            poem_text,
-            num_passes=num_passes,
-            words_per_pass=words_per_pass
+            poem_text, num_passes=num_passes, words_per_pass=words_per_pass
         )
 
         if transformations:
             # Generate and display the report
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print("TRANSFORMATION COMPLETE")
-            print("="*60)
+            print("=" * 60)
 
             report = transformer.generate_transformation_report(transformations)
             print(report)
 
             # Offer to save the result
             save_choice = input("\nSave transformed poem? (y/n): ").strip().lower()
-            if save_choice == 'y':
+            if save_choice == "y":
                 output_filename = f"{selected_title}_transformed.txt"
                 output_path = os.path.join(directory, output_filename)
 
-                with open(output_path, 'w', encoding='utf-8') as f:
+                with open(output_path, "w", encoding="utf-8") as f:
                     f.write(f"# Ship of Theseus Transformation of '{selected_title}'\n\n")
                     f.write("## Original:\n")
                     f.write(poem_text)
@@ -521,9 +521,9 @@ def idea_generator_action():
     """Generate poetry ideas from classic literature"""
     generator = PoetryIdeaGenerator()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("POETRY IDEA GENERATOR")
-    print("="*60)
+    print("=" * 60)
     print("\nStruggling with writer's block? Let classic literature spark")
     print("your creativity! This tool mines Project Gutenberg texts for")
     print("evocative fragments, scenarios, and concepts to inspire poems.")
@@ -579,16 +579,16 @@ def idea_generator_action():
         collection = generator.generate_ideas(num_ideas, preferred_types)
 
         if collection.total_count() > 0:
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print("IDEAS GENERATED")
-            print("="*60)
+            print("=" * 60)
 
             # Generate and display the report
             report = generator.generate_idea_report(collection)
             print(report)
 
             # Interactive options
-            print("\n" + "="*60)
+            print("\n" + "=" * 60)
             print("OPTIONS:")
             print("1. Generate more ideas")
             print("2. Focus on a different category")
@@ -597,26 +597,26 @@ def idea_generator_action():
 
             choice = input("\nYour choice (1-4): ").strip()
 
-            if choice == '1':
+            if choice == "1":
                 # Generate more ideas
                 more_ideas = generator.generate_ideas(10, preferred_types)
                 print(f"\nGenerated {more_ideas.total_count()} additional ideas:")
                 additional_report = generator.generate_idea_report(more_ideas)
                 print(additional_report)
 
-            elif choice == '2':
+            elif choice == "2":
                 # Recursive call with different category
                 idea_generator_action()
                 return
 
-            elif choice == '3':
+            elif choice == "3":
                 # Random selection for immediate use
                 random_ideas = collection.get_random_mixed_selection(5)
                 print("\nRANDOM SELECTION FOR IMMEDIATE USE:")
                 print("-" * 50)
                 for i, idea in enumerate(random_ideas, 1):
-                    category_name = idea.idea_type.value.replace('_', ' ').title()
-                    print(f"{i}. [{category_name}] \"{idea.text}\"")
+                    category_name = idea.idea_type.value.replace("_", " ").title()
+                    print(f'{i}. [{category_name}] "{idea.text}"')
                     print(f"   Prompt: {idea.creative_prompt}")
                     print()
 
@@ -637,17 +637,17 @@ def six_degrees_action():
     """Explore word convergence paths"""
     sd = SixDegrees()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("SIX DEGREES - WORD CONVERGENCE EXPLORER")
-    print("="*60)
+    print("=" * 60)
     print("\nDiscover the hidden pathways between words!")
     print("This explores how two words can connect through semantic relationships,")
     print("like the Wikipedia phenomenon where you can reach any page through links.")
 
     while True:
-        print("\n" + "-"*40)
+        print("\n" + "-" * 40)
         word_a = input("Enter first word (or 'exit' to return): ").strip()
-        if word_a.lower() == 'exit':
+        if word_a.lower() == "exit":
             break
 
         word_b = input("Enter second word: ").strip()
@@ -670,7 +670,7 @@ def six_degrees_action():
             print(f"\nError during convergence search: {e}")
 
         print("\nTry another pair? (Enter to continue, 'exit' to return)")
-        if input().lower() == 'exit':
+        if input().lower() == "exit":
             break
 
 
@@ -678,15 +678,15 @@ def causal_poetry_action():
     """Mine resonant fragments from classic literature"""
     miner = ResonantFragmentMiner()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("RESONANT FRAGMENT MINER")
-    print("="*60)
+    print("=" * 60)
     print("\nDiscovers evocative sentence fragments from classic literature")
     print("that could serve as seeds for compression poetry. Mines multiple")
     print("sentence patterns for fragments with poetic weight and causal resonance.")
 
     while True:
-        print("\n" + "-"*40)
+        print("\n" + "-" * 40)
         print("1. Mine 50 fragments (recommended)")
         print("2. Mine 100 fragments")
         print("3. Mine with custom count")
@@ -694,17 +694,17 @@ def causal_poetry_action():
 
         choice = input("\nChoice (1-4): ").strip()
 
-        if choice == '1':
+        if choice == "1":
             print("\n🔍 Mining 50 resonant fragments...")
             collection = miner.mine_fragments(target_count=50, num_texts=5)
             print("\n" + miner.format_fragment_collection(collection))
 
-        elif choice == '2':
+        elif choice == "2":
             print("\n🔍 Mining 100 resonant fragments...")
             collection = miner.mine_fragments(target_count=100, num_texts=8)
             print("\n" + miner.format_fragment_collection(collection))
 
-        elif choice == '3':
+        elif choice == "3":
             try:
                 count_input = input("How many fragments to mine? (10-200, default 50): ").strip()
                 count = int(count_input) if count_input else 50
@@ -717,7 +717,7 @@ def causal_poetry_action():
             collection = miner.mine_fragments(target_count=count, num_texts=num_texts)
             print("\n" + miner.format_fragment_collection(collection))
 
-        elif choice == '4':
+        elif choice == "4":
             break
         else:
             print("Invalid choice. Please enter 1-4.")
@@ -730,83 +730,75 @@ def main():
     """
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
-        description='Generative Poetry - Procedural poetry generation and ideation tools',
-        epilog='For more information, visit: https://github.com/sndwch/generativepoetry-py'
+        description="Generative Poetry - Procedural poetry generation and ideation tools",
+        epilog="For more information, visit: https://github.com/sndwch/generativepoetry-py",
     )
 
     # Reproducibility
     parser.add_argument(
-        '--seed',
+        "--seed",
         type=int,
-        metavar='INT',
-        help='Random seed for deterministic/reproducible generation (example: --seed 42)'
+        metavar="INT",
+        help="Random seed for deterministic/reproducible generation (example: --seed 42)",
     )
 
     # Output control
     parser.add_argument(
-        '--out', '-o',
+        "--out",
+        "-o",
         type=str,
-        metavar='PATH',
-        help='Output directory for generated files (default: current directory)'
+        metavar="PATH",
+        help="Output directory for generated files (default: current directory)",
     )
 
     parser.add_argument(
-        '--format', '-f',
+        "--format",
+        "-f",
         type=str,
-        choices=['png', 'pdf', 'svg', 'txt'],
-        metavar='FORMAT',
-        help='Output format: png, pdf, svg, or txt (default: pdf)'
+        choices=["png", "pdf", "svg", "txt"],
+        metavar="FORMAT",
+        help="Output format: png, pdf, svg, or txt (default: pdf)",
     )
 
     # CLI behavior
     parser.add_argument(
-        '--quiet', '-q',
-        action='store_true',
-        help='Suppress non-essential output (show only warnings and errors)'
+        "--quiet",
+        "-q",
+        action="store_true",
+        help="Suppress non-essential output (show only warnings and errors)",
     )
 
     parser.add_argument(
-        '--verbose', '-v',
-        action='store_true',
-        help='Show detailed output including debug information'
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Show detailed output including debug information",
     )
 
     parser.add_argument(
-        '--no-color',
-        action='store_true',
-        help='Disable colored output for better compatibility'
+        "--no-color", action="store_true", help="Disable colored output for better compatibility"
     )
 
     parser.add_argument(
-        '--dry-run',
-        action='store_true',
-        help='Preview actions without generating files'
+        "--dry-run", action="store_true", help="Preview actions without generating files"
     )
 
     # Utility commands
+    parser.add_argument("--list-fonts", action="store_true", help="List available fonts and exit")
+
     parser.add_argument(
-        '--list-fonts',
-        action='store_true',
-        help='List available fonts and exit'
+        "--list-procedures",
+        action="store_true",
+        help="List available poem generation procedures and exit",
     )
 
     parser.add_argument(
-        '--list-procedures',
-        action='store_true',
-        help='List available poem generation procedures and exit'
+        "--setup",
+        action="store_true",
+        help="Download and install all required NLTK data and spaCy models, then exit",
     )
 
-    parser.add_argument(
-        '--setup',
-        action='store_true',
-        help='Download and install all required NLTK data and spaCy models, then exit'
-    )
-
-    parser.add_argument(
-        '--version',
-        action='version',
-        version='generativepoetry 0.3.4'
-    )
+    parser.add_argument("--version", action="version", version="generativepoetry 0.3.4")
 
     args = parser.parse_args()
 
@@ -815,10 +807,20 @@ def main():
         print("Available fonts for PDF generation:\n")
         # List standard PDF fonts (always available with reportlab)
         standard_fonts = [
-            'Courier', 'Courier-Bold', 'Courier-BoldOblique', 'Courier-Oblique',
-            'Helvetica', 'Helvetica-Bold', 'Helvetica-BoldOblique', 'Helvetica-Oblique',
-            'Times-Roman', 'Times-Bold', 'Times-Italic', 'Times-BoldItalic',
-            'Symbol', 'ZapfDingbats'
+            "Courier",
+            "Courier-Bold",
+            "Courier-BoldOblique",
+            "Courier-Oblique",
+            "Helvetica",
+            "Helvetica-Bold",
+            "Helvetica-BoldOblique",
+            "Helvetica-Oblique",
+            "Times-Roman",
+            "Times-Bold",
+            "Times-Italic",
+            "Times-BoldItalic",
+            "Symbol",
+            "ZapfDingbats",
         ]
 
         print("Standard PostScript Fonts (always available):")
@@ -828,6 +830,7 @@ def main():
         # Try to list registered fonts from pdfmetrics
         try:
             from reportlab.pdfbase import pdfmetrics
+
             registered = pdfmetrics.getRegisteredFontNames()
             if registered and len(registered) > len(standard_fonts):
                 print("\nAdditionally Registered Fonts:")
@@ -892,6 +895,7 @@ def main():
     # Apply CLI flags to config
     if args.out:
         from pathlib import Path
+
         config.output_dir = Path(args.out).resolve()
         config.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -934,20 +938,38 @@ def main():
 
     # Original generation items
     futurist_function_item = FunctionItem("Futurist Poem (PDF/Image)", futurist_poem_action)
-    markov_function_item = FunctionItem("Stochastic Jolatic (Markov) Poem (Image)", markov_poem_action)
-    chaotic_concrete_function_item = FunctionItem("Chaotic Concrete Poem (Image)", chaotic_concrete_poem_action)
-    character_soup_function_item = FunctionItem("Character Soup Poem (Image)", character_soup_poem_action)
-    stopword_soup_function_item = FunctionItem("Stop Word Soup Poem (Image)", stopword_soup_poem_action)
-    simple_visual_function_item = FunctionItem("Visual Puzzle Poem (Terminal-Based)", visual_puzzle_poem_action)
+    markov_function_item = FunctionItem(
+        "Stochastic Jolatic (Markov) Poem (Image)", markov_poem_action
+    )
+    chaotic_concrete_function_item = FunctionItem(
+        "Chaotic Concrete Poem (Image)", chaotic_concrete_poem_action
+    )
+    character_soup_function_item = FunctionItem(
+        "Character Soup Poem (Image)", character_soup_poem_action
+    )
+    stopword_soup_function_item = FunctionItem(
+        "Stop Word Soup Poem (Image)", stopword_soup_poem_action
+    )
+    simple_visual_function_item = FunctionItem(
+        "Visual Puzzle Poem (Terminal-Based)", visual_puzzle_poem_action
+    )
 
     # New ideation items
     line_seeds_item = FunctionItem("🌱 Generate Line Seeds (Poetry Ideation)", line_seeds_action)
-    metaphor_item = FunctionItem("🔮 Generate Metaphors (Poetry Ideation)", metaphor_generator_action)
+    metaphor_item = FunctionItem(
+        "🔮 Generate Metaphors (Poetry Ideation)", metaphor_generator_action
+    )
     corpus_item = FunctionItem("📊 Analyze Personal Poetry Corpus", corpus_analyzer_action)
     transformer_item = FunctionItem("🚢 Ship of Theseus Poem Transformer", poem_transformer_action)
-    idea_item = FunctionItem("💡 Poetry Idea Generator (Beat Writer's Block)", idea_generator_action)
-    six_degrees_item = FunctionItem("🔗 Six Degrees - Word Convergence Explorer", six_degrees_action)
-    causal_poetry_item = FunctionItem("🔍 Resonant Fragment Miner (Literary Discovery)", causal_poetry_action)
+    idea_item = FunctionItem(
+        "💡 Poetry Idea Generator (Beat Writer's Block)", idea_generator_action
+    )
+    six_degrees_item = FunctionItem(
+        "🔗 Six Degrees - Word Convergence Explorer", six_degrees_action
+    )
+    causal_poetry_item = FunctionItem(
+        "🔍 Resonant Fragment Miner (Literary Discovery)", causal_poetry_action
+    )
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -975,5 +997,5 @@ def main():
     print("Session complete.\n")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

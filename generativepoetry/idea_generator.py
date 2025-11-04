@@ -34,6 +34,7 @@ class IdeaType(Enum):
 @dataclass
 class PoetryIdea:
     """A creative seed extracted from classic literature"""
+
     text: str
     idea_type: IdeaType
     source_preview: str  # Brief preview of source text
@@ -44,6 +45,7 @@ class PoetryIdea:
 @dataclass
 class IdeaCollection:
     """Collection of poetry ideas organized by type"""
+
     emotional_moments: List[PoetryIdea] = field(default_factory=list)
     vivid_imagery: List[PoetryIdea] = field(default_factory=list)
     character_situations: List[PoetryIdea] = field(default_factory=list)
@@ -112,50 +114,50 @@ class PoetryIdeaGenerator:
         # Patterns for different types of creative seeds
         self.patterns = {
             IdeaType.EMOTIONAL_MOMENT: [
-                r'[A-Z][^.!?]*(?:felt|feeling|emotion|heart|soul|tears|joy|sorrow|fear|love|hate|anger|hope|despair)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:suddenly|then|now|when|as)[^.!?]*(?:realized|understood|knew|felt|remembered)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:eyes|face|voice|hands)[^.!?]*(?:trembled|shook|whispered|cried|smiled)[^.!?]*[.!?]'
+                r"[A-Z][^.!?]*(?:felt|feeling|emotion|heart|soul|tears|joy|sorrow|fear|love|hate|anger|hope|despair)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:suddenly|then|now|when|as)[^.!?]*(?:realized|understood|knew|felt|remembered)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:eyes|face|voice|hands)[^.!?]*(?:trembled|shook|whispered|cried|smiled)[^.!?]*[.!?]",
             ],
             IdeaType.VIVID_IMAGERY: [
-                r'[A-Z][^.!?]*(?:light|shadow|color|golden|silver|crimson|azure|emerald|darkness)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:mountain|river|ocean|forest|field|garden|sky|stars|moon|sun)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:through|across|beneath|above|beyond)[^.!?]*[.!?]'
+                r"[A-Z][^.!?]*(?:light|shadow|color|golden|silver|crimson|azure|emerald|darkness)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:mountain|river|ocean|forest|field|garden|sky|stars|moon|sun)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:through|across|beneath|above|beyond)[^.!?]*[.!?]",
             ],
             IdeaType.CHARACTER_SITUATION: [
-                r'[A-Z][^.!?]*(?:man|woman|child|stranger|figure|person)[^.!?]*(?:stood|sat|walked|ran|appeared)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:he|she)[^.!?]*(?:was|had been|found himself|found herself)[^.!?]*[.!?]'
+                r"[A-Z][^.!?]*(?:man|woman|child|stranger|figure|person)[^.!?]*(?:stood|sat|walked|ran|appeared)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:he|she)[^.!?]*(?:was|had been|found himself|found herself)[^.!?]*[.!?]",
             ],
             IdeaType.PHILOSOPHICAL_FRAGMENT: [
-                r'[A-Z][^.!?]*(?:truth|life|death|time|existence|meaning|purpose|reason|wisdom)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:what is|why do|how can|where does|when will)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:always|never|forever|eternal|infinite|beyond)[^.!?]*[.!?]'
+                r"[A-Z][^.!?]*(?:truth|life|death|time|existence|meaning|purpose|reason|wisdom)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:what is|why do|how can|where does|when will)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:always|never|forever|eternal|infinite|beyond)[^.!?]*[.!?]",
             ],
             IdeaType.SETTING_DESCRIPTION: [
-                r'[A-Z][^.!?]*(?:room|house|street|city|village|castle|church|tower)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:morning|evening|night|dawn|dusk|noon|midnight)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:ancient|old|new|forgotten|hidden|distant|remote)[^.!?]*[.!?]'
+                r"[A-Z][^.!?]*(?:room|house|street|city|village|castle|church|tower)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:morning|evening|night|dawn|dusk|noon|midnight)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:ancient|old|new|forgotten|hidden|distant|remote)[^.!?]*[.!?]",
             ],
             IdeaType.DIALOGUE_SPARK: [
                 r'"[A-Z][^"]*(?:what|why|how|where|when|who)[^"]*"',
                 r'"[A-Z][^"]*(?:never|always|remember|forget|tell me|listen)[^"]*"',
-                r'"[A-Z][^"]{20,100}"'  # Interesting dialogue of medium length
+                r'"[A-Z][^"]{20,100}"',  # Interesting dialogue of medium length
             ],
             IdeaType.OPENING_LINE: [
-                r'^[A-Z][^.!?]{30,120}[.!?]',  # First sentences of good length
-                r'^\s*[A-Z][^.!?]*(?:once|long ago|in the|there was|it was)[^.!?]*[.!?]'
+                r"^[A-Z][^.!?]{30,120}[.!?]",  # First sentences of good length
+                r"^\s*[A-Z][^.!?]*(?:once|long ago|in the|there was|it was)[^.!?]*[.!?]",
             ],
             IdeaType.SENSORY_DETAIL: [
-                r'[A-Z][^.!?]*(?:smell|scent|taste|sound|touch|feel|hear|see|watch)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:sweet|bitter|sour|rough|smooth|soft|hard|warm|cold|hot)[^.!?]*[.!?]'
+                r"[A-Z][^.!?]*(?:smell|scent|taste|sound|touch|feel|hear|see|watch)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:sweet|bitter|sour|rough|smooth|soft|hard|warm|cold|hot)[^.!?]*[.!?]",
             ],
             IdeaType.CONFLICT_SCENARIO: [
-                r'[A-Z][^.!?]*(?:against|between|struggle|fight|battle|conflict|oppose)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:but|however|yet|although|despite|nevertheless)[^.!?]*[.!?]'
+                r"[A-Z][^.!?]*(?:against|between|struggle|fight|battle|conflict|oppose)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:but|however|yet|although|despite|nevertheless)[^.!?]*[.!?]",
             ],
             IdeaType.METAPHYSICAL_CONCEPT: [
-                r'[A-Z][^.!?]*(?:spirit|essence|being|consciousness|dream|vision|soul)[^.!?]*[.!?]',
-                r'[A-Z][^.!?]*(?:beyond|transcend|invisible|ethereal|mystical|divine)[^.!?]*[.!?]'
-            ]
+                r"[A-Z][^.!?]*(?:spirit|essence|being|consciousness|dream|vision|soul)[^.!?]*[.!?]",
+                r"[A-Z][^.!?]*(?:beyond|transcend|invisible|ethereal|mystical|divine)[^.!?]*[.!?]",
+            ],
         }
 
         # Creative prompts for each type
@@ -164,65 +166,67 @@ class PoetryIdeaGenerator:
                 "Write about a moment when you felt this same emotion",
                 "Explore what led to this emotional state",
                 "Contrast this feeling with its opposite",
-                "Describe this emotion through metaphor"
+                "Describe this emotion through metaphor",
             ],
             IdeaType.VIVID_IMAGERY: [
                 "Use this image as the central metaphor for a poem",
                 "Describe a memory triggered by this scene",
                 "Write about someone experiencing this setting",
-                "Contrast this image with something modern"
+                "Contrast this image with something modern",
             ],
             IdeaType.CHARACTER_SITUATION: [
                 "Write from this character's perspective",
                 "Imagine what happens next in this situation",
                 "Explore what brought this character to this moment",
-                "Write about watching this scene unfold"
+                "Write about watching this scene unfold",
             ],
             IdeaType.PHILOSOPHICAL_FRAGMENT: [
                 "Question or challenge this idea",
                 "Explore this concept through personal experience",
                 "Use this as the theme for a reflective poem",
-                "Connect this idea to a specific moment or image"
+                "Connect this idea to a specific moment or image",
             ],
             IdeaType.SETTING_DESCRIPTION: [
                 "Set a personal memory in this place",
                 "Write about someone discovering this location",
                 "Describe how this place changes over time",
-                "Use this setting to reflect an emotional state"
+                "Use this setting to reflect an emotional state",
             ],
             IdeaType.DIALOGUE_SPARK: [
                 "Continue this conversation in verse",
                 "Write about the silence after these words",
                 "Explore who might have said this and why",
-                "Use this as the opening or closing of a poem"
+                "Use this as the opening or closing of a poem",
             ],
             IdeaType.OPENING_LINE: [
                 "Use this as inspiration for your own opening",
                 "Write a poem that leads to this realization",
                 "Modernize this scenario or setting",
-                "Respond to or challenge this statement"
+                "Respond to or challenge this statement",
             ],
             IdeaType.SENSORY_DETAIL: [
                 "Build a poem around this sensory experience",
                 "Connect this sensation to a memory",
                 "Use this detail to ground an abstract idea",
-                "Explore how this sensation changes over time"
+                "Explore how this sensation changes over time",
             ],
             IdeaType.CONFLICT_SCENARIO: [
                 "Explore both sides of this conflict",
                 "Write about the moment before or after this tension",
                 "Use this conflict as metaphor for internal struggle",
-                "Imagine the resolution or escalation"
+                "Imagine the resolution or escalation",
             ],
             IdeaType.METAPHYSICAL_CONCEPT: [
                 "Ground this abstract idea in concrete imagery",
                 "Explore this concept through everyday experiences",
                 "Question or reimagine this spiritual idea",
-                "Use this as the hidden theme beneath a simple narrative"
-            ]
+                "Use this as the hidden theme beneath a simple narrative",
+            ],
         }
 
-    def generate_ideas(self, num_ideas: int = 20, preferred_types: Optional[List[IdeaType]] = None) -> IdeaCollection:
+    def generate_ideas(
+        self, num_ideas: int = 20, preferred_types: Optional[List[IdeaType]] = None
+    ) -> IdeaCollection:
         """Generate a collection of poetry ideas from classic literature using adaptive scaling"""
         print(f"Generating {num_ideas} poetry ideas from classic literature...")
 
@@ -233,7 +237,9 @@ class PoetryIdeaGenerator:
         initial_batch_size = max(3, num_ideas // 10)  # Start with reasonable batch
         print(f"📚 Retrieving {initial_batch_size} diverse documents for idea extraction...")
 
-        documents = get_diverse_gutenberg_documents(count=initial_batch_size, min_length=DocumentConfig.MIN_LENGTH_IDEAS)
+        documents = get_diverse_gutenberg_documents(
+            count=initial_batch_size, min_length=DocumentConfig.MIN_LENGTH_IDEAS
+        )
         if not documents:
             print("❌ Failed to retrieve documents for idea extraction")
             return collection
@@ -253,7 +259,9 @@ class PoetryIdeaGenerator:
                         break
                     collection.add_idea(idea)
 
-                print(f"    ✓ Found {len(ideas)} potential ideas, collection now has {collection.total_count()}")
+                print(
+                    f"    ✓ Found {len(ideas)} potential ideas, collection now has {collection.total_count()}"
+                )
 
                 if collection.total_count() >= num_ideas:
                     break
@@ -266,11 +274,18 @@ class PoetryIdeaGenerator:
         min_target = num_ideas
         while collection.total_count() < min_target:
             remaining_needed = min_target - collection.total_count()
-            additional_batch = min(DocumentConfig.MAX_ADAPTIVE_BATCH, max(DocumentConfig.MIN_ADAPTIVE_BATCH, remaining_needed // 5))
+            additional_batch = min(
+                DocumentConfig.MAX_ADAPTIVE_BATCH,
+                max(DocumentConfig.MIN_ADAPTIVE_BATCH, remaining_needed // 5),
+            )
 
-            print(f"  📚 Found {collection.total_count()} ideas, need {remaining_needed} more. Retrieving {additional_batch} additional documents...")
+            print(
+                f"  📚 Found {collection.total_count()} ideas, need {remaining_needed} more. Retrieving {additional_batch} additional documents..."
+            )
 
-            additional_docs = get_diverse_gutenberg_documents(count=additional_batch, min_length=DocumentConfig.MIN_LENGTH_IDEAS)
+            additional_docs = get_diverse_gutenberg_documents(
+                count=additional_batch, min_length=DocumentConfig.MIN_LENGTH_IDEAS
+            )
 
             if not additional_docs:
                 print("  ⚠ Could not retrieve additional documents")
@@ -287,7 +302,9 @@ class PoetryIdeaGenerator:
                             break
                         collection.add_idea(idea)
 
-                    print(f"    ✓ Found {len(ideas)} additional ideas, collection now has {collection.total_count()}")
+                    print(
+                        f"    ✓ Found {len(ideas)} additional ideas, collection now has {collection.total_count()}"
+                    )
 
                     if collection.total_count() >= min_target:
                         break
@@ -296,14 +313,15 @@ class PoetryIdeaGenerator:
                     print(f"    ⚠ Error processing additional document {documents_processed}: {e}")
                     continue
 
-        print(f"🎉 Successfully generated {collection.total_count()} ideas from {documents_processed} diverse texts!")
+        print(
+            f"🎉 Successfully generated {collection.total_count()} ideas from {documents_processed} diverse texts!"
+        )
         return collection
-
 
     def _extract_ideas_from_text(self, text: str, target_types: List[IdeaType]) -> List[PoetryIdea]:
         """Extract creative ideas from a single text"""
         ideas = []
-        source_preview = text[:100].replace('\n', ' ').strip()
+        source_preview = text[:100].replace("\n", " ").strip()
 
         # Parse the text
         ParsedText(text)
@@ -338,7 +356,7 @@ class PoetryIdeaGenerator:
                         idea_type=idea_type,
                         source_preview=source_preview,
                         creative_prompt=random.choice(self.creative_prompts[idea_type]),
-                        keywords=self._extract_keywords(idea_text)
+                        keywords=self._extract_keywords(idea_text),
                     )
 
                     ideas.append(idea)
@@ -358,14 +376,25 @@ class PoetryIdeaGenerator:
             return False
 
         # Must contain some alphabetic content
-        if not re.search(r'[a-zA-Z]', text):
+        if not re.search(r"[a-zA-Z]", text):
             return False
 
         # Avoid overly technical or boring content
         boring_indicators = [
-            'copyright', 'transcriber', 'project gutenberg', 'chapter',
-            'vol.', 'page', 'footnote', 'table of contents', 'index',
-            'isbn', 'published', 'edition', 'printer', 'library'
+            "copyright",
+            "transcriber",
+            "project gutenberg",
+            "chapter",
+            "vol.",
+            "page",
+            "footnote",
+            "table of contents",
+            "index",
+            "isbn",
+            "published",
+            "edition",
+            "printer",
+            "library",
         ]
 
         text_lower = text.lower()
@@ -379,7 +408,7 @@ class PoetryIdeaGenerator:
 
         # Must have some interesting words
         interesting_word_count = 0
-        words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+        words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
         for word in words:
             if len(word) > 4 and self.word_validator.is_valid_english_word(word):
                 interesting_word_count += 1
@@ -389,14 +418,28 @@ class PoetryIdeaGenerator:
     def _extract_keywords(self, text: str) -> List[str]:
         """Extract key words from the idea text"""
         # Simple keyword extraction
-        words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+        words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
 
         # Filter to interesting words
         keywords = []
         for word in words:
-            if (len(word) > 4 and
-                word not in {'that', 'with', 'have', 'this', 'will', 'from', 'they', 'been', 'were', 'said'} and
-                self.word_validator.is_valid_english_word(word)):
+            if (
+                len(word) > 4
+                and word
+                not in {
+                    "that",
+                    "with",
+                    "have",
+                    "this",
+                    "will",
+                    "from",
+                    "they",
+                    "been",
+                    "were",
+                    "said",
+                }
+                and self.word_validator.is_valid_english_word(word)
+            ):
                 keywords.append(word)
 
         # Return unique keywords, limited count
@@ -408,7 +451,9 @@ class PoetryIdeaGenerator:
 
         report.append("POETRY IDEA GENERATOR")
         report.append("=" * 60)
-        report.append(f"\nGenerated {collection.total_count()} creative seeds from classic literature")
+        report.append(
+            f"\nGenerated {collection.total_count()} creative seeds from classic literature"
+        )
 
         # Show ideas by category
         for idea_type in IdeaType:
@@ -417,13 +462,13 @@ class PoetryIdeaGenerator:
                 continue
 
             # Format the category name nicely
-            category_name = idea_type.value.replace('_', ' ').title()
+            category_name = idea_type.value.replace("_", " ").title()
 
             report.append(f"\n{category_name.upper()}:")
             report.append("-" * 40)
 
             for i, idea in enumerate(ideas[:3], 1):  # Show first 3 of each type
-                report.append(f"{i}. \"{idea.text}\"")
+                report.append(f'{i}. "{idea.text}"')
                 report.append(f"   Prompt: {idea.creative_prompt}")
                 if idea.keywords:
                     report.append(f"   Keywords: {', '.join(idea.keywords[:3])}")

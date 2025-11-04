@@ -7,4 +7,3 @@ These functions allow for controlled random sampling of words from Project Datam
 
 .. automodule:: generativepoetry.lexigen
    :members:
-

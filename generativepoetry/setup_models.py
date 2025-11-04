@@ -14,16 +14,16 @@ from .logger import logger
 
 # Required NLTK data packages
 REQUIRED_NLTK_DATA = [
-    ('tokenizers/punkt', 'punkt', 'Punkt sentence tokenizer'),
-    ('corpora/words', 'words', 'Words corpus'),
-    ('corpora/brown', 'brown', 'Brown corpus'),
-    ('corpora/wordnet', 'wordnet', 'WordNet lexical database'),
-    ('corpora/stopwords', 'stopwords', 'Stopwords corpus'),
+    ("tokenizers/punkt", "punkt", "Punkt sentence tokenizer"),
+    ("corpora/words", "words", "Words corpus"),
+    ("corpora/brown", "brown", "Brown corpus"),
+    ("corpora/wordnet", "wordnet", "WordNet lexical database"),
+    ("corpora/stopwords", "stopwords", "Stopwords corpus"),
 ]
 
 # Required spaCy models
 REQUIRED_SPACY_MODELS = [
-    ('en_core_web_sm', 'English language model (small)'),
+    ("en_core_web_sm", "English language model (small)"),
 ]
 
 
@@ -74,6 +74,7 @@ def check_spacy_model(model_name: str) -> bool:
     """
     try:
         import spacy
+
         spacy.load(model_name)
         return True
     except (OSError, ImportError):
@@ -98,10 +99,10 @@ def download_spacy_model(model_name: str, description: str, quiet: bool = False)
 
         # Use python -m spacy download to ensure it uses the correct Python environment
         result = subprocess.run(
-            [sys.executable, '-m', 'spacy', 'download', model_name],
+            [sys.executable, "-m", "spacy", "download", model_name],
             capture_output=True,
             text=True,
-            check=False
+            check=False,
         )
 
         if result.returncode == 0:

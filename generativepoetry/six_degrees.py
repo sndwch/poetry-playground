@@ -18,9 +18,10 @@ from .word_validator import WordValidator
 @dataclass
 class WordNode:
     """A word in the exploration tree"""
+
     word: str
     level: int
-    parent: Optional['WordNode'] = None
+    parent: Optional["WordNode"] = None
     relationship_type: str = ""
     confidence: float = 0.0
 
@@ -28,6 +29,7 @@ class WordNode:
 @dataclass
 class ConvergencePath:
     """A complete path from word A to word B through convergence"""
+
     word_a: str
     word_b: str
     convergence_word: str
@@ -58,10 +60,10 @@ class SixDegrees:
 
         # Streamlined relationship types (focus on most effective ones)
         self.relationship_types = [
-            ('ml', 'similar_meaning', 1.0),      # means like
-            ('rel_trg', 'contextual', 0.8),     # frequent followers
-            ('rel_syn', 'synonym', 0.9),        # synonyms
-            ('rel_gen', 'general', 0.7),        # more general terms
+            ("ml", "similar_meaning", 1.0),  # means like
+            ("rel_trg", "contextual", 0.8),  # frequent followers
+            ("rel_syn", "synonym", 0.9),  # synonyms
+            ("rel_gen", "general", 0.7),  # more general terms
         ]
 
     def find_convergence(self, word_a: str, word_b: str) -> Optional[ConvergencePath]:
@@ -82,14 +84,14 @@ class SixDegrees:
 
             # Expand from A
             if level - 1 in tree_a:
-                new_nodes_a = self._expand_level(tree_a[level - 1], level, 'A')
+                new_nodes_a = self._expand_level(tree_a[level - 1], level, "A")
                 tree_a[level] = new_nodes_a
                 for node in new_nodes_a:
                     words_from_a[node.word] = node
 
             # Expand from B
             if level - 1 in tree_b:
-                new_nodes_b = self._expand_level(tree_b[level - 1], level, 'B')
+                new_nodes_b = self._expand_level(tree_b[level - 1], level, "B")
                 tree_b[level] = new_nodes_b
                 for node in new_nodes_b:
                     words_from_b[node.word] = node
@@ -111,7 +113,7 @@ class SixDegrees:
                     path_a=path_a,
                     path_b=path_b,
                     total_steps=len(path_a) + len(path_b),
-                    relationship_chain=self._extract_relationship_chain(path_a, path_b)
+                    relationship_chain=self._extract_relationship_chain(path_a, path_b),
                 )
 
             # Brief pause to avoid API rate limits
@@ -120,7 +122,9 @@ class SixDegrees:
         print(f"  ❌ No convergence found within {self.max_levels} levels")
         return None
 
-    def _expand_level(self, parent_nodes: List[WordNode], level: int, direction: str) -> List[WordNode]:
+    def _expand_level(
+        self, parent_nodes: List[WordNode], level: int, direction: str
+    ) -> List[WordNode]:
         """Expand one level from parent nodes"""
         new_nodes = []
 
@@ -132,7 +136,7 @@ class SixDegrees:
             if len(related_words) > self.max_words_per_level:
                 # Sort by confidence and take top ones
                 related_words.sort(key=lambda x: x[2], reverse=True)
-                related_words = related_words[:self.max_words_per_level]
+                related_words = related_words[: self.max_words_per_level]
 
             for word, rel_type, confidence in related_words:
                 if self._is_valid_expansion_word(word):
@@ -141,7 +145,7 @@ class SixDegrees:
                         level=level,
                         parent=parent,
                         relationship_type=rel_type,
-                        confidence=confidence
+                        confidence=confidence,
                     )
                     new_nodes.append(node)
 
@@ -155,21 +159,21 @@ class SixDegrees:
         for rel_code, rel_name, base_confidence in self.relationship_types:
             try:
                 # Query Datamuse API
-                if rel_code == 'ml':
+                if rel_code == "ml":
                     results = self.datamuse_api.words(ml=word, max=10)
-                elif rel_code.startswith('rel_'):
-                    query = {rel_code: word, 'max': 8}
+                elif rel_code.startswith("rel_"):
+                    query = {rel_code: word, "max": 8}
                     results = self.datamuse_api.words(**query)
                 else:
                     continue
 
                 # Process results
                 for result in results:
-                    if 'word' in result:
-                        word_result = result['word']
+                    if "word" in result:
+                        word_result = result["word"]
 
                         # Skip multi-word phrases and compounds for now
-                        if ' ' in word_result or '-' in word_result:
+                        if " " in word_result or "-" in word_result:
                             continue
 
                         # Skip if same as input word
@@ -177,7 +181,7 @@ class SixDegrees:
                             continue
 
                         # Adjust confidence based on API score and our base confidence
-                        api_score = result.get('score', 1000) / 1000.0  # Normalize
+                        api_score = result.get("score", 1000) / 1000.0  # Normalize
                         final_confidence = min(1.0, api_score * base_confidence)
 
                         all_related.append((word_result, rel_name, final_confidence))
@@ -201,9 +205,32 @@ class SixDegrees:
 
         # Skip only the most common words that might create false convergences
         common_words = {
-            'the', 'be', 'to', 'of', 'and', 'a', 'in', 'that', 'have',
-            'it', 'for', 'not', 'on', 'with', 'as', 'do', 'at', 'this',
-            'but', 'by', 'from', 'they', 'we', 'or', 'an', 'will'
+            "the",
+            "be",
+            "to",
+            "of",
+            "and",
+            "a",
+            "in",
+            "that",
+            "have",
+            "it",
+            "for",
+            "not",
+            "on",
+            "with",
+            "as",
+            "do",
+            "at",
+            "this",
+            "but",
+            "by",
+            "from",
+            "they",
+            "we",
+            "or",
+            "an",
+            "will",
         }
 
         if word.lower() in common_words:
@@ -211,15 +238,16 @@ class SixDegrees:
 
         return self.word_validator.is_valid_english_word(word)
 
-    def _check_convergence(self, words_from_a: Dict[str, WordNode],
-                          words_from_b: Dict[str, WordNode]) -> Optional[Tuple[str, WordNode, WordNode]]:
+    def _check_convergence(
+        self, words_from_a: Dict[str, WordNode], words_from_b: Dict[str, WordNode]
+    ) -> Optional[Tuple[str, WordNode, WordNode]]:
         """Check if any words from A and B have converged"""
         common_words = set(words_from_a.keys()) & set(words_from_b.keys())
 
         if common_words:
             # If multiple convergences, pick the one with shortest total path
             best_convergence = None
-            best_total_distance = float('inf')
+            best_total_distance = float("inf")
 
             for word in common_words:
                 node_a = words_from_a[word]
@@ -243,7 +271,9 @@ class SixDegrees:
             current = current.parent
         return path
 
-    def _extract_relationship_chain(self, path_a: List[WordNode], path_b: List[WordNode]) -> List[str]:
+    def _extract_relationship_chain(
+        self, path_a: List[WordNode], path_b: List[WordNode]
+    ) -> List[str]:
         """Extract the chain of relationships used"""
         chain = []
 
@@ -293,7 +323,9 @@ class SixDegrees:
 
         # Show relationship types used
         if convergence.relationship_chain:
-            report.append(f"\n🔧 Relationship types: {', '.join(set(convergence.relationship_chain))}")
+            report.append(
+                f"\n🔧 Relationship types: {', '.join(set(convergence.relationship_chain))}"
+            )
 
         return "\n".join(report)
 
@@ -311,10 +343,12 @@ class SixDegrees:
             # Found convergence - distance is total steps
             distance_score = convergence.total_steps
             relationship_strength = 1.0 / (distance_score + 1)  # Closer = stronger
-            distance_category = "close" if distance_score <= 3 else "moderate" if distance_score <= 6 else "distant"
+            distance_category = (
+                "close" if distance_score <= 3 else "moderate" if distance_score <= 6 else "distant"
+            )
         else:
             # No convergence - they're very distant
-            distance_score = float('inf')
+            distance_score = float("inf")
             relationship_strength = 0.0
             distance_category = "very_distant"
 
@@ -322,16 +356,18 @@ class SixDegrees:
         self.max_levels = original_max_levels
 
         return {
-            'word_a': word_a,
-            'word_b': word_b,
-            'distance_score': distance_score,
-            'relationship_strength': relationship_strength,
-            'category': distance_category,
-            'convergence_path': convergence,
-            'has_semantic_bridge': convergence is not None
+            "word_a": word_a,
+            "word_b": word_b,
+            "distance_score": distance_score,
+            "relationship_strength": relationship_strength,
+            "category": distance_category,
+            "convergence_path": convergence,
+            "has_semantic_bridge": convergence is not None,
         }
 
-    def explore_multiple_paths(self, word_a: str, word_b: str, num_attempts: int = 3) -> List[ConvergencePath]:
+    def explore_multiple_paths(
+        self, word_a: str, word_b: str, num_attempts: int = 3
+    ) -> List[ConvergencePath]:
         """Try to find multiple different convergence paths"""
         paths = []
 

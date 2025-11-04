@@ -10,6 +10,7 @@ from wordfreq import word_frequency
 # Try to import hunspell, but make it optional
 try:
     import hunspell
+
     HUNSPELL_AVAILABLE = True
 except ImportError:
     HUNSPELL_AVAILABLE = False
@@ -27,48 +28,54 @@ def setup_spellchecker():
 
     system = platform.system()
 
-    if system == 'Windows':
+    if system == "Windows":
         # Hunspell on Windows requires manual setup, skip gracefully
         return None
-    elif system == 'Darwin':
+    elif system == "Darwin":
         # macOS - try default dictionary location
         try:
-            return hunspell.HunSpell('/Library/Spelling/en_US.dic', '/Library/Spelling/en_US.aff')
+            return hunspell.HunSpell("/Library/Spelling/en_US.dic", "/Library/Spelling/en_US.aff")
         except Exception:
             # Optional feature, fail gracefully
             return None
     else:
         # Linux - try default dictionary location
         try:
-            return hunspell.HunSpell('/usr/share/hunspell/en_US.dic', '/usr/share/hunspell/en_US.aff')
+            return hunspell.HunSpell(
+                "/usr/share/hunspell/en_US.dic", "/usr/share/hunspell/en_US.aff"
+            )
         except Exception:
             # Optional feature, fail gracefully
             return None
 
 
 hobj = setup_spellchecker()
-str_or_list_of_str = TypeVar('str_or_list_of_str', str, List[str])
+str_or_list_of_str = TypeVar("str_or_list_of_str", str, List[str])
+
 
 def get_input_words():
-    prompt = 'To generate a poem, type some words separated by commas or spaces, and then press enter.\n\n'
+    prompt = "To generate a poem, type some words separated by commas or spaces, and then press enter.\n\n"
 
     input_words = []
     while len(input_words) == 0:
         inp = Screen().input(prompt=prompt)
-        input_words = [word for word in re.split(r'[\s,]', inp) if word]
+        input_words = [word for word in re.split(r"[\s,]", inp) if word]
     return input_words
 
 
-def get_random_color(threshold=.85):
+def get_random_color(threshold=0.85):
     """Gets a random color -- 2/3 of the rgb values must be below the threshold value"""
     r, g, b = 1, 1, 1
-    while (1 - r <= threshold and 1 - g <= threshold) or (1 - g <= threshold and 1 - b <= threshold) or \
-            (1 - r <= threshold and 1 - b <= threshold):
+    while (
+        (1 - r <= threshold and 1 - g <= threshold)
+        or (1 - g <= threshold and 1 - b <= threshold)
+        or (1 - r <= threshold and 1 - b <= threshold)
+    ):
         r, g, b = random.random(), random.random(), random.random()
     return r, g, b
 
 
-def validate_str(input_val, msg='Not a string'):
+def validate_str(input_val, msg="Not a string"):
     """Validate the input argument by checking if it is a string.
 
     :param input_val: the value to validate
@@ -78,7 +85,7 @@ def validate_str(input_val, msg='Not a string'):
         raise ValueError(msg)
 
 
-def validate_str_list(input_val, msg='Not a list'):
+def validate_str_list(input_val, msg="Not a list"):
     """Validate the input parameter by checking if it is a list of strings.
 
     :param input_val: the value to validate
@@ -88,7 +95,7 @@ def validate_str_list(input_val, msg='Not a list'):
         raise ValueError(msg)
     for i, elem in enumerate(input_val):
         if not isinstance(elem, str):
-            raise ValueError(f'Element {i + 1} not a string')
+            raise ValueError(f"Element {i + 1} not a string")
 
 
 def validate_str_or_list_of_str(input_val) -> List[str]:
@@ -99,10 +106,10 @@ def validate_str_or_list_of_str(input_val) -> List[str]:
     if isinstance(input_val, str):
         return [input_val]
     elif isinstance(input_val, list):
-        validate_str_list(input_val, msg='Must provide a string or list of strings')
+        validate_str_list(input_val, msg="Must provide a string or list of strings")
         return input_val
     else:
-        raise ValueError('Must provide a string or list of strings')
+        raise ValueError("Must provide a string or list of strings")
 
 
 def has_invalid_characters(string):
@@ -120,7 +127,7 @@ def validate_word(input_val):
     """
     validate_str(input_val)
     if has_invalid_characters(input_val):
-        raise ValueError('Word may not contain digits, spaces, or special characters.')
+        raise ValueError("Word may not contain digits, spaces, or special characters.")
 
 
 def filter_word(string, spellcheck=True, exclude_words=None, word_frequency_threshold=4e-08):
@@ -141,23 +148,32 @@ def filter_word(string, spellcheck=True, exclude_words=None, word_frequency_thre
     # a historical sense to do that, so I have decided to exclude these.
     if exclude_words is None:
         exclude_words = []
-    unfitting_words = pkgutil.get_data('generativepoetry', 'data/hate_words.txt').decode("utf-8").splitlines()
-    unfitting_words.extend(pkgutil.get_data('generativepoetry', 'data/abbreviations_etc.txt').decode("utf-8")
-                           .splitlines())
-    exclude_words.extend(unfitting_words)  # Some words Datamuse tends to return that disruptive poetic flow
+    unfitting_words = (
+        pkgutil.get_data("generativepoetry", "data/hate_words.txt").decode("utf-8").splitlines()
+    )
+    unfitting_words.extend(
+        pkgutil.get_data("generativepoetry", "data/abbreviations_etc.txt")
+        .decode("utf-8")
+        .splitlines()
+    )
+    exclude_words.extend(
+        unfitting_words
+    )  # Some words Datamuse tends to return that disruptive poetic flow
     validate_str(string)
     if len(string) < 3:
         return False
     if has_invalid_characters(string):
         return False
-    if word_frequency(string, 'en') < word_frequency_threshold:
+    if word_frequency(string, "en") < word_frequency_threshold:
         return False
     if spellcheck and hobj is not None and not hobj.spell(string):
         return False
     return string not in exclude_words
 
 
-def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_words: Optional[List[str]] = None) -> List[str]:
+def filter_word_list(
+    word_list: List[str], spellcheck: bool = True, exclude_words: Optional[List[str]] = None
+) -> List[str]:
     """Filter a list of words using the filter_word method.
 
     :param word_list: list of words to filter
@@ -167,7 +183,8 @@ def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_word
         exclude_words = []
     results: List[str] = list(
         filter(
-            lambda word: filter_word(word, spellcheck=spellcheck, exclude_words=exclude_words), word_list
+            lambda word: filter_word(word, spellcheck=spellcheck, exclude_words=exclude_words),
+            word_list,
         )
     )
     return results
@@ -176,7 +193,23 @@ def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_word
 def sort_by_rarity(word_list: List[str]) -> List[str]:
     if len(word_list) <= 1:
         return word_list
-    return [*sort_by_rarity([word for word in word_list[1:] if word_frequency(word, 'en') < word_frequency(word_list[0], 'en')]), word_list[0], *sort_by_rarity([word for word in word_list[1:] if word_frequency(word, 'en') >= word_frequency(word_list[0], 'en')])]
+    return [
+        *sort_by_rarity(
+            [
+                word
+                for word in word_list[1:]
+                if word_frequency(word, "en") < word_frequency(word_list[0], "en")
+            ]
+        ),
+        word_list[0],
+        *sort_by_rarity(
+            [
+                word
+                for word in word_list[1:]
+                if word_frequency(word, "en") >= word_frequency(word_list[0], "en")
+            ]
+        ),
+    ]
 
 
 def too_similar(word1: str, comparison_val: str_or_list_of_str) -> bool:
@@ -191,33 +224,37 @@ def too_similar(word1: str, comparison_val: str_or_list_of_str) -> bool:
             return False
         if word1 == word2:
             return True
-        if word1 + 's' == word2 or word2 + 's' == word1:  # Plural, probably
+        if word1 + "s" == word2 or word2 + "s" == word1:  # Plural, probably
             return True
-        if word1 + 'ly' == word2 or word2 + 'ly' == word1:  # Adverb form of an adjective
+        if word1 + "ly" == word2 or word2 + "ly" == word1:  # Adverb form of an adjective
             return True
         # Perhaps the latter two checks could still be done efficiently with lemmatization
-        if (len(word1) > 2 and len(word2) > 2) and ((word1[-2] == 'e' and word2 + 'd' == word1) or
-            (word2[-2] == 'e' and word1 + 'd' == word2)):  # Past tense
+        if (len(word1) > 2 and len(word2) > 2) and (
+            (word1[-2] == "e" and word2 + "d" == word1)
+            or (word2[-2] == "e" and word1 + "d" == word2)
+        ):  # Past tense
             return True
-        if ((len(word1) > 5 and len(word2) > 2) or (len(word2) > 5 and len(word1) > 2)) and \
-                ((word1[-3:] == 'ing' and word2 + 'ing' == word1) or (word2[-3:] == 'ing' and word1 + 'ing' == word2)):
+        if ((len(word1) > 5 and len(word2) > 2) or (len(word2) > 5 and len(word1) > 2)) and (
+            (word1[-3:] == "ing" and word2 + "ing" == word1)
+            or (word2[-3:] == "ing" and word1 + "ing" == word2)
+        ):
             # Gerunds
             return True
-        too_similar_case = ['the', 'thee', 'them']
+        too_similar_case = ["the", "thee", "them"]
         if word1 in too_similar_case and word2 in too_similar_case:
             return True
     return False
 
 
 def correct_a_vs_an(phrase_as_list: List[str]) -> List[str]:
-    consonants = 'bcdfghjklmnpqrstvwxyz'
-    vowels = 'aeoiu'
+    consonants = "bcdfghjklmnpqrstvwxyz"
+    vowels = "aeoiu"
     last_word = None
     for i, word in enumerate(phrase_as_list):
-        if last_word == 'a':
+        if last_word == "a":
             if word[0] in vowels:
-                phrase_as_list[i - 1] = 'an'
-        elif last_word == 'an' and word[0] in consonants:
-            phrase_as_list[i - 1] = 'a'
+                phrase_as_list[i - 1] = "an"
+        elif last_word == "an" and word[0] in consonants:
+            phrase_as_list[i - 1] = "a"
         last_word = word
     return phrase_as_list

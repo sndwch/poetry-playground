@@ -21,6 +21,7 @@ from .word_validator import word_validator
 
 class SeedType(Enum):
     """Types of line seeds that can be generated."""
+
     OPENING = "opening"
     PIVOT = "pivot"
     IMAGE = "image"
@@ -32,6 +33,7 @@ class SeedType(Enum):
 
 class GenerationStrategy(Enum):
     """Strategies for generating line seeds."""
+
     JUXTAPOSITION = "juxtaposition"
     SYNESTHESIA = "synesthesia"
     INCOMPLETE_METAPHOR = "incomplete_metaphor"
@@ -44,6 +46,7 @@ class GenerationStrategy(Enum):
 @dataclass
 class LineSeed:
     """A line seed with metadata."""
+
     text: str
     seed_type: SeedType
     strategy: Optional[GenerationStrategy]
@@ -70,7 +73,7 @@ class LineSeedGenerator:
             "{Temporal} the {noun} {verb}...",
             "Where {noun} meets {noun}, the {noun}...",
             "Through {adjective} {noun}, something {adjective}...",
-            "{Pronoun} {verb} the {noun} of {abstract}..."
+            "{Pronoun} {verb} the {noun} of {abstract}...",
         ]
 
         self.fragment_patterns = [
@@ -78,7 +81,7 @@ class LineSeedGenerator:
             "...the {noun}'s {noun}...",
             "...{verb}ing what we {verb}...",
             "...{adjective}, {comparative} {adjective}...",
-            "...through {noun}, {noun}..."
+            "...through {noun}, {noun}...",
         ]
 
         self.closing_approaches = [
@@ -87,58 +90,77 @@ class LineSeedGenerator:
             "open_question",
             "sensory_snapshot",
             "emotional_truth",
-            "paradox"
+            "paradox",
         ]
 
     def _init_connectives(self):
         """Initialize connecting words and phrases."""
         self.temporal_markers = [
-            "Before", "After", "When", "While", "During",
-            "Until", "Since", "As", "Once", "Still"
+            "Before",
+            "After",
+            "When",
+            "While",
+            "During",
+            "Until",
+            "Since",
+            "As",
+            "Once",
+            "Still",
         ]
 
         self.spatial_prepositions = [
-            "beneath", "between", "through", "across",
-            "beyond", "within", "against", "beside"
+            "beneath",
+            "between",
+            "through",
+            "across",
+            "beyond",
+            "within",
+            "against",
+            "beside",
         ]
 
         self.abstract_connectors = [
-            "almost", "perhaps", "somehow", "barely",
-            "nearly", "always", "never", "still"
+            "almost",
+            "perhaps",
+            "somehow",
+            "barely",
+            "nearly",
+            "always",
+            "never",
+            "still",
         ]
 
     def _init_sensory_words(self):
         """Initialize sensory vocabulary using shared vocabulary."""
         # Base sensory words, enhanced with atmospheric nouns and evocative verbs
         base_sensory = {
-            'sight': ['glimmer', 'shadow', 'gleam', 'blur', 'shimmer', 'flicker', 'dazzle', 'fade'],
-            'sound': ['whisper', 'echo', 'hum', 'rustle', 'murmur', 'crackle', 'thrum', 'drone'],
-            'touch': ['smooth', 'rough', 'cold', 'warm', 'sharp', 'tender', 'coarse', 'velvet'],
-            'smell': ['smoke', 'rain', 'metal', 'earth', 'salt', 'musk', 'pine', 'copper'],
-            'taste': ['bitter', 'sweet', 'acid', 'iron', 'ash', 'honey', 'brine', 'mint']
+            "sight": ["glimmer", "shadow", "gleam", "blur", "shimmer", "flicker", "dazzle", "fade"],
+            "sound": ["whisper", "echo", "hum", "rustle", "murmur", "crackle", "thrum", "drone"],
+            "touch": ["smooth", "rough", "cold", "warm", "sharp", "tender", "coarse", "velvet"],
+            "smell": ["smoke", "rain", "metal", "earth", "salt", "musk", "pine", "copper"],
+            "taste": ["bitter", "sweet", "acid", "iron", "ash", "honey", "brine", "mint"],
         }
 
         # Enhance with words from shared vocabulary (convert sets to lists for slicing)
         atmospheric_words = list(vocabulary.atmospheric_nouns)[:50]  # Sample from larger set
-        evocative_words = list(vocabulary.evocative_verbs)[:50]     # Sample from larger set
+        evocative_words = list(vocabulary.evocative_verbs)[:50]  # Sample from larger set
 
         # Add evocative words to appropriate sensory categories based on characteristics
         for word in atmospheric_words + evocative_words:
-            if any(sense in word.lower() for sense in ['light', 'bright', 'dark', 'see', 'glow']):
-                base_sensory['sight'].append(word)
-            elif any(sense in word.lower() for sense in ['sound', 'voice', 'call', 'ring', 'sing']):
-                base_sensory['sound'].append(word)
-            elif any(sense in word.lower() for sense in ['touch', 'feel', 'hold', 'grasp']):
-                base_sensory['touch'].append(word)
-            elif any(sense in word.lower() for sense in ['smell', 'scent', 'aroma']):
-                base_sensory['smell'].append(word)
-            elif any(sense in word.lower() for sense in ['taste', 'sweet', 'bitter']):
-                base_sensory['taste'].append(word)
+            if any(sense in word.lower() for sense in ["light", "bright", "dark", "see", "glow"]):
+                base_sensory["sight"].append(word)
+            elif any(sense in word.lower() for sense in ["sound", "voice", "call", "ring", "sing"]):
+                base_sensory["sound"].append(word)
+            elif any(sense in word.lower() for sense in ["touch", "feel", "hold", "grasp"]):
+                base_sensory["touch"].append(word)
+            elif any(sense in word.lower() for sense in ["smell", "scent", "aroma"]):
+                base_sensory["smell"].append(word)
+            elif any(sense in word.lower() for sense in ["taste", "sweet", "bitter"]):
+                base_sensory["taste"].append(word)
 
         self.sensory_map = base_sensory
 
-    def generate_opening_line(self, seed_words: List[str],
-                            mood: Optional[str] = None) -> LineSeed:
+    def generate_opening_line(self, seed_words: List[str], mood: Optional[str] = None) -> LineSeed:
         """Generate a strong opening line with forward momentum.
 
         Args:
@@ -167,11 +189,10 @@ class LineSeedGenerator:
             strategy=strategy,
             momentum=random.uniform(0.7, 0.95),
             openness=random.uniform(0.6, 0.9),
-            quality_score=quality
+            quality_score=quality,
         )
 
-    def generate_fragment(self, seed_words: List[str],
-                         position: str = 'any') -> LineSeed:
+    def generate_fragment(self, seed_words: List[str], position: str = "any") -> LineSeed:
         """Generate an evocative incomplete fragment.
 
         Args:
@@ -192,7 +213,7 @@ class LineSeedGenerator:
         # Combine with seed words, ensuring we have something to work with
         all_words = seed_words + expanded_words
         if not all_words:
-            all_words = ['word', 'phrase', 'thought']  # Emergency fallback
+            all_words = ["word", "phrase", "thought"]  # Emergency fallback
 
         # Build fragment
         pattern = random.choice(self.fragment_patterns)
@@ -206,7 +227,7 @@ class LineSeedGenerator:
             strategy=None,
             momentum=random.uniform(0.4, 0.7),
             openness=random.uniform(0.7, 1.0),
-            quality_score=quality
+            quality_score=quality,
         )
 
     def generate_image_seed(self, seed_words: List[str]) -> LineSeed:
@@ -238,7 +259,7 @@ class LineSeedGenerator:
             f"{random.choice(sensory_words)} {random.choice(context_words)}",
             f"the {random.choice(sensory_words)} of {random.choice(context_words)}",
             f"{random.choice(context_words)} like {random.choice(sensory_words)}",
-            f"{random.choice(sensory_words)}, {random.choice(sensory_words)} {random.choice(context_words)}"
+            f"{random.choice(sensory_words)}, {random.choice(sensory_words)} {random.choice(context_words)}",
         ]
 
         image = random.choice(templates)
@@ -250,7 +271,7 @@ class LineSeedGenerator:
             strategy=GenerationStrategy.SYNESTHESIA if random.random() > 0.5 else None,
             momentum=random.uniform(0.3, 0.6),
             openness=random.uniform(0.5, 0.8),
-            quality_score=quality
+            quality_score=quality,
         )
 
     def generate_pivot_line(self, seed_words: List[str]) -> LineSeed:
@@ -268,7 +289,7 @@ class LineSeedGenerator:
             "Or was it {noun} that {verb}...",
             "Until the {noun} {verb}...",
             "Then {noun}, then {noun}...",
-            "As if {noun} could {verb}..."
+            "As if {noun} could {verb}...",
         ]
 
         template = random.choice(templates)
@@ -281,7 +302,7 @@ class LineSeedGenerator:
             strategy=GenerationStrategy.QUESTION_IMPLIED,
             momentum=random.uniform(0.6, 0.9),
             openness=random.uniform(0.8, 1.0),
-            quality_score=quality
+            quality_score=quality,
         )
 
     def generate_sonic_pattern(self, seed_words: List[str]) -> LineSeed:
@@ -305,7 +326,9 @@ class LineSeedGenerator:
             pattern = f"{sound_words[0]}, {sound_words[1]}, {sound_words[2]}"
         else:
             # Fallback to rhythm pattern
-            pattern = f"{seed_words[0]}-{random.choice(['pause', 'beat', 'breath'])}-{seed_words[-1]}"
+            pattern = (
+                f"{seed_words[0]}-{random.choice(['pause', 'beat', 'breath'])}-{seed_words[-1]}"
+            )
 
         quality = self._evaluate_quality(pattern)
 
@@ -316,11 +339,12 @@ class LineSeedGenerator:
             momentum=random.uniform(0.5, 0.8),
             openness=random.uniform(0.4, 0.7),
             quality_score=quality,
-            notes="Build on this sound pattern"
+            notes="Build on this sound pattern",
         )
 
-    def generate_ending_approach(self, seed_words: List[str],
-                                opening_line: Optional[str] = None) -> LineSeed:
+    def generate_ending_approach(
+        self, seed_words: List[str], opening_line: Optional[str] = None
+    ) -> LineSeed:
         """Suggest approaches for ending the poem.
 
         Args:
@@ -347,7 +371,9 @@ class LineSeedGenerator:
             else:
                 ending = f"Just {seed_words[0]}."
         elif approach == "open_question":
-            ending = f"What {random.choice(['remains', 'persists', 'echoes'])} when {seed_words[0]}...?"
+            ending = (
+                f"What {random.choice(['remains', 'persists', 'echoes'])} when {seed_words[0]}...?"
+            )
         else:
             # Emotional truth or paradox
             ending = f"All {seed_words[0]}, no {seed_words[-1]}"
@@ -361,11 +387,12 @@ class LineSeedGenerator:
             momentum=random.uniform(0.1, 0.3),
             openness=random.uniform(0.2, 0.5),
             quality_score=quality,
-            notes=f"Closing approach: {approach}"
+            notes=f"Closing approach: {approach}",
         )
 
-    def generate_seed_collection(self, seed_words: List[str],
-                                num_seeds: int = 10) -> List[LineSeed]:
+    def generate_seed_collection(
+        self, seed_words: List[str], num_seeds: int = 10
+    ) -> List[LineSeed]:
         """Generate a collection of varied line seeds.
 
         Args:
@@ -387,11 +414,9 @@ class LineSeedGenerator:
         # Fill remaining with fragments and varied types
         remaining = num_seeds - len(seeds)
         for _ in range(remaining):
-            seed_type = random.choice([
-                self.generate_fragment,
-                self.generate_image_seed,
-                self.generate_pivot_line
-            ])
+            seed_type = random.choice(
+                [self.generate_fragment, self.generate_image_seed, self.generate_pivot_line]
+            )
             seeds.append(seed_type(seed_words))
 
         # Sort by quality score
@@ -436,19 +461,19 @@ class LineSeedGenerator:
 
         # Ensure we have words to work with
         if not words:
-            words = ['word']  # Fallback word
+            words = ["word"]  # Fallback word
 
         # Simple replacement logic (can be enhanced)
         replacements = {
-            '{noun}': lambda: random.choice(words) if words else 'word',
-            '{verb}': lambda: random.choice(['carries', 'holds', 'breaks', 'turns', 'waits']),
-            '{adjective}': lambda: random.choice(['distant', 'quiet', 'sharp', 'soft', 'strange']),
-            '{pronoun}': lambda: random.choice(['we', 'they', 'it', 'you']),
-            '{Pronoun}': lambda: random.choice(['We', 'They', 'It', 'You']),
-            '{Temporal}': lambda: random.choice(self.temporal_markers),
-            '{preposition}': lambda: random.choice(self.spatial_prepositions),
-            '{abstract}': lambda: random.choice(['memory', 'time', 'silence', 'distance']),
-            '{comparative}': lambda: random.choice(['more', 'less', 'almost', 'nearly'])
+            "{noun}": lambda: random.choice(words) if words else "word",
+            "{verb}": lambda: random.choice(["carries", "holds", "breaks", "turns", "waits"]),
+            "{adjective}": lambda: random.choice(["distant", "quiet", "sharp", "soft", "strange"]),
+            "{pronoun}": lambda: random.choice(["we", "they", "it", "you"]),
+            "{Pronoun}": lambda: random.choice(["We", "They", "It", "You"]),
+            "{Temporal}": lambda: random.choice(self.temporal_markers),
+            "{preposition}": lambda: random.choice(self.spatial_prepositions),
+            "{abstract}": lambda: random.choice(["memory", "time", "silence", "distance"]),
+            "{comparative}": lambda: random.choice(["more", "less", "almost", "nearly"]),
         }
 
         for placeholder, func in replacements.items():
@@ -476,21 +501,21 @@ class LineSeedGenerator:
         # Check for variety in word length
         words = text.split()
         if words:
-            lengths = [len(w.strip('.,!?')) for w in words]
+            lengths = [len(w.strip(".,!?")) for w in words]
             if len(set(lengths)) > len(lengths) * 0.6:
                 score += 0.1
 
         # Check for avoiding clichés
-        cliches = ['heart', 'soul', 'love', 'dream', 'tears', 'broken']
+        cliches = ["heart", "soul", "love", "dream", "tears", "broken"]
         if not any(cliche in text.lower() for cliche in cliches):
             score += 0.2
 
         # Check for interesting word combinations
-        if '...' in text:
+        if "..." in text:
             score += 0.1  # Suggests openness
 
         # Check for concrete imagery
-        concrete_indicators = ['the', 'through', 'between', 'of']
+        concrete_indicators = ["the", "through", "between", "of"]
         if any(word in text.lower() for word in concrete_indicators):
             score += 0.1
 

@@ -4,10 +4,7 @@ import warnings
 
 # Suppress the specific deprecation warning from pronouncing
 warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    message=".*pkg_resources is deprecated.*",
-    module="pronouncing"
+    "ignore", category=UserWarning, message=".*pkg_resources is deprecated.*", module="pronouncing"
 )
 
 # Alternative: monkey-patch pkg_resources before pronouncing imports it

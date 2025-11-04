@@ -4,7 +4,7 @@ import logging
 import sys
 
 
-def setup_logger(name='generativepoetry', level=logging.INFO):
+def setup_logger(name="generativepoetry", level=logging.INFO):
     """Set up a logger with console output."""
     logger = logging.getLogger(name)
 
@@ -15,8 +15,7 @@ def setup_logger(name='generativepoetry', level=logging.INFO):
 
         # Format
         formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
         )
         console_handler.setFormatter(formatter)
 

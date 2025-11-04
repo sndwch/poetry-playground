@@ -15,6 +15,7 @@ from typing import Any, Callable, Optional
 
 try:
     from diskcache import Cache
+
     DISKCACHE_AVAILABLE = True
 except ImportError:
     DISKCACHE_AVAILABLE = False
@@ -43,9 +44,9 @@ class CacheKeyGenerator:
             MD5 hash of the key components
         """
         key_data = {
-            'endpoint': endpoint,
-            'params': sorted(params.items()) if isinstance(params, dict) else params,
-            'version': version
+            "endpoint": endpoint,
+            "params": sorted(params.items()) if isinstance(params, dict) else params,
+            "version": version,
         }
         key_str = json.dumps(key_data, sort_keys=True, default=str)
         return hashlib.md5(key_str.encode()).hexdigest()
@@ -76,7 +77,7 @@ class RetryStrategy:
             Delay in seconds
         """
         # Exponential backoff: base * 2^attempt
-        delay = min(self.base_delay * (2 ** attempt), self.max_delay)
+        delay = min(self.base_delay * (2**attempt), self.max_delay)
 
         # Add jitter (±20%) to prevent thundering herd
         jitter = delay * 0.2 * (random.random() * 2 - 1)
@@ -121,10 +122,7 @@ class PersistentAPICache:
     """Persistent API cache using diskcache with offline mode support."""
 
     def __init__(
-        self,
-        cache_dir: Optional[Path] = None,
-        ttl: int = 86400,
-        offline_mode: bool = False
+        self, cache_dir: Optional[Path] = None, ttl: int = 86400, offline_mode: bool = False
     ):
         """Initialize persistent cache.
 
@@ -138,21 +136,22 @@ class PersistentAPICache:
         self.enabled = config.enable_cache
         self.offline_mode = offline_mode
         self.retry_strategy = RetryStrategy(
-            max_retries=config.max_api_retries,
-            base_delay=config.api_retry_delay
+            max_retries=config.max_api_retries, base_delay=config.api_retry_delay
         )
 
         # Initialize cache backend
         if self.enabled and DISKCACHE_AVAILABLE:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             self.cache = Cache(str(self.cache_dir))
-            self._backend = 'diskcache'
+            self._backend = "diskcache"
             logger.debug(f"Initialized diskcache at {self.cache_dir}")
         else:
             if self.enabled and not DISKCACHE_AVAILABLE:
-                logger.warning("diskcache not available, caching disabled. Install with: pip install diskcache")
+                logger.warning(
+                    "diskcache not available, caching disabled. Install with: pip install diskcache"
+                )
             self.cache = None
-            self._backend = 'none'
+            self._backend = "none"
 
     def get(self, key: str) -> Optional[Any]:
         """Get value from cache if it exists and is not expired.
@@ -212,28 +211,24 @@ class PersistentAPICache:
             Dictionary with cache stats
         """
         if not self.enabled or self.cache is None:
-            return {'enabled': False, 'backend': self._backend}
+            return {"enabled": False, "backend": self._backend}
 
         try:
             volume = self.cache.volume()
             size = len(self.cache)
             return {
-                'enabled': True,
-                'backend': self._backend,
-                'size': size,
-                'volume_bytes': volume,
-                'offline_mode': self.offline_mode
+                "enabled": True,
+                "backend": self._backend,
+                "size": size,
+                "volume_bytes": volume,
+                "offline_mode": self.offline_mode,
             }
         except Exception as e:
             logger.warning(f"Cache stats error: {e}")
-            return {'enabled': True, 'backend': self._backend, 'error': str(e)}
+            return {"enabled": True, "backend": self._backend, "error": str(e)}
 
 
-def cached_api_call(
-    endpoint: str,
-    ttl: int = 3600,
-    offline_mode: bool = False
-):
+def cached_api_call(endpoint: str, ttl: int = 3600, offline_mode: bool = False):
     """Decorator to cache API call results with retry logic.
 
     Args:
@@ -252,7 +247,7 @@ def cached_api_call(
         @wraps(func)
         def wrapper(*args, **kwargs):
             # Generate cache key from endpoint and parameters
-            params = {'args': args, 'kwargs': kwargs}
+            params = {"args": args, "kwargs": kwargs}
             cache_key = CacheKeyGenerator.generate(endpoint, params)
 
             # Try to get from cache

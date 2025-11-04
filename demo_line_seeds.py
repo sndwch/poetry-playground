@@ -2,26 +2,28 @@
 """Demo script for line seeds feature."""
 
 # Suppress the pronouncing warning
-from generativepoetry.pronouncing_patch import *
 from generativepoetry.line_seeds import LineSeedGenerator
+from generativepoetry.pronouncing_patch import *
+
 
 def demo():
     """Run a demo of the line seeds generator."""
     generator = LineSeedGenerator()
 
     # Example seed words
-    seed_words = ['ocean', 'memory', 'dissolve']
+    seed_words = ["ocean", "memory", "dissolve"]
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("POETRY LINE SEEDS DEMO")
     print(f"Generating seeds from: {', '.join(seed_words)}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
 
     # Generate and display seeds
     seeds = generator.generate_seed_collection(seed_words, num_seeds=15)
 
     # Group by type
     from generativepoetry.line_seeds import SeedType
+
     by_type = {}
     for seed in seeds:
         if seed.seed_type not in by_type:
@@ -67,9 +69,9 @@ def demo():
                 print(f"    → {seed.notes}")
         print()
 
-    print("="*60)
+    print("=" * 60)
     print("💡 Use these seeds as starting points for your own poetry!")
-    print("="*60)
+    print("=" * 60)
 
 
 if __name__ == "__main__":

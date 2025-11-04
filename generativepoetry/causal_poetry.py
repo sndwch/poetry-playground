@@ -21,17 +21,19 @@ from .word_validator import WordValidator
 @dataclass
 class ResonantFragment:
     """A discovered fragment with poetic potential"""
-    text: str                    # The fragment text
-    pattern_type: str           # Which pattern matched (causality, temporal, etc.)
-    word_count: int             # Length in words
-    source_preview: str         # Brief context from source
-    emotional_tone: str         # Detected emotional quality
-    poetic_score: float         # How evocative it seems (0-1)
+
+    text: str  # The fragment text
+    pattern_type: str  # Which pattern matched (causality, temporal, etc.)
+    word_count: int  # Length in words
+    source_preview: str  # Brief context from source
+    emotional_tone: str  # Detected emotional quality
+    poetic_score: float  # How evocative it seems (0-1)
 
 
 @dataclass
 class FragmentCollection:
     """Collection of fragments organized by pattern type"""
+
     causality: List[ResonantFragment] = field(default_factory=list)
     temporal: List[ResonantFragment] = field(default_factory=list)
     universal: List[ResonantFragment] = field(default_factory=list)
@@ -39,7 +41,13 @@ class FragmentCollection:
     modal: List[ResonantFragment] = field(default_factory=list)
 
     def total_count(self) -> int:
-        return len(self.causality) + len(self.temporal) + len(self.universal) + len(self.singular) + len(self.modal)
+        return (
+            len(self.causality)
+            + len(self.temporal)
+            + len(self.universal)
+            + len(self.singular)
+            + len(self.modal)
+        )
 
     def get_all_fragments(self) -> List[ResonantFragment]:
         return self.causality + self.temporal + self.universal + self.singular + self.modal
@@ -53,49 +61,49 @@ class ResonantFragmentMiner:
 
         # Fragment patterns - more flexible to capture diverse literary language
         self.patterns = {
-            'causality': [
-                r'The [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]',           # "The door slammed."
-                r'The [a-zA-Z]+ had [a-zA-Z]+[^.!?]{0,50}[.!?]',       # "The light had faded."
-                r'[A-Z][a-zA-Z]+ [a-zA-Z]+ed[^.!?]{0,40}[.!?]',        # "Something crashed."
-                r'[A-Z][a-zA-Z]+ [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,40}[.!?]', # "Fire burns everything."
-                r'It [a-zA-Z]+[^.!?]{0,40}[.!?]',                      # "It shattered."
-                r'She [a-zA-Z]+[^.!?]{0,40}[.!?]',                     # "She whispered."
-                r'He [a-zA-Z]+[^.!?]{0,40}[.!?]',                      # "He vanished."
+            "causality": [
+                r"The [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "The door slammed."
+                r"The [a-zA-Z]+ had [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "The light had faded."
+                r"[A-Z][a-zA-Z]+ [a-zA-Z]+ed[^.!?]{0,40}[.!?]",  # "Something crashed."
+                r"[A-Z][a-zA-Z]+ [a-zA-Z]+ [a-zA-Z]+[^.!?]{0,40}[.!?]",  # "Fire burns everything."
+                r"It [a-zA-Z]+[^.!?]{0,40}[.!?]",  # "It shattered."
+                r"She [a-zA-Z]+[^.!?]{0,40}[.!?]",  # "She whispered."
+                r"He [a-zA-Z]+[^.!?]{0,40}[.!?]",  # "He vanished."
             ],
-            'temporal': [
-                r'When [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "When silence fell."
-                r'As [a-zA-Z]+[^.!?]{0,50}[.!?]',                      # "As darkness crept."
-                r'Until [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "Until morning broke."
-                r'Before [a-zA-Z]+[^.!?]{0,50}[.!?]',                  # "Before dawn arrived."
-                r'After [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "After thunder roared."
-                r'Then [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Then everything changed."
-                r'Now [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "Now darkness falls."
-                r'Soon [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Soon hope returned."
+            "temporal": [
+                r"When [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "When silence fell."
+                r"As [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "As darkness crept."
+                r"Until [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Until morning broke."
+                r"Before [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Before dawn arrived."
+                r"After [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "After thunder roared."
+                r"Then [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Then everything changed."
+                r"Now [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Now darkness falls."
+                r"Soon [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Soon hope returned."
             ],
-            'universal': [
-                r'Every [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "Every shadow whispered."
-                r'All [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "All hope vanished."
-                r'No [a-zA-Z]+[^.!?]{0,50}[.!?]',                      # "No sound escaped."
-                r'Each [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Each breath echoed."
-                r'Any [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "Any movement ceased."
-                r'None [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "None dared speak."
+            "universal": [
+                r"Every [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Every shadow whispered."
+                r"All [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "All hope vanished."
+                r"No [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "No sound escaped."
+                r"Each [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Each breath echoed."
+                r"Any [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Any movement ceased."
+                r"None [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "None dared speak."
             ],
-            'singular': [
-                r'One [a-zA-Z]+[^.!?]{0,50}[.!?]',                     # "One candle burned."
-                r'Only [a-zA-Z]+[^.!?]{0,50}[.!?]',                    # "Only silence remained."
-                r'Something [a-zA-Z]+[^.!?]{0,50}[.!?]',                # "Something stirred."
-                r'Nothing [a-zA-Z]+[^.!?]{0,50}[.!?]',                  # "Nothing moved."
-                r'Someone [a-zA-Z]+[^.!?]{0,50}[.!?]',                  # "Someone whispered."
-                r'Anyone [a-zA-Z]+[^.!?]{0,50}[.!?]',                   # "Anyone could see."
+            "singular": [
+                r"One [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "One candle burned."
+                r"Only [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Only silence remained."
+                r"Something [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Something stirred."
+                r"Nothing [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Nothing moved."
+                r"Someone [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Someone whispered."
+                r"Anyone [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Anyone could see."
             ],
-            'modal': [
-                r'[A-Z][a-zA-Z]+ would [a-zA-Z]+[^.!?]{0,50}[.!?]',    # "Memory would return."
-                r'[A-Z][a-zA-Z]+ could [a-zA-Z]+[^.!?]{0,50}[.!?]',    # "Fire could consume."
-                r'[A-Z][a-zA-Z]+ might [a-zA-Z]+[^.!?]{0,50}[.!?]',    # "Wind might whisper."
-                r'[A-Z][a-zA-Z]+ should [a-zA-Z]+[^.!?]{0,50}[.!?]',   # "Love should endure."
-                r'[A-Z][a-zA-Z]+ may [a-zA-Z]+[^.!?]{0,50}[.!?]',      # "Hope may return."
-                r'[A-Z][a-zA-Z]+ must [a-zA-Z]+[^.!?]{0,50}[.!?]',     # "Truth must prevail."
-            ]
+            "modal": [
+                r"[A-Z][a-zA-Z]+ would [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Memory would return."
+                r"[A-Z][a-zA-Z]+ could [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Fire could consume."
+                r"[A-Z][a-zA-Z]+ might [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Wind might whisper."
+                r"[A-Z][a-zA-Z]+ should [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Love should endure."
+                r"[A-Z][a-zA-Z]+ may [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Hope may return."
+                r"[A-Z][a-zA-Z]+ must [a-zA-Z]+[^.!?]{0,50}[.!?]",  # "Truth must prevail."
+            ],
         }
 
         # Use shared vocabulary for emotional tone classification
@@ -110,7 +118,9 @@ class ResonantFragmentMiner:
 
         # Start with initial batch
         print(f"  📚 Retrieving {initial_texts} diverse documents...")
-        documents = get_diverse_gutenberg_documents(count=initial_texts, min_length=DocumentConfig.MIN_LENGTH_FRAGMENTS)
+        documents = get_diverse_gutenberg_documents(
+            count=initial_texts, min_length=DocumentConfig.MIN_LENGTH_FRAGMENTS
+        )
 
         if not documents:
             print("❌ Failed to retrieve any documents. Check internet connection.")
@@ -122,9 +132,13 @@ class ResonantFragmentMiner:
         documents_processed = 0
         for text in documents:
             documents_processed += 1
-            print(f"  📖 Mining from document {documents_processed}... (found {collection.total_count()}/{target_count})")
+            print(
+                f"  📖 Mining from document {documents_processed}... (found {collection.total_count()}/{target_count})"
+            )
 
-            fragments_added = self._mine_fragments_from_single_text(text, collection, seen_fragments, target_count)
+            fragments_added = self._mine_fragments_from_single_text(
+                text, collection, seen_fragments, target_count
+            )
             print(f"    ✓ Added {fragments_added} high-quality fragments")
 
             # Check if we've reached our target
@@ -145,29 +159,42 @@ class ResonantFragmentMiner:
             else:
                 adaptive_batch_size = 2  # Smaller batches when close
 
-            print(f"  📚 Need {needed} more fragments, retrieving {adaptive_batch_size} additional documents...")
+            print(
+                f"  📚 Need {needed} more fragments, retrieving {adaptive_batch_size} additional documents..."
+            )
 
-            additional_docs = get_diverse_gutenberg_documents(count=adaptive_batch_size, min_length=DocumentConfig.MIN_LENGTH_FRAGMENTS)
+            additional_docs = get_diverse_gutenberg_documents(
+                count=adaptive_batch_size, min_length=DocumentConfig.MIN_LENGTH_FRAGMENTS
+            )
 
             if not additional_docs:
-                print("  ⚠ Could not retrieve additional documents - network issue or exhausted sources")
+                print(
+                    "  ⚠ Could not retrieve additional documents - network issue or exhausted sources"
+                )
                 break
 
             for text in additional_docs:
                 documents_processed += 1
-                print(f"  📖 Mining from document {documents_processed}... (found {collection.total_count()}/{target_count})")
+                print(
+                    f"  📖 Mining from document {documents_processed}... (found {collection.total_count()}/{target_count})"
+                )
 
-                fragments_added = self._mine_fragments_from_single_text(text, collection, seen_fragments, target_count)
+                fragments_added = self._mine_fragments_from_single_text(
+                    text, collection, seen_fragments, target_count
+                )
                 print(f"    ✓ Added {fragments_added} high-quality fragments")
 
                 if collection.total_count() >= target_count:
                     break
 
-        print(f"🎉 Successfully mined {collection.total_count()} unique high-quality fragments from {documents_processed} diverse texts!")
+        print(
+            f"🎉 Successfully mined {collection.total_count()} unique high-quality fragments from {documents_processed} diverse texts!"
+        )
         return collection
 
-    def _mine_fragments_from_single_text(self, text: str, collection: FragmentCollection,
-                                       seen_fragments: set, target_count: int) -> int:
+    def _mine_fragments_from_single_text(
+        self, text: str, collection: FragmentCollection, seen_fragments: set, target_count: int
+    ) -> int:
         """Mine fragments from a single text and add to collection"""
         added_count = 0
 
@@ -207,19 +234,19 @@ class ResonantFragmentMiner:
         if text_len > 10000:
             # Take samples from beginning, middle, and end
             sections = [
-                text[:text_len//3],
-                text[text_len//3:2*text_len//3],
-                text[2*text_len//3:]
+                text[: text_len // 3],
+                text[text_len // 3 : 2 * text_len // 3],
+                text[2 * text_len // 3 :],
             ]
-            sample_text = ' '.join(sections)
+            sample_text = " ".join(sections)
         else:
             sample_text = text
 
-        source_preview = sample_text[:100].replace('\n', ' ').strip()
+        source_preview = sample_text[:100].replace("\n", " ").strip()
 
         # Clean the text - remove excessive whitespace and weird characters
-        cleaned_text = re.sub(r'\s+', ' ', sample_text)
-        cleaned_text = re.sub(r'[^\w\s.!?,:;\'"-]', ' ', cleaned_text)
+        cleaned_text = re.sub(r"\s+", " ", sample_text)
+        cleaned_text = re.sub(r'[^\w\s.!?,:;\'"-]', " ", cleaned_text)
 
         # Search for each pattern type
         for pattern_type, patterns in self.patterns.items():
@@ -240,7 +267,7 @@ class ResonantFragmentMiner:
                         word_count=len(fragment_text.split()),
                         source_preview=source_preview,
                         emotional_tone=self._detect_emotional_tone(fragment_text),
-                        poetic_score=self._calculate_poetic_score(fragment_text)
+                        poetic_score=self._calculate_poetic_score(fragment_text),
                     )
 
                     fragments.append(fragment)
@@ -259,11 +286,13 @@ class ResonantFragmentMiner:
             return False
 
         # Must end with punctuation
-        if not text.strip().endswith(('.', '!', '?')):
+        if not text.strip().endswith((".", "!", "?")):
             return False
 
         # Avoid obvious non-literary content
-        if any(char in text for char in ['(', ')', '[', ']']) or any(word.isdigit() for word in words):
+        if any(char in text for char in ["(", ")", "[", "]"]) or any(
+            word.isdigit() for word in words
+        ):
             return False
 
         # Use shared vocabulary for evocative word detection
@@ -289,7 +318,7 @@ class ResonantFragmentMiner:
 
         # Bonus for emotional tone (not neutral)
         tone = vocabulary.get_emotional_tone(text)
-        if tone != 'neutral':
+        if tone != "neutral":
             score += 0.2
 
         # Bonus for shorter fragments (more compressed)
@@ -309,10 +338,10 @@ class ResonantFragmentMiner:
 
         # Reject overly generic fragments (relaxed)
         generic_patterns = [
-            r'^(What|How|Where|When|Why)\s+(could|would|should|might)',  # "What could it mean?"
-            r'^\w+\s+(said|asked|replied|answered)\s*(to|that)',  # Dialogue tags with continuation
-            r'^(I|We|You)\s+(was|were|am|is|are)\s+\w+\.$',  # Simple self-referential statements
-            r'^\w+\s+\w+\.$',  # Only two words total
+            r"^(What|How|Where|When|Why)\s+(could|would|should|might)",  # "What could it mean?"
+            r"^\w+\s+(said|asked|replied|answered)\s*(to|that)",  # Dialogue tags with continuation
+            r"^(I|We|You)\s+(was|were|am|is|are)\s+\w+\.$",  # Simple self-referential statements
+            r"^\w+\s+\w+\.$",  # Only two words total
         ]
 
         for pattern in generic_patterns:
@@ -320,27 +349,33 @@ class ResonantFragmentMiner:
                 return False
 
         # Reject fragments with too many proper names (characters)
-        proper_nouns = [word for word in words if word[0].isupper() and word.lower() not in ['the', 'a', 'an', 'i']]
+        proper_nouns = [
+            word
+            for word in words
+            if word[0].isupper() and word.lower() not in ["the", "a", "an", "i"]
+        ]
         if len(proper_nouns) > 2:  # Too character-specific
             return False
 
         # Prefer fragments with interesting imagery or action
         has_imagery = any(vocabulary.is_evocative_word(word.lower()) for word in words)
-        has_action = any(word.endswith(('ed', 'ing', 's')) for word in words if len(word) > 3)
+        has_action = any(word.endswith(("ed", "ing", "s")) for word in words if len(word) > 3)
 
         return has_imagery or has_action
 
-    def _add_fragment_to_collection(self, fragment: ResonantFragment, collection: FragmentCollection):
+    def _add_fragment_to_collection(
+        self, fragment: ResonantFragment, collection: FragmentCollection
+    ):
         """Add fragment to the appropriate category in collection"""
-        if fragment.pattern_type == 'causality':
+        if fragment.pattern_type == "causality":
             collection.causality.append(fragment)
-        elif fragment.pattern_type == 'temporal':
+        elif fragment.pattern_type == "temporal":
             collection.temporal.append(fragment)
-        elif fragment.pattern_type == 'universal':
+        elif fragment.pattern_type == "universal":
             collection.universal.append(fragment)
-        elif fragment.pattern_type == 'singular':
+        elif fragment.pattern_type == "singular":
             collection.singular.append(fragment)
-        elif fragment.pattern_type == 'modal':
+        elif fragment.pattern_type == "modal":
             collection.modal.append(fragment)
 
     def format_fragment_collection(self, collection: FragmentCollection) -> str:
@@ -356,11 +391,11 @@ class ResonantFragmentMiner:
 
         # Display each category
         categories = [
-            ('CAUSALITY', collection.causality, "Direct cause-and-effect patterns"),
-            ('TEMPORAL', collection.temporal, "Time-based transitions and flow"),
-            ('UNIVERSAL', collection.universal, "Sweeping statements and absolutes"),
-            ('SINGULAR', collection.singular, "Focus on individual elements"),
-            ('MODAL', collection.modal, "Conditional and possibility expressions")
+            ("CAUSALITY", collection.causality, "Direct cause-and-effect patterns"),
+            ("TEMPORAL", collection.temporal, "Time-based transitions and flow"),
+            ("UNIVERSAL", collection.universal, "Sweeping statements and absolutes"),
+            ("SINGULAR", collection.singular, "Focus on individual elements"),
+            ("MODAL", collection.modal, "Conditional and possibility expressions"),
         ]
 
         for category_name, fragments, description in categories:
@@ -376,17 +411,27 @@ class ResonantFragmentMiner:
             sorted_fragments = sorted(fragments, key=lambda f: f.poetic_score, reverse=True)
 
             # Show all fragments if total count > 50, otherwise limit to top 12 per category
-            display_limit = len(sorted_fragments) if collection.total_count() > 50 else min(12, len(sorted_fragments))
+            display_limit = (
+                len(sorted_fragments)
+                if collection.total_count() > 50
+                else min(12, len(sorted_fragments))
+            )
             for i, fragment in enumerate(sorted_fragments[:display_limit], 1):
                 tone_emoji = {
-                    'dark': '🌑', 'light': '☀️', 'dynamic': '⚡',
-                    'quiet': '🌙', 'mysterious': '🔮', 'neutral': '📝'
-                }.get(fragment.emotional_tone, '📝')
+                    "dark": "🌑",
+                    "light": "☀️",
+                    "dynamic": "⚡",
+                    "quiet": "🌙",
+                    "mysterious": "🔮",
+                    "neutral": "📝",
+                }.get(fragment.emotional_tone, "📝")
 
-                report.append(f"{i:2d}. \"{fragment.text}\"")
-                report.append(f"     {tone_emoji} {fragment.emotional_tone} | "
-                            f"⭐ {fragment.poetic_score:.2f} | "
-                            f"📏 {fragment.word_count} words")
+                report.append(f'{i:2d}. "{fragment.text}"')
+                report.append(
+                    f"     {tone_emoji} {fragment.emotional_tone} | "
+                    f"⭐ {fragment.poetic_score:.2f} | "
+                    f"📏 {fragment.word_count} words"
+                )
                 report.append("")
 
         report.append("CREATIVE SUGGESTIONS:")

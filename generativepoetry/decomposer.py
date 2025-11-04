@@ -11,6 +11,7 @@ from gutenbergpy.textget import get_text_by_id, strip_headers
 
 try:
     from internetarchive import download
+
     INTERNETARCHIVE_AVAILABLE = True
 except ImportError:
     INTERNETARCHIVE_AVAILABLE = False
@@ -23,15 +24,15 @@ from .setup_models import lazy_ensure_nltk_data, lazy_ensure_spacy_model
 # Lazy-load NLTK punkt tokenizer
 def _get_sent_detector():
     """Get sentence detector, downloading if needed."""
-    lazy_ensure_nltk_data('tokenizers/punkt', 'punkt', 'Punkt sentence tokenizer')
-    return nltk.data.load('tokenizers/punkt/english.pickle')
+    lazy_ensure_nltk_data("tokenizers/punkt", "punkt", "Punkt sentence tokenizer")
+    return nltk.data.load("tokenizers/punkt/english.pickle")
 
 
 # Lazy-load spaCy model
 def _get_spacy_nlp():
     """Get spaCy NLP model, downloading if needed."""
-    lazy_ensure_spacy_model('en_core_web_sm', 'English language model (small)')
-    nlp = spacy.load('en_core_web_sm', disable=['ner'])
+    lazy_ensure_spacy_model("en_core_web_sm", "English language model (small)")
+    nlp = spacy.load("en_core_web_sm", disable=["ner"])
     nlp.remove_pipe("parser")
     return nlp
 
@@ -56,12 +57,12 @@ def get_spacy_nlp():
         _spacy_nlp = _get_spacy_nlp()
     return _spacy_nlp
 
+
 inflector = inflect.engine()
-input_type = TypeVar('input_type', str, List[str])  # Must be str or list of strings
+input_type = TypeVar("input_type", str, List[str])  # Must be str or list of strings
 
 
 class ParsedText:
-
     def __init__(self, text):
         self.raw_text = text
         self.sentences = get_sent_detector().tokenize(text)
@@ -105,40 +106,40 @@ class ParsedText:
         return paragraph
 
 
-def validate_url(url, expected_netloc=''):
+def validate_url(url, expected_netloc=""):
     """Validate that the provided string is indeed a URL from the anticipated source
 
-     Keyword arguments:
-        expected_netloc (str) -- the expected site the URL should be from, i.e. archive.org or gutenberg.org
+    Keyword arguments:
+       expected_netloc (str) -- the expected site the URL should be from, i.e. archive.org or gutenberg.org
     """
     url_parts = urlsplit(url)
     if not url_parts.netloc or (expected_netloc and expected_netloc not in url_parts.netloc):
-        raise Exception(f'Not a valid f{expected_netloc} document url')
+        raise Exception(f"Not a valid f{expected_netloc} document url")
 
 
 def get_internet_archive_document(url) -> str:
     """Downloads a document (book, etc.) from Internet Archive and returns it as a string. The linked document must
-       have a text version. PDF text extraction is not supported at this time.
-       Returns a ParsedText instance.
+    have a text version. PDF text extraction is not supported at this time.
+    Returns a ParsedText instance.
     """
     if not INTERNETARCHIVE_AVAILABLE:
         raise ImportError("internetarchive package not available")
-    validate_url(url, expected_netloc='archive.org')
+    validate_url(url, expected_netloc="archive.org")
     url_parts = urlsplit(url).path.split("/")
     if len(url_parts) > 2:
         document_id = url_parts[2]
     else:
-        raise Exception('Not a valid url')
+        raise Exception("Not a valid url")
     try:
         response = download(document_id, glob_pattern="*txt", return_responses=True)[0]
         # Remove single newlines, preserve double  newlines (because they demarcate paragraphs
-        text = re.sub('(?<![\r\n])(\r?\n|\n?\r)(?![\r\n])', ' ', response.text.strip())
+        text = re.sub("(?<![\r\n])(\r?\n|\n?\r)(?![\r\n])", " ", response.text.strip())
         # This usually creates double spaces between lines because most lines end with single spaces, but to account
         # for cases in which lines end without spaces, we will handle this in two lines
-        return re.sub(r'(?<=[\S])(\s\s)(?=[\S])', ' ', text)
+        return re.sub(r"(?<=[\S])(\s\s)(?=[\S])", " ", text)
 
     except Exception:
-        raise Exception(f'Archive.org download failed for url: {url}')
+        raise Exception(f"Archive.org download failed for url: {url}")
 
 
 def get_gutenberg_document(url_or_id) -> str:
@@ -152,7 +153,7 @@ def get_gutenberg_document(url_or_id) -> str:
     """
     try:
         # Handle both URL and numeric ID
-        if isinstance(url_or_id, str) and 'gutenberg.org' in url_or_id:
+        if isinstance(url_or_id, str) and "gutenberg.org" in url_or_id:
             # Extract ID from URL
             document_id = get_document_id_from_url(url_or_id)
         else:
@@ -165,9 +166,9 @@ def get_gutenberg_document(url_or_id) -> str:
         if raw_text:
             text = strip_headers(raw_text)
             if isinstance(text, bytes):
-                text = text.decode('utf-8', errors='ignore')
+                text = text.decode("utf-8", errors="ignore")
             # Remove excessive whitespace
-            text = re.sub(r'\n\n+', '\n\n', text)
+            text = re.sub(r"\n\n+", "\n\n", text)
             return text
     except Exception as e:
         print(f"Error getting Gutenberg text: {e}")
@@ -175,7 +176,7 @@ def get_gutenberg_document(url_or_id) -> str:
     return ""
 
 
-def random_gutenberg_document(language_filter='en') -> str:
+def random_gutenberg_document(language_filter="en") -> str:
     """Downloads a random document (book, etc.) from Project Gutenberg and returns it as a string.
 
     Keyword arguments:
@@ -190,9 +191,9 @@ def random_gutenberg_document(language_filter='en') -> str:
             if raw_text:
                 text = strip_headers(raw_text)
                 if isinstance(text, bytes):
-                    text = text.decode('utf-8', errors='ignore')
+                    text = text.decode("utf-8", errors="ignore")
                 # Remove excessive whitespace
-                text = re.sub(r'\n\n+', '\n\n', text)
+                text = re.sub(r"\n\n+", "\n\n", text)
                 if len(text) > 1000:  # Ensure it has substantial content
                     return text
         except Exception:
@@ -201,7 +202,9 @@ def random_gutenberg_document(language_filter='en') -> str:
     return ""  # Return empty if we couldn't find anything
 
 
-def reconcile_replacement_word(original_word_with_ws, original_word_tag, replacement_word, replacement_word_tag) -> str:
+def reconcile_replacement_word(
+    original_word_with_ws, original_word_tag, replacement_word, replacement_word_tag
+) -> str:
     """Modify replacement word if needed to fix subject/verb agreement and preserve the whitespace or lack of before
     and after the original word.
 
@@ -212,13 +215,16 @@ def reconcile_replacement_word(original_word_with_ws, original_word_tag, replace
         replacement_word_tag (str):  part-of-speech tag of replacement word
     """
     # Pluralize or singularize the replacement word if we're dealing with nouns and one's plural and one's singular.
-    if original_word_tag == 'NNS' and replacement_word_tag == 'NN':
+    if original_word_tag == "NNS" and replacement_word_tag == "NN":
         replacement_word = inflector.plural(replacement_word)
-    elif original_word_tag == 'NN' and replacement_word_tag == 'NNS':
-        replacement_word = inflector.singular_noun(replacement_word) \
-            if inflector.singular_noun(replacement_word) else replacement_word
+    elif original_word_tag == "NN" and replacement_word_tag == "NNS":
+        replacement_word = (
+            inflector.singular_noun(replacement_word)
+            if inflector.singular_noun(replacement_word)
+            else replacement_word
+        )
     #  Use regex to preserve the whitespace of the word-to-be-replaced
-    replacement_word = re.sub(r'(?<!\S)\S+(?!\S)', replacement_word, original_word_with_ws)
+    replacement_word = re.sub(r"(?<!\S)\S+(?!\S)", replacement_word, original_word_with_ws)
     return replacement_word
 
 
@@ -231,12 +237,15 @@ def swap_parts_of_speech(text1, text2, parts_of_speech=None) -> (str, str):
                                   https://spacy.io/api/annotation#pos-tagging
     """
     if parts_of_speech is None:
-        parts_of_speech = ['ADJ', 'NOUN']
+        parts_of_speech = ["ADJ", "NOUN"]
     nlp = get_spacy_nlp()
     doc1 = nlp(text1)
     doc2 = nlp(text2)
     # First build two dictionaries (one for each text) whose keys are parts of speech and values are lists of words
-    doc1_words_keyed_by_pos, doc2_words_keyed_by_pos = defaultdict(lambda: []), defaultdict(lambda: [])
+    doc1_words_keyed_by_pos, doc2_words_keyed_by_pos = (
+        defaultdict(lambda: []),
+        defaultdict(lambda: []),
+    )
     for token in doc1:
         if token.pos_ in parts_of_speech and token.text not in doc1_words_keyed_by_pos[token.pos_]:
             doc1_words_keyed_by_pos[token.pos_].append((token.text, token.tag_))
@@ -250,8 +259,9 @@ def swap_parts_of_speech(text1, text2, parts_of_speech=None) -> (str, str):
             doc2_words_keyed_by_pos[token.pos_].append((token.text, token.tag_))
             try:
                 replacement_word, replacement_word_tag = doc1_words_keyed_by_pos[token.pos_].pop()
-                replacement_word = reconcile_replacement_word(token.text_with_ws, token.tag_, replacement_word,
-                                                              replacement_word_tag)
+                replacement_word = reconcile_replacement_word(
+                    token.text_with_ws, token.tag_, replacement_word, replacement_word_tag
+                )
                 text2_word_swaps[token.text_with_ws] = replacement_word
             except IndexError:  # There are no more words to substitute; the other text had more words of this p.o.s.
                 pass
@@ -261,15 +271,21 @@ def swap_parts_of_speech(text1, text2, parts_of_speech=None) -> (str, str):
         if token.pos_ in parts_of_speech:
             try:
                 replacement_word, replacement_word_tag = doc2_words_keyed_by_pos[token.pos_].pop()
-                replacement_word = reconcile_replacement_word(token.text_with_ws, token.tag_, replacement_word,
-                                                              replacement_word_tag)
+                replacement_word = reconcile_replacement_word(
+                    token.text_with_ws, token.tag_, replacement_word, replacement_word_tag
+                )
                 text1_word_swaps[token.text_with_ws] = replacement_word
             except IndexError:  # There are no more words to substitute; the other text had more words of this p.o.s.
                 pass
     # Recompose the text from its whitespace-aware tokens, substituting words if needed.
-    text1 = ''.join([text1_word_swaps.get(token.text_with_ws, token.text_with_ws) for token in doc1])
-    text2 = ''.join([text2_word_swaps.get(token.text_with_ws, token.text_with_ws) for token in doc2])
+    text1 = "".join(
+        [text1_word_swaps.get(token.text_with_ws, token.text_with_ws) for token in doc1]
+    )
+    text2 = "".join(
+        [text2_word_swaps.get(token.text_with_ws, token.text_with_ws) for token in doc2]
+    )
     return text1, text2
+
 
 def markov(input: input_type, ngram_size=1, num_output_sentences=5) -> List[str]:
     """Markov chain text generation from markovify library, supports custom n-gram length

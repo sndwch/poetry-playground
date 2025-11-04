@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 class MetaphorType(Enum):
     """Types of metaphors that can be generated."""
+
     SIMILE = "simile"  # X is like Y
     DIRECT = "direct"  # X is Y
     IMPLIED = "implied"  # Using verbs associated with Y for X
@@ -38,6 +39,7 @@ class MetaphorType(Enum):
 @dataclass
 class Metaphor:
     """A generated metaphor with metadata."""
+
     text: str
     source: str  # The tenor (what's being described)
     target: str  # The vehicle (what it's compared to)
@@ -69,7 +71,7 @@ class MetaphorGenerator:
             "{source} like {target}",
             "{source}, like {target},",
             "as {adjective} as {target}",
-            "{source} resembles {target}"
+            "{source} resembles {target}",
         ]
 
         self.direct_patterns = [
@@ -77,21 +79,21 @@ class MetaphorGenerator:
             "{source}: {target}",
             "{source}, a {target}",
             "the {target} of {source}",
-            "{source} becomes {target}"
+            "{source} becomes {target}",
         ]
 
         self.possessive_patterns = [
             "{target}'s {source}",
             "the {source} of {target}",
             "{target}-{source}",
-            "{source}, {target}'s child"
+            "{source}, {target}'s child",
         ]
 
         self.appositive_patterns = [
             "{source}, that {target}",
             "{source}, the {target}",
             "{source} — {target} —",
-            "{source} (a {target})"
+            "{source} (a {target})",
         ]
 
     def _init_verb_associations(self):
@@ -111,7 +113,9 @@ class MetaphorGenerator:
 
         # Get diverse documents using centralized system
         print(f"📚 Retrieving {num_texts} diverse documents for metaphor extraction...")
-        documents = get_diverse_gutenberg_documents(count=num_texts, min_length=DocumentConfig.MIN_LENGTH_METAPHORS)
+        documents = get_diverse_gutenberg_documents(
+            count=num_texts, min_length=DocumentConfig.MIN_LENGTH_METAPHORS
+        )
 
         if not documents:
             print("❌ Failed to retrieve documents for metaphor extraction")
@@ -123,7 +127,7 @@ class MetaphorGenerator:
         for doc_index, text in enumerate(documents, 1):
             found_metaphors = self._extract_metaphors_from_text(text, doc_index, len(documents))
             if found_metaphors:
-                all_metaphors.extend(found_metaphors[:QualityConfig.MAX_METAPHORS_PER_TEXT])
+                all_metaphors.extend(found_metaphors[: QualityConfig.MAX_METAPHORS_PER_TEXT])
 
         # Apply adaptive scaling: get more documents if yield is low
         min_target = max(15, num_texts * 5)  # Higher expectations for metaphors
@@ -131,11 +135,18 @@ class MetaphorGenerator:
 
         while len(all_metaphors) < min_target:
             remaining_needed = min_target - len(all_metaphors)
-            additional_batch = min(DocumentConfig.MAX_ADAPTIVE_BATCH, max(DocumentConfig.MIN_ADAPTIVE_BATCH, remaining_needed // 3))
+            additional_batch = min(
+                DocumentConfig.MAX_ADAPTIVE_BATCH,
+                max(DocumentConfig.MIN_ADAPTIVE_BATCH, remaining_needed // 3),
+            )
 
-            print(f"  📚 Found {len(all_metaphors)} metaphors, need {remaining_needed} more. Retrieving {additional_batch} additional documents...")
+            print(
+                f"  📚 Found {len(all_metaphors)} metaphors, need {remaining_needed} more. Retrieving {additional_batch} additional documents..."
+            )
 
-            additional_docs = get_diverse_gutenberg_documents(count=additional_batch, min_length=DocumentConfig.MIN_LENGTH_METAPHORS)
+            additional_docs = get_diverse_gutenberg_documents(
+                count=additional_batch, min_length=DocumentConfig.MIN_LENGTH_METAPHORS
+            )
 
             if not additional_docs:
                 print("  ⚠ Could not retrieve additional documents")
@@ -143,9 +154,11 @@ class MetaphorGenerator:
 
             for text in additional_docs:
                 documents_processed += 1
-                found_metaphors = self._extract_metaphors_from_text(text, documents_processed, None, is_additional=True)
+                found_metaphors = self._extract_metaphors_from_text(
+                    text, documents_processed, None, is_additional=True
+                )
                 if found_metaphors:
-                    all_metaphors.extend(found_metaphors[:QualityConfig.MAX_METAPHORS_PER_TEXT])
+                    all_metaphors.extend(found_metaphors[: QualityConfig.MAX_METAPHORS_PER_TEXT])
 
                 if len(all_metaphors) >= min_target:
                     break
@@ -159,7 +172,9 @@ class MetaphorGenerator:
                 seen_pairs.add(pair)
                 unique_metaphors.append(metaphor)
 
-        print(f"🎉 Extracted {len(unique_metaphors)} unique metaphor patterns from {documents_processed} diverse texts!")
+        print(
+            f"🎉 Extracted {len(unique_metaphors)} unique metaphor patterns from {documents_processed} diverse texts!"
+        )
 
         self._gutenberg_patterns.extend(unique_metaphors)
         return unique_metaphors
@@ -167,15 +182,19 @@ class MetaphorGenerator:
     def _get_text_signature(self, text: str) -> str:
         """Create a signature for a text to identify unique documents"""
         # Use first 200 characters as signature (after cleaning)
-        clean_text = re.sub(r'\s+', ' ', text[:500]).strip()
+        clean_text = re.sub(r"\s+", " ", text[:500]).strip()
         return clean_text[:200]
 
     def _is_valid_metaphor_pair(self, source: str, target: str) -> bool:
         """Check if a source-target pair makes a valid metaphor."""
         # Filter out common non-metaphorical phrases
         invalid_pairs = {
-            ('it', 'that'), ('this', 'that'), ('he', 'she'),
-            ('one', 'another'), ('some', 'other'), ('man', 'woman')
+            ("it", "that"),
+            ("this", "that"),
+            ("he", "she"),
+            ("one", "another"),
+            ("some", "other"),
+            ("man", "woman"),
         }
 
         if (source, target) in invalid_pairs:
@@ -186,19 +205,26 @@ class MetaphorGenerator:
             return False
 
         # Use word validator
-        return (word_validator.is_valid_english_word(source) and
-               word_validator.is_valid_english_word(target))
+        return word_validator.is_valid_english_word(
+            source
+        ) and word_validator.is_valid_english_word(target)
 
         return True
 
-    def _extract_metaphors_from_text(self, text: str, doc_index: int, total_docs: Optional[int] = None, is_additional: bool = False) -> List[Tuple[str, str, str]]:
+    def _extract_metaphors_from_text(
+        self,
+        text: str,
+        doc_index: int,
+        total_docs: Optional[int] = None,
+        is_additional: bool = False,
+    ) -> List[Tuple[str, str, str]]:
         """Extract metaphors from a single text using defined patterns."""
         patterns = [
-            r'(\w+)\s+(?:is|was|are|were)\s+like\s+(?:a\s+|an\s+|the\s+)?(\w+)',
-            r'(\w+)\s+as\s+(?:a\s+|an\s+|the\s+)?(\w+)',
-            r'(\w+),\s+(?:a\s+|an\s+|that\s+|this\s+)(\w+)',
-            r'the\s+(\w+)\s+of\s+(\w+)',
-            r'(\w+)\s+(?:resembles|mirrors|echoes)\s+(?:a\s+|an\s+|the\s+)?(\w+)',
+            r"(\w+)\s+(?:is|was|are|were)\s+like\s+(?:a\s+|an\s+|the\s+)?(\w+)",
+            r"(\w+)\s+as\s+(?:a\s+|an\s+|the\s+)?(\w+)",
+            r"(\w+),\s+(?:a\s+|an\s+|that\s+|this\s+)(\w+)",
+            r"the\s+(\w+)\s+of\s+(\w+)",
+            r"(\w+)\s+(?:resembles|mirrors|echoes)\s+(?:a\s+|an\s+|the\s+)?(\w+)",
         ]
 
         try:
@@ -211,7 +237,10 @@ class MetaphorGenerator:
             found_metaphors = []
 
             # Sample sentences from throughout the text, not just the beginning
-            sentences_to_check = parsed.sentences[:50] + parsed.sentences[len(parsed.sentences)//2:len(parsed.sentences)//2+50]
+            sentences_to_check = (
+                parsed.sentences[:50]
+                + parsed.sentences[len(parsed.sentences) // 2 : len(parsed.sentences) // 2 + 50]
+            )
 
             for sentence in sentences_to_check:
                 for pattern in patterns:
@@ -256,12 +285,14 @@ class MetaphorGenerator:
 
             for target in targets[:5]:  # Limit targets per source
                 # Generate different types
-                metaphors.extend([
-                    self._generate_simile(source, target),
-                    self._generate_direct_metaphor(source, target),
-                    self._generate_implied_metaphor(source, target),
-                    self._generate_possessive_metaphor(source, target)
-                ])
+                metaphors.extend(
+                    [
+                        self._generate_simile(source, target),
+                        self._generate_direct_metaphor(source, target),
+                        self._generate_implied_metaphor(source, target),
+                        self._generate_possessive_metaphor(source, target),
+                    ]
+                )
 
         # Remove None values
         metaphors = [m for m in metaphors if m is not None]
@@ -315,11 +346,13 @@ class MetaphorGenerator:
 
         # Add elaboration if we have grounds
         if grounds:
-            elaboration = random.choice([
-                f", both {grounds[0]}",
-                f" in its {grounds[0]}ness",
-                f": {grounds[0]}, {grounds[1] if len(grounds) > 1 else 'endless'}"
-            ])
+            elaboration = random.choice(
+                [
+                    f", both {grounds[0]}",
+                    f" in its {grounds[0]}ness",
+                    f": {grounds[0]}, {grounds[1] if len(grounds) > 1 else 'endless'}",
+                ]
+            )
             text += elaboration
 
         quality = self._score_metaphor(source, target, grounds)
@@ -330,7 +363,7 @@ class MetaphorGenerator:
             target=target,
             metaphor_type=MetaphorType.SIMILE,
             quality_score=quality,
-            grounds=grounds
+            grounds=grounds,
         )
 
     def _generate_direct_metaphor(self, source: str, target: str) -> Optional[Metaphor]:
@@ -347,7 +380,7 @@ class MetaphorGenerator:
             target=target,
             metaphor_type=MetaphorType.DIRECT,
             quality_score=quality,
-            grounds=grounds
+            grounds=grounds,
         )
 
     def _generate_implied_metaphor(self, source: str, target: str) -> Optional[Metaphor]:
@@ -365,10 +398,10 @@ class MetaphorGenerator:
         if not target_verbs:
             following = frequently_following_words(target, sample_size=10)
             # Filter for likely verbs (simple heuristic)
-            target_verbs = [w for w in following if w.endswith(('s', 'ed', 'ing'))]
+            target_verbs = [w for w in following if w.endswith(("s", "ed", "ing"))]
 
         if not target_verbs:
-            target_verbs = ['becomes', 'transforms', 'emerges']
+            target_verbs = ["becomes", "transforms", "emerges"]
 
         verb = random.choice(target_verbs)
         text = f"{source} {verb}"
@@ -387,7 +420,7 @@ class MetaphorGenerator:
             target=target,
             metaphor_type=MetaphorType.IMPLIED,
             quality_score=quality,
-            grounds=grounds
+            grounds=grounds,
         )
 
     def _generate_possessive_metaphor(self, source: str, target: str) -> Optional[Metaphor]:
@@ -404,7 +437,7 @@ class MetaphorGenerator:
             target=target,
             metaphor_type=MetaphorType.POSSESSIVE,
             quality_score=quality,
-            grounds=grounds
+            grounds=grounds,
         )
 
     def generate_extended_metaphor(self, source: str, target: str) -> Metaphor:
@@ -419,20 +452,24 @@ class MetaphorGenerator:
 
         # Add elaborations
         if grounds:
-            lines.append(f"Both {grounds[0]}, both {grounds[1] if len(grounds) > 1 else 'endless'}.")
+            lines.append(
+                f"Both {grounds[0]}, both {grounds[1] if len(grounds) > 1 else 'endless'}."
+            )
 
         # Add action
-        target_verbs = self.verb_associations.get(target.lower(), ['moves', 'shifts', 'changes'])
+        target_verbs = self.verb_associations.get(target.lower(), ["moves", "shifts", "changes"])
         if target_verbs:
             verb = random.choice(target_verbs)
             lines.append(f"It {verb} through {random.choice(vocabulary.abstract_entities[:8])}.")
 
         # Closing transformation
-        transformation = random.choice([
-            f"Until {source} and {target} are one.",
-            f"Where {target} ends, {source} begins.",
-            f"In this light, all {source} becomes {target}."
-        ])
+        transformation = random.choice(
+            [
+                f"Until {source} and {target} are one.",
+                f"Where {target} ends, {source} begins.",
+                f"In this light, all {source} becomes {target}.",
+            ]
+        )
         lines.append(transformation)
 
         text = "\n".join(lines)
@@ -444,7 +481,7 @@ class MetaphorGenerator:
             target=target,
             metaphor_type=MetaphorType.EXTENDED,
             quality_score=min(1.0, quality),
-            grounds=grounds
+            grounds=grounds,
         )
 
     def mine_gutenberg_for_domain(self, domain: str, sample_size: int = 5) -> List[Tuple[str, str]]:
@@ -513,19 +550,19 @@ class MetaphorGenerator:
         attributes = []
 
         # Time-related words
-        time_words = {'morning', 'evening', 'night', 'dawn', 'dusk', 'noon', 'midnight', 'season'}
-        emotion_words = {'disappointment', 'joy', 'sorrow', 'anger', 'fear', 'love', 'hope'}
-        nature_words = {'ocean', 'mountain', 'forest', 'river', 'sky', 'earth', 'storm', 'calm'}
+        time_words = {"morning", "evening", "night", "dawn", "dusk", "noon", "midnight", "season"}
+        emotion_words = {"disappointment", "joy", "sorrow", "anger", "fear", "love", "hope"}
+        nature_words = {"ocean", "mountain", "forest", "river", "sky", "earth", "storm", "calm"}
 
         # Generate contextual attributes
         all_words = {source.lower(), target.lower()}
 
         if any(word in time_words for word in all_words):
-            attributes.extend(vocabulary.get_thematic_words('temporal', count=2))
+            attributes.extend(vocabulary.get_thematic_words("temporal", count=2))
         elif any(word in emotion_words for word in all_words):
-            attributes.extend(vocabulary.get_thematic_words('emotional', count=2))
+            attributes.extend(vocabulary.get_thematic_words("emotional", count=2))
         elif any(word in nature_words for word in all_words):
-            attributes.extend(vocabulary.get_thematic_words('natural', count=2))
+            attributes.extend(vocabulary.get_thematic_words("natural", count=2))
         else:
             # Use shared vocabulary for general attributes
             attributes.extend(vocabulary.get_random_attributes(count=2))
@@ -538,8 +575,12 @@ class MetaphorGenerator:
 
         # Novelty: Penalize very common pairings
         common_pairs = {
-            ('life', 'journey'), ('love', 'fire'), ('time', 'river'),
-            ('mind', 'ocean'), ('death', 'sleep'), ('heart', 'stone')
+            ("life", "journey"),
+            ("love", "fire"),
+            ("time", "river"),
+            ("mind", "ocean"),
+            ("death", "sleep"),
+            ("heart", "stone"),
         }
         if (source, target) not in common_pairs:
             score += 0.2
@@ -578,5 +619,5 @@ class MetaphorGenerator:
             target=sense2_word,
             metaphor_type=MetaphorType.SYNESTHETIC,
             quality_score=0.7,
-            grounds=[senses[0], senses[1]]
+            grounds=[senses[0], senses[1]],
         )

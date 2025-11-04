@@ -10,6 +10,7 @@ from typing import Optional
 
 try:
     import numpy as np
+
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
@@ -83,9 +84,9 @@ class SeedManager:
             Dictionary with seed state information
         """
         return {
-            'current_seed': self._current_seed,
-            'seed_history': self._seed_history.copy(),
-            'numpy_available': NUMPY_AVAILABLE
+            "current_seed": self._current_seed,
+            "seed_history": self._seed_history.copy(),
+            "numpy_available": NUMPY_AVAILABLE,
         }
 
     def format_seed_output(self, prefix: str = "🎲") -> str:

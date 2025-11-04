@@ -1,22 +1,18 @@
 #!/usr/bin/env python3
 """Tests for the line seeds generator."""
 
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from generativepoetry.line_seeds import (
-    LineSeedGenerator,
-    LineSeed,
-    SeedType,
-    GenerationStrategy
-)
+from generativepoetry.line_seeds import LineSeed, LineSeedGenerator, SeedType
 
 
 def test_line_seed_generator():
     """Test basic line seed generation."""
     generator = LineSeedGenerator()
-    seed_words = ['ocean', 'memory', 'light']
+    seed_words = ["ocean", "memory", "light"]
 
     # Test opening line generation
     opening = generator.generate_opening_line(seed_words)
@@ -33,7 +29,7 @@ def test_line_seed_generator():
     assert isinstance(fragment, LineSeed)
     assert fragment.seed_type == SeedType.FRAGMENT
     assert fragment.text
-    assert '...' in fragment.text
+    assert "..." in fragment.text
     print(f"Fragment: {fragment.text}")
 
     # Test image seed generation
@@ -70,7 +66,7 @@ def test_line_seed_generator():
 def test_seed_collection():
     """Test generating a collection of seeds."""
     generator = LineSeedGenerator()
-    seed_words = ['night', 'stars', 'silence']
+    seed_words = ["night", "stars", "silence"]
 
     seeds = generator.generate_seed_collection(seed_words, num_seeds=10)
     assert len(seeds) <= 10
@@ -92,17 +88,17 @@ def test_different_moods():
     generator = LineSeedGenerator()
 
     # Test with dark/melancholic words
-    dark_words = ['shadow', 'grief', 'hollow']
+    dark_words = ["shadow", "grief", "hollow"]
     dark_opening = generator.generate_opening_line(dark_words)
     print(f"\nDark opening: {dark_opening.text}")
 
     # Test with bright/hopeful words
-    bright_words = ['dawn', 'bloom', 'singing']
+    bright_words = ["dawn", "bloom", "singing"]
     bright_opening = generator.generate_opening_line(bright_words)
     print(f"Bright opening: {bright_opening.text}")
 
     # Test with abstract words
-    abstract_words = ['time', 'thought', 'becoming']
+    abstract_words = ["time", "thought", "becoming"]
     abstract_opening = generator.generate_opening_line(abstract_words)
     print(f"Abstract opening: {abstract_opening.text}")
 
@@ -112,14 +108,16 @@ def test_quality_evaluation():
     generator = LineSeedGenerator()
 
     # Generate multiple seeds and check quality distribution
-    seed_words = ['rain', 'window', 'waiting']
+    seed_words = ["rain", "window", "waiting"]
     seeds = generator.generate_seed_collection(seed_words, num_seeds=20)
 
     qualities = [s.quality_score for s in seeds]
     avg_quality = sum(qualities) / len(qualities)
 
-    print(f"\nQuality scores - Min: {min(qualities):.2f}, "
-          f"Max: {max(qualities):.2f}, Avg: {avg_quality:.2f}")
+    print(
+        f"\nQuality scores - Min: {min(qualities):.2f}, "
+        f"Max: {max(qualities):.2f}, Avg: {avg_quality:.2f}"
+    )
 
     # Should have some variation in quality
     assert min(qualities) < max(qualities)
@@ -130,12 +128,12 @@ def test_quality_evaluation():
 def demonstrate_interactive_session():
     """Demonstrate how a poet might use this interactively."""
     generator = LineSeedGenerator()
-    seed_words = ['metamorphosis', 'glass', 'breaking']
+    seed_words = ["metamorphosis", "glass", "breaking"]
 
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
     print("INTERACTIVE POETRY IDEATION SESSION")
     print(f"Seed words: {', '.join(seed_words)}")
-    print("="*50 + "\n")
+    print("=" * 50 + "\n")
 
     # Generate opening
     opening = generator.generate_opening_line(seed_words)
@@ -144,7 +142,7 @@ def demonstrate_interactive_session():
     # Generate some fragments to develop
     print("Develop with these fragments:")
     for _ in range(3):
-        fragment = generator.generate_fragment(seed_words, position='middle')
+        fragment = generator.generate_fragment(seed_words, position="middle")
         print(f"  {fragment.text}")
 
     # Add an image
@@ -168,19 +166,19 @@ def demonstrate_interactive_session():
 
 if __name__ == "__main__":
     print("Testing Line Seed Generator...")
-    print("="*50)
+    print("=" * 50)
 
     test_line_seed_generator()
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
 
     test_seed_collection()
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
 
     test_different_moods()
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
 
     test_quality_evaluation()
-    print("\n" + "="*50)
+    print("\n" + "=" * 50)
 
     demonstrate_interactive_session()
 

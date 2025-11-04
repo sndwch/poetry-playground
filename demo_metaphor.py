@@ -2,20 +2,21 @@
 """Demo script for the metaphor generator."""
 
 # Suppress warnings
-from generativepoetry.pronouncing_patch import *
 from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
+from generativepoetry.pronouncing_patch import *
+
 
 def demo():
     """Run a demo of the metaphor generator."""
     generator = MetaphorGenerator()
 
     # Example seed words
-    seed_words = ['memory', 'time', 'silence']
+    seed_words = ["memory", "time", "silence"]
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("METAPHOR GENERATOR DEMO")
     print(f"Creating metaphors for: {', '.join(seed_words)}")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     # Generate batch of metaphors
     metaphors = generator.generate_metaphor_batch(seed_words, count=20)
@@ -61,10 +62,10 @@ def demo():
     # Generate an extended metaphor
     print("EXTENDED METAPHOR (Multi-line development):")
     print("-" * 50)
-    targets = generator._find_target_domains('memory')
+    targets = generator._find_target_domains("memory")
     if targets:
-        extended = generator.generate_extended_metaphor('memory', targets[0])
-        for line in extended.text.split('\n'):
+        extended = generator.generate_extended_metaphor("memory", targets[0])
+        for line in extended.text.split("\n"):
             print(f"  {line}")
     print()
 
@@ -85,7 +86,7 @@ def demo():
     if patterns:
         print(f"Found {len(patterns)} metaphorical patterns")
         for source, target, context in patterns[:3]:
-            print(f"  • \"{source}\" compared to \"{target}\"")
+            print(f'  • "{source}" compared to "{target}"')
             if len(context) > 100:
                 context = context[:100] + "..."
             print(f"    Context: {context}")
@@ -101,9 +102,9 @@ def demo():
         print(f"  {i}. {m.text}")
         print(f"     Quality: {m.quality_score:.2f}, Type: {m.metaphor_type.value}")
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("💡 Use these metaphors as inspiration for your poetry!")
-    print("="*70)
+    print("=" * 70)
 
 
 if __name__ == "__main__":

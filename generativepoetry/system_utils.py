@@ -8,10 +8,7 @@ def check_poppler_installed():
     """Check if Poppler is installed and available in PATH."""
     try:
         # Try to run pdfinfo which is part of poppler-utils
-        result = subprocess.run(['pdfinfo', '-v'],
-                              capture_output=True,
-                              text=True,
-                              timeout=2)
+        result = subprocess.run(["pdfinfo", "-v"], capture_output=True, text=True, timeout=2)
         return result.returncode == 0
     except (subprocess.SubprocessError, FileNotFoundError):
         return False
@@ -26,11 +23,11 @@ def get_poppler_install_instructions():
     elif system == "Linux":
         # Try to detect Linux distribution
         try:
-            with open('/etc/os-release') as f:
+            with open("/etc/os-release") as f:
                 content = f.read().lower()
-                if 'ubuntu' in content or 'debian' in content:
+                if "ubuntu" in content or "debian" in content:
                     return "Install with: sudo apt-get install poppler-utils"
-                elif 'fedora' in content or 'rhel' in content or 'centos' in content:
+                elif "fedora" in content or "rhel" in content or "centos" in content:
                     return "Install with: sudo yum install poppler-utils"
                 else:
                     return "Install poppler-utils using your distribution's package manager"
@@ -46,19 +43,20 @@ def check_hunspell_installed():
     """Check if hunspell Python package and system libraries are available."""
     try:
         import hunspell
+
         # Try to actually initialize it to verify system libraries
         system = platform.system()
         if system == "Darwin":
             # Try macOS default location
             try:
-                hunspell.HunSpell('/Library/Spelling/en_US.dic', '/Library/Spelling/en_US.aff')
+                hunspell.HunSpell("/Library/Spelling/en_US.dic", "/Library/Spelling/en_US.aff")
                 return True
             except Exception:
                 return False
         elif system == "Linux":
             # Try Linux default location
             try:
-                hunspell.HunSpell('/usr/share/hunspell/en_US.dic', '/usr/share/hunspell/en_US.aff')
+                hunspell.HunSpell("/usr/share/hunspell/en_US.dic", "/usr/share/hunspell/en_US.aff")
                 return True
             except Exception:
                 return False
@@ -81,13 +79,13 @@ def get_hunspell_install_instructions():
     elif system == "Linux":
         # Try to detect Linux distribution
         try:
-            with open('/etc/os-release') as f:
+            with open("/etc/os-release") as f:
                 content = f.read().lower()
-                if 'ubuntu' in content or 'debian' in content:
+                if "ubuntu" in content or "debian" in content:
                     return """Install with:
   1. sudo apt-get install libhunspell-dev hunspell-en-us
   2. pip install hunspell"""
-                elif 'fedora' in content or 'rhel' in content or 'centos' in content:
+                elif "fedora" in content or "rhel" in content or "centos" in content:
                     return """Install with:
   1. sudo yum install hunspell-devel hunspell-en
   2. pip install hunspell"""
@@ -133,7 +131,7 @@ def check_system_dependencies():
         print("  ✗ PDF to PNG conversion: DISABLED")
         print("\n  Installation instructions:")
         instructions = get_poppler_install_instructions()
-        for line in instructions.split('\n'):
+        for line in instructions.split("\n"):
             print(f"  {line}")
         print("\n  Note: This is OPTIONAL. You can still generate PDFs without it.")
 
@@ -149,7 +147,7 @@ def check_system_dependencies():
         print("  ✗ Spellchecking features: DISABLED")
         print("\n  Installation instructions:")
         instructions = get_hunspell_install_instructions()
-        for line in instructions.split('\n'):
+        for line in instructions.split("\n"):
             print(f"  {line}")
         print("\n  Note: This is OPTIONAL. Most features work without it.")
 

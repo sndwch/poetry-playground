@@ -22,6 +22,7 @@ from .word_validator import WordValidator
 @dataclass
 class TransformationStep:
     """Records a single word transformation"""
+
     original_word: str
     new_word: str
     transformation_type: str  # 'semantic', 'contextual', 'sonic'
@@ -32,6 +33,7 @@ class TransformationStep:
 @dataclass
 class PoemTransformation:
     """Complete record of a poem transformation"""
+
     original_poem: str
     transformed_poem: str
     steps: List[TransformationStep] = field(default_factory=list)
@@ -48,17 +50,86 @@ class PoemTransformer:
 
         # Words to avoid transforming (preserve poem structure)
         self.preserve_words = {
-            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
-            'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
-            'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can',
-            'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
-            'my', 'your', 'his', 'its', 'our', 'their',
-            'this', 'that', 'these', 'those', 'what', 'which', 'who', 'where', 'when', 'why', 'how',
-            'not', 'no', 'yes', 'so', 'if', 'then', 'else', 'than', 'as', 'like'
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "must",
+            "shall",
+            "can",
+            "i",
+            "you",
+            "he",
+            "she",
+            "it",
+            "we",
+            "they",
+            "me",
+            "him",
+            "her",
+            "us",
+            "them",
+            "my",
+            "your",
+            "his",
+            "its",
+            "our",
+            "their",
+            "this",
+            "that",
+            "these",
+            "those",
+            "what",
+            "which",
+            "who",
+            "where",
+            "when",
+            "why",
+            "how",
+            "not",
+            "no",
+            "yes",
+            "so",
+            "if",
+            "then",
+            "else",
+            "than",
+            "as",
+            "like",
         }
 
-    def transform_poem_iteratively(self, poem_text: str, num_passes: int = 5,
-                                 words_per_pass: int = 8) -> List[PoemTransformation]:
+    def transform_poem_iteratively(
+        self, poem_text: str, num_passes: int = 5, words_per_pass: int = 8
+    ) -> List[PoemTransformation]:
         """Transform a poem through multiple passes, like telephone game"""
         transformations = []
         current_poem = poem_text.strip()
@@ -88,10 +159,11 @@ class PoemTransformer:
 
         return transformations
 
-    def _single_transformation_pass(self, poem_text: str, pass_number: int,
-                                  target_changes: int) -> Optional[PoemTransformation]:
+    def _single_transformation_pass(
+        self, poem_text: str, pass_number: int, target_changes: int
+    ) -> Optional[PoemTransformation]:
         """Perform a single transformation pass on the poem"""
-        lines = poem_text.split('\n')
+        lines = poem_text.split("\n")
         new_lines = lines.copy()
         transformation_steps = []
 
@@ -103,8 +175,7 @@ class PoemTransformer:
 
         # Randomly select words to transform this pass
         words_to_transform = random.sample(
-            transformable_words,
-            min(target_changes, len(transformable_words))
+            transformable_words, min(target_changes, len(transformable_words))
         )
 
         for word_info in words_to_transform:
@@ -119,8 +190,7 @@ class PoemTransformer:
                 weights = [0.4, 0.4, 0.2]
 
             transformation_type = random.choices(
-                ['semantic', 'contextual', 'sonic'],
-                weights=weights
+                ["semantic", "contextual", "sonic"], weights=weights
             )[0]
 
             # Get replacement word
@@ -138,12 +208,14 @@ class PoemTransformer:
                     new_word=replacement,
                     transformation_type=transformation_type,
                     line_number=line_idx + 1,
-                    confidence=self._calculate_replacement_confidence(word, replacement, transformation_type)
+                    confidence=self._calculate_replacement_confidence(
+                        word, replacement, transformation_type
+                    ),
                 )
                 transformation_steps.append(step)
 
         if transformation_steps:
-            transformed_poem = '\n'.join(new_lines)
+            transformed_poem = "\n".join(new_lines)
             coherence_score = self._calculate_coherence_score(poem_text, transformed_poem)
 
             return PoemTransformation(
@@ -151,19 +223,19 @@ class PoemTransformer:
                 transformed_poem=transformed_poem,
                 steps=transformation_steps,
                 pass_number=pass_number,
-                coherence_score=coherence_score
+                coherence_score=coherence_score,
             )
 
         return None
 
     def _get_transformable_words(self, poem_text: str) -> List[Tuple[str, int]]:
         """Get list of words that can be transformed, with their line numbers"""
-        lines = poem_text.split('\n')
+        lines = poem_text.split("\n")
         transformable = []
 
         for line_idx, line in enumerate(lines):
             # Extract words, preserving their position
-            words = re.findall(r'\b[a-zA-Z]+\b', line)
+            words = re.findall(r"\b[a-zA-Z]+\b", line)
 
             for word in words:
                 word_lower = word.lower()
@@ -187,19 +259,18 @@ class PoemTransformer:
     def _get_replacement_word(self, word: str, transformation_type: str) -> Optional[str]:
         """Get a replacement word using the specified transformation type"""
         try:
-            if transformation_type == 'semantic':
+            if transformation_type == "semantic":
                 replacements = similar_meaning_words(word, sample_size=5, datamuse_api_max=15)
-            elif transformation_type == 'contextual':
+            elif transformation_type == "contextual":
                 replacements = contextually_linked_words(word, sample_size=5, datamuse_api_max=15)
-            elif transformation_type == 'sonic':
+            elif transformation_type == "sonic":
                 replacements = similar_sounding_words(word, sample_size=5, datamuse_api_max=15)
             else:
                 return None
 
             # Filter and validate replacements
             valid_replacements = [
-                r for r in replacements
-                if r != word and self._is_good_replacement(word, r)
+                r for r in replacements if r != word and self._is_good_replacement(word, r)
             ]
 
             if valid_replacements:
@@ -235,9 +306,12 @@ class PoemTransformer:
         """Replace a word in a line, preserving capitalization and punctuation"""
         # Handle different capitalization patterns
         patterns = [
-            (r'\b' + re.escape(old_word) + r'\b', new_word),  # exact match
-            (r'\b' + re.escape(old_word.capitalize()) + r'\b', new_word.capitalize()),  # capitalized
-            (r'\b' + re.escape(old_word.upper()) + r'\b', new_word.upper()),  # uppercase
+            (r"\b" + re.escape(old_word) + r"\b", new_word),  # exact match
+            (
+                r"\b" + re.escape(old_word.capitalize()) + r"\b",
+                new_word.capitalize(),
+            ),  # capitalized
+            (r"\b" + re.escape(old_word.upper()) + r"\b", new_word.upper()),  # uppercase
         ]
 
         for pattern, replacement in patterns:
@@ -246,15 +320,12 @@ class PoemTransformer:
 
         return line
 
-    def _calculate_replacement_confidence(self, original: str, replacement: str,
-                                        transformation_type: str) -> float:
+    def _calculate_replacement_confidence(
+        self, original: str, replacement: str, transformation_type: str
+    ) -> float:
         """Calculate confidence score for a replacement (0-1)"""
         # Base confidence by transformation type
-        base_confidence = {
-            'semantic': 0.8,
-            'contextual': 0.6,
-            'sonic': 0.4
-        }
+        base_confidence = {"semantic": 0.8, "contextual": 0.6, "sonic": 0.4}
 
         confidence = base_confidence.get(transformation_type, 0.5)
 
@@ -270,8 +341,8 @@ class PoemTransformer:
     def _calculate_coherence_score(self, original: str, transformed: str) -> float:
         """Calculate how coherent the transformed poem is (very basic heuristic)"""
         # This is a simple heuristic - could be much more sophisticated
-        original_words = set(re.findall(r'\b[a-zA-Z]+\b', original.lower()))
-        transformed_words = set(re.findall(r'\b[a-zA-Z]+\b', transformed.lower()))
+        original_words = set(re.findall(r"\b[a-zA-Z]+\b", original.lower()))
+        transformed_words = set(re.findall(r"\b[a-zA-Z]+\b", transformed.lower()))
 
         # Measure word overlap (higher = more coherent)
         if not original_words:
@@ -289,7 +360,7 @@ class PoemTransformer:
         poems = []
         for file_path in directory.glob("*.txt"):
             try:
-                with open(file_path, encoding='utf-8') as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read().strip()
                     if content:  # Skip empty files
                         poems.append((file_path.stem, str(file_path)))
@@ -299,7 +370,7 @@ class PoemTransformer:
         # Also check for .md files
         for file_path in directory.glob("*.md"):
             try:
-                with open(file_path, encoding='utf-8') as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read().strip()
                     if content:
                         poems.append((file_path.stem, str(file_path)))
@@ -310,24 +381,24 @@ class PoemTransformer:
 
     def load_poem(self, file_path: str) -> str:
         """Load and clean a poem from a file"""
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         # Remove markdown formatting but preserve line breaks
-        content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)  # Remove bold
-        content = re.sub(r'\*(.*?)\*', r'\1', content)      # Remove italic
-        content = re.sub(r'```.*?```', '', content, flags=re.DOTALL)  # Remove code blocks
-        content = re.sub(r'\\$', '', content, flags=re.MULTILINE)     # Remove line continuation
+        content = re.sub(r"\*\*(.*?)\*\*", r"\1", content)  # Remove bold
+        content = re.sub(r"\*(.*?)\*", r"\1", content)  # Remove italic
+        content = re.sub(r"```.*?```", "", content, flags=re.DOTALL)  # Remove code blocks
+        content = re.sub(r"\\$", "", content, flags=re.MULTILINE)  # Remove line continuation
 
         # Clean up whitespace
-        lines = content.split('\n')
+        lines = content.split("\n")
         cleaned_lines = []
         for line in lines:
             line = line.strip()
             if line:
                 cleaned_lines.append(line)
 
-        return '\n'.join(cleaned_lines)
+        return "\n".join(cleaned_lines)
 
     def generate_transformation_report(self, transformations: List[PoemTransformation]) -> str:
         """Generate a report showing the transformation process"""
@@ -364,7 +435,9 @@ class PoemTransformer:
 
             for step in transformation.steps:
                 conf_str = f"({step.confidence:.2f})" if step.confidence > 0 else ""
-                report.append(f"  Line {step.line_number}: '{step.original_word}' → '{step.new_word}' ({step.transformation_type}) {conf_str}")
+                report.append(
+                    f"  Line {step.line_number}: '{step.original_word}' → '{step.new_word}' ({step.transformation_type}) {conf_str}"
+                )
 
         # Show final result
         report.append("\nFINAL TRANSFORMED POEM:")

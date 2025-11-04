@@ -12,11 +12,28 @@ from .utils import has_invalid_characters, too_similar
 
 
 class StochasticJolasticWordGenerator:
-    common_words = ["the", "with", "in", "that", "not", "a", "an", "of", "for", "as", "like", "on", 'his', 'the',
-                    'your', 'my', 'their']
+    common_words = [
+        "the",
+        "with",
+        "in",
+        "that",
+        "not",
+        "a",
+        "an",
+        "of",
+        "for",
+        "as",
+        "like",
+        "on",
+        "his",
+        "the",
+        "your",
+        "my",
+        "their",
+    ]
 
     def __init__(self, previous_lines=None):
-        self.connector_choices = ['and', 'or', 'as', 'like', 'with']
+        self.connector_choices = ["and", "or", "as", "like", "with"]
         self.last_algorithms_used_to_reach_next_word = (None, None)
         self.previous_lines = previous_lines if previous_lines is not None else []
 
@@ -36,41 +53,69 @@ class StochasticJolasticWordGenerator:
         result = None
         while result is None:
             # Randomly choose up to two algorithms the next word - one's repeated in this list for increased probability
-            next_word_algorithms = [similar_sounding_word, similar_meaning_word, contextually_linked_word,
-                                    frequently_following_word, frequently_following_word]
+            next_word_algorithms = [
+                similar_sounding_word,
+                similar_meaning_word,
+                contextually_linked_word,
+                frequently_following_word,
+                frequently_following_word,
+            ]
             nw_algorithms_copy = next_word_algorithms.copy()
-            if self.last_algorithms_used_to_reach_next_word and self.last_algorithms_used_to_reach_next_word[0]:
+            if (
+                self.last_algorithms_used_to_reach_next_word
+                and self.last_algorithms_used_to_reach_next_word[0]
+            ):
                 # Don't use the same algorithm for picking two successive words
                 next_word_algorithms.remove(self.last_algorithms_used_to_reach_next_word[0])
             random_algorithm = random.choice(next_word_algorithms)
             # The frequently following function should always use the preceding word as input
             # But otherwise, this will randomly sometimes use a different preceding word as input
-            input_word = previous_words[-1] if random.random() <= .75 else random.choice(previous_words)
-            if random_algorithm != frequently_following_word and random.random() <= .25:
-                if self.last_algorithms_used_to_reach_next_word and self.last_algorithms_used_to_reach_next_word[1]:
+            input_word = (
+                previous_words[-1] if random.random() <= 0.75 else random.choice(previous_words)
+            )
+            if random_algorithm != frequently_following_word and random.random() <= 0.25:
+                if (
+                    self.last_algorithms_used_to_reach_next_word
+                    and self.last_algorithms_used_to_reach_next_word[1]
+                ):
                     # Same goe for the 2nd algorithm used though this should be pretty rare
                     nw_algorithms_copy.remove(self.last_algorithms_used_to_reach_next_word[1])
                 second_random_algorithm = random.choice(nw_algorithms_copy)
                 possible_result = random_algorithm(input_word)
-                possible_result = second_random_algorithm(possible_result) if possible_result else \
-                    second_random_algorithm(input_word)
-                self.last_algorithms_used_to_reach_next_word = (random_algorithm, second_random_algorithm)
+                possible_result = (
+                    second_random_algorithm(possible_result)
+                    if possible_result
+                    else second_random_algorithm(input_word)
+                )
+                self.last_algorithms_used_to_reach_next_word = (
+                    random_algorithm,
+                    second_random_algorithm,
+                )
             else:
                 possible_result = random_algorithm(input_word)
                 self.last_algorithms_used_to_reach_next_word = (random_algorithm, None)
-            if possible_result and not too_similar(possible_result, previous_words) and \
-                    not (len(self.previous_lines) > 0 and
-                         too_similar(possible_result, self.previous_lines[-1].split(' '))
-                         and not has_invalid_characters(possible_result)) and \
-                    not (rhymable and not rhyme(possible_result)):
+            if (
+                possible_result
+                and not too_similar(possible_result, previous_words)
+                and not (
+                    len(self.previous_lines) > 0
+                    and too_similar(possible_result, self.previous_lines[-1].split(" "))
+                    and not has_invalid_characters(possible_result)
+                )
+                and not (rhymable and not rhyme(possible_result))
+            ):
                 # Is the word too similar to another word in the line or the previous line?
                 # Does the word have numbers or spaces for some reason? (extremely rare)
                 # If so, keep trying; otherwise exit the loop and return the word)
                 result = possible_result
         return result
 
-    def last_word_of_markov_line(self, previous_words: List[str], rhyme_with: Optional[str] = None,
-                                 max_length: Optional[int] = None) -> str:
+    def last_word_of_markov_line(
+        self,
+        previous_words: List[str],
+        rhyme_with: Optional[str] = None,
+        max_length: Optional[int] = None,
+    ) -> str:
         """Get the last word of a poem line generated by the markov algorithm and optionally try to make it rhyme.
 
         :param previous_words: an ordered list of previous words of generated poem line
@@ -85,17 +130,27 @@ class StochasticJolasticWordGenerator:
                 word = rhyme(rhyme_with)
             # But if there's no rhyme result try another method altogether
             if not word:
-                while word is None or (max_length and len(word) > max_length) or word in self.common_words \
-                        or too_similar(word, previous_words):
+                while (
+                    word is None
+                    or (max_length and len(word) > max_length)
+                    or word in self.common_words
+                    or too_similar(word, previous_words)
+                ):
                     word = self.random_nonrhyme(previous_words)
         else:
-            while word is None or (max_length and len(word) > max_length) or word in self.common_words \
-                    or too_similar(word, previous_words):
+            while (
+                word is None
+                or (max_length and len(word) > max_length)
+                or word in self.common_words
+                or too_similar(word, previous_words)
+            ):
                 # Maybe revisit defaulting rhymable to true here
                 word = self.random_nonrhyme(previous_words, rhymable=True)
         return word
 
-    def nonlast_word_of_markov_line(self, previous_words: List[str], words_for_sampling: Optional[List[str]] = None) -> str:
+    def nonlast_word_of_markov_line(
+        self, previous_words: List[str], words_for_sampling: Optional[List[str]] = None
+    ) -> str:
         """Get the next word of a poem line generated by the markov algorithm.
 
         :param previous_words: an ordered list of previous words of generated poem line
@@ -105,7 +160,7 @@ class StochasticJolasticWordGenerator:
             words_for_sampling = []
         word = None
         if previous_words[-1] in self.common_words:
-            if random.random() >= .85 and len(previous_words) > 1:
+            if random.random() >= 0.85 and len(previous_words) > 1:
                 word = self.random_nonrhyme(previous_words[:-1])
             else:
                 while word is None or too_similar(word, previous_words):
@@ -114,10 +169,10 @@ class StochasticJolasticWordGenerator:
                     else:
                         word = self.random_nonrhyme(previous_words)
         else:
-            threshold = .6 if len(words_for_sampling) else 1
-            while word is None or too_similar(word,  previous_words):
+            threshold = 0.6 if len(words_for_sampling) else 1
+            while word is None or too_similar(word, previous_words):
                 if random.random() > threshold:
-                    if random.random() <= .5:
+                    if random.random() <= 0.5:
                         word = random.choice(self.connector_choices)
                     else:
                         if words_for_sampling:

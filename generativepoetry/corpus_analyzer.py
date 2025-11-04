@@ -25,6 +25,7 @@ from .word_validator import WordValidator
 @dataclass
 class PoetryMetrics:
     """Container for various poetry analysis metrics"""
+
     total_poems: int = 0
     total_lines: int = 0
     total_words: int = 0
@@ -47,9 +48,12 @@ class PoetryMetrics:
 @dataclass
 class VocabularyProfile:
     """Detailed vocabulary analysis"""
+
     most_common_words: List[Tuple[str, int]] = field(default_factory=list)
     most_common_content_words: List[Tuple[str, int]] = field(default_factory=list)
-    signature_words: List[Tuple[str, float]] = field(default_factory=list)  # High frequency relative to general usage
+    signature_words: List[Tuple[str, float]] = field(
+        default_factory=list
+    )  # High frequency relative to general usage
     rare_words: List[Tuple[str, int]] = field(default_factory=list)
 
     # Part-of-speech preferences
@@ -62,6 +66,7 @@ class VocabularyProfile:
 @dataclass
 class ThematicProfile:
     """Thematic and semantic analysis"""
+
     semantic_clusters: List[Tuple[str, List[str]]] = field(default_factory=list)
     metaphor_patterns: List[str] = field(default_factory=list)
     emotional_register: Dict[str, float] = field(default_factory=dict)
@@ -71,6 +76,7 @@ class ThematicProfile:
 @dataclass
 class VocabularyExpansion:
     """Suggested vocabulary expansions using Datamuse API"""
+
     original_word: str
     similar_meaning: List[str] = field(default_factory=list)
     contextual_links: List[str] = field(default_factory=list)
@@ -84,6 +90,7 @@ class VocabularyExpansion:
 @dataclass
 class InspiredStanza:
     """A generated stanza inspired by corpus patterns"""
+
     original_fragments: List[str]
     expanded_stanza: str
     substitution_map: Dict[str, str]  # original -> new word
@@ -93,6 +100,7 @@ class InspiredStanza:
 @dataclass
 class StyleFingerprint:
     """Complete style analysis of personal corpus"""
+
     metrics: PoetryMetrics = field(default_factory=PoetryMetrics)
     vocabulary: VocabularyProfile = field(default_factory=VocabularyProfile)
     themes: ThematicProfile = field(default_factory=ThematicProfile)
@@ -113,36 +121,188 @@ class PersonalCorpusAnalyzer:
     def __init__(self):
         """Initialize the analyzer with NLP tools"""
         try:
-            self.nlp = spacy.load('en_core_web_sm', disable=['ner', 'parser'])
+            self.nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
         except OSError:
             print("Warning: spaCy model not found. Some analysis features will be limited.")
             self.nlp = None
 
         try:
-            nltk.data.find('tokenizers/punkt')
+            nltk.data.find("tokenizers/punkt")
         except LookupError:
             print("Downloading NLTK punkt tokenizer...")
-            nltk.download('punkt')
+            nltk.download("punkt")
 
         self.word_validator = WordValidator()
         self.datamuse_api = datamuse.Datamuse()
 
         # Extended stop words including function words and common contractions
         self.stop_words = {
-            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
-            'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
-            'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can',
-            'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
-            'my', 'your', 'his', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs',
-            'this', 'that', 'these', 'those', 'what', 'which', 'who', 'whom', 'whose', 'where', 'when', 'why', 'how',
-            'not', 'no', 'yes', 'so', 'too', 'very', 'just', 'only', 'even', 'also', 'still', 'more', 'most',
-            'some', 'any', 'all', 'every', 'each', 'few', 'many', 'much', 'several', 'both', 'either', 'neither',
-            'if', 'then', 'else', 'than', 'as', 'like', 'since', 'until', 'while', 'before', 'after', 'during',
-            'up', 'down', 'out', 'off', 'over', 'under', 'again', 'further', 'once', 'here', 'there', 'everywhere',
-            'am', 'get', 'got', 'say', 'said', 'go', 'went', 'come', 'came', 'take', 'took', 'make', 'made',
-            'done', 'doing', 'put', 'know', 'knew', 'think', 'thought', 'see', 'saw', 'look', 'looked',
-            'way', 'one', 'two', 'three', 'first', 'last', 'next', 'back', 'away', 'around', 'about',
-            'into', 'from', 'through', 'across', 'between', 'among', 'within', 'without', 'above', 'below'
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "must",
+            "shall",
+            "can",
+            "i",
+            "you",
+            "he",
+            "she",
+            "it",
+            "we",
+            "they",
+            "me",
+            "him",
+            "her",
+            "us",
+            "them",
+            "my",
+            "your",
+            "his",
+            "its",
+            "our",
+            "their",
+            "mine",
+            "yours",
+            "hers",
+            "ours",
+            "theirs",
+            "this",
+            "that",
+            "these",
+            "those",
+            "what",
+            "which",
+            "who",
+            "whom",
+            "whose",
+            "where",
+            "when",
+            "why",
+            "how",
+            "not",
+            "no",
+            "yes",
+            "so",
+            "too",
+            "very",
+            "just",
+            "only",
+            "even",
+            "also",
+            "still",
+            "more",
+            "most",
+            "some",
+            "any",
+            "all",
+            "every",
+            "each",
+            "few",
+            "many",
+            "much",
+            "several",
+            "both",
+            "either",
+            "neither",
+            "if",
+            "then",
+            "else",
+            "than",
+            "as",
+            "like",
+            "since",
+            "until",
+            "while",
+            "before",
+            "after",
+            "during",
+            "up",
+            "down",
+            "out",
+            "off",
+            "over",
+            "under",
+            "again",
+            "further",
+            "once",
+            "here",
+            "there",
+            "everywhere",
+            "am",
+            "get",
+            "got",
+            "say",
+            "said",
+            "go",
+            "went",
+            "come",
+            "came",
+            "take",
+            "took",
+            "make",
+            "made",
+            "done",
+            "doing",
+            "put",
+            "know",
+            "knew",
+            "think",
+            "thought",
+            "see",
+            "saw",
+            "look",
+            "looked",
+            "way",
+            "one",
+            "two",
+            "three",
+            "first",
+            "last",
+            "next",
+            "back",
+            "away",
+            "around",
+            "about",
+            "into",
+            "from",
+            "through",
+            "across",
+            "between",
+            "among",
+            "within",
+            "without",
+            "above",
+            "below",
         }
 
     def analyze_directory(self, directory_path: str) -> StyleFingerprint:
@@ -154,14 +314,12 @@ class PersonalCorpusAnalyzer:
         poems = []
         for file_path in directory.glob("*.txt"):
             try:
-                with open(file_path, encoding='utf-8') as f:
+                with open(file_path, encoding="utf-8") as f:
                     content = f.read().strip()
                     if content:  # Skip empty files
-                        poems.append({
-                            'title': file_path.stem,
-                            'content': content,
-                            'path': str(file_path)
-                        })
+                        poems.append(
+                            {"title": file_path.stem, "content": content, "path": str(file_path)}
+                        )
             except Exception as e:
                 print(f"Warning: Could not read {file_path}: {e}")
                 continue
@@ -181,10 +339,10 @@ class PersonalCorpusAnalyzer:
         poem_structures = []
 
         for poem in poems:
-            content = self._clean_poem_text(poem['content'])
+            content = self._clean_poem_text(poem["content"])
             # Expand contractions for better analysis
             content = self._expand_contractions(content)
-            lines = [line.strip() for line in content.split('\n') if line.strip()]
+            lines = [line.strip() for line in content.split("\n") if line.strip()]
 
             all_text.append(content)
             all_lines.extend(lines)
@@ -211,25 +369,27 @@ class PersonalCorpusAnalyzer:
     def _clean_poem_text(self, text: str) -> str:
         """Clean poem text while preserving formatting"""
         # Remove markdown formatting but preserve line breaks
-        text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)  # Remove bold
-        text = re.sub(r'\*(.*?)\*', r'\1', text)      # Remove italic
-        text = re.sub(r'```.*?```', '', text, flags=re.DOTALL)  # Remove code blocks
-        text = re.sub(r'\\$', '', text, flags=re.MULTILINE)     # Remove line continuation
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)  # Remove bold
+        text = re.sub(r"\*(.*?)\*", r"\1", text)  # Remove italic
+        text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)  # Remove code blocks
+        text = re.sub(r"\\$", "", text, flags=re.MULTILINE)  # Remove line continuation
 
         # Normalize whitespace while preserving intentional spacing
-        lines = text.split('\n')
+        lines = text.split("\n")
         cleaned_lines = []
         for line in lines:
             line = line.strip()
             if line:
                 cleaned_lines.append(line)
 
-        return '\n'.join(cleaned_lines)
+        return "\n".join(cleaned_lines)
 
     def _expand_contractions(self, text: str) -> str:
         """Expand contractions to improve analysis accuracy"""
         # First normalize smart quotes to regular apostrophes
-        text = text.replace("'", "'").replace("'", "'").replace(chr(8217), "'").replace(chr(8216), "'")
+        text = (
+            text.replace("'", "'").replace("'", "'").replace(chr(8217), "'").replace(chr(8216), "'")
+        )
 
         contractions = {
             "didn't": "did not",
@@ -276,11 +436,11 @@ class PersonalCorpusAnalyzer:
             "we'd": "we would",
             "they'd": "they would",
             "he'd": "he would",
-            "she'd": "she would"
+            "she'd": "she would",
         }
 
         # Create pattern that matches contractions (case insensitive)
-        contraction_pattern = r'\b(' + '|'.join(re.escape(key) for key in contractions) + r')\b'
+        contraction_pattern = r"\b(" + "|".join(re.escape(key) for key in contractions) + r")\b"
 
         def replace_contraction(match):
             contraction = match.group(1).lower()
@@ -300,8 +460,24 @@ class PersonalCorpusAnalyzer:
 
         # Skip words that are likely contractions fragments or typos
         invalid_fragments = {
-            'didn', 'doesn', 'wouldn', 'couldn', 'shouldn', 'hasn', 'haven',
-            'hadn', 'isn', 'aren', 'wasn', 'weren', 've', 'll', 're', 'd', 't', 's'
+            "didn",
+            "doesn",
+            "wouldn",
+            "couldn",
+            "shouldn",
+            "hasn",
+            "haven",
+            "hadn",
+            "isn",
+            "aren",
+            "wasn",
+            "weren",
+            "ve",
+            "ll",
+            "re",
+            "d",
+            "t",
+            "s",
         }
 
         if word in invalid_fragments:
@@ -316,13 +492,47 @@ class PersonalCorpusAnalyzer:
 
         # Filter out crude slang and inappropriate terms
         inappropriate_words = {
-            'marijuana', 'cannabis', 'pot', 'weed', 'dope', 'drug', 'drugs',
-            'shit', 'crap', 'damn', 'hell', 'bitch', 'piss', 'fuck',
-            'sex', 'sexual', 'porn', 'naked', 'rape',
-            'kill', 'murder', 'death', 'dead', 'corpse', 'suicide',
-            'money', 'cash', 'dollar', 'profit', 'business', 'corporate',
-            'internet', 'website', 'computer', 'software', 'app',
-            'covid', 'pandemic', 'virus', 'disease', 'cancer'
+            "marijuana",
+            "cannabis",
+            "pot",
+            "weed",
+            "dope",
+            "drug",
+            "drugs",
+            "shit",
+            "crap",
+            "damn",
+            "hell",
+            "bitch",
+            "piss",
+            "fuck",
+            "sex",
+            "sexual",
+            "porn",
+            "naked",
+            "rape",
+            "kill",
+            "murder",
+            "death",
+            "dead",
+            "corpse",
+            "suicide",
+            "money",
+            "cash",
+            "dollar",
+            "profit",
+            "business",
+            "corporate",
+            "internet",
+            "website",
+            "computer",
+            "software",
+            "app",
+            "covid",
+            "pandemic",
+            "virus",
+            "disease",
+            "cancer",
         }
 
         if word_lower in inappropriate_words:
@@ -337,7 +547,7 @@ class PersonalCorpusAnalyzer:
             return False
 
         # Prefer words that are reasonably common but not too mundane
-        freq = word_frequency(word_lower, 'en')
+        freq = word_frequency(word_lower, "en")
         if freq < 1e-7 or freq > 1e-3:  # Too rare or too common
             return False
 
@@ -378,31 +588,33 @@ class PersonalCorpusAnalyzer:
         metrics.stanza_patterns = poem_structures
 
         # Vocabulary richness (type-token ratio)
-        all_words = ' '.join(all_lines).lower().split()
+        all_words = " ".join(all_lines).lower().split()
         unique_words = set(all_words)
         metrics.vocabulary_size = len(unique_words)
         metrics.vocabulary_richness = len(unique_words) / len(all_words) if all_words else 0
 
         # Punctuation and capitalization patterns
-        all_text = ' '.join(all_lines)
-        punctuation_chars = '.,!?;:-()[]"\'…'
+        all_text = " ".join(all_lines)
+        punctuation_chars = ".,!?;:-()[]\"'…"
         for char in punctuation_chars:
             metrics.punctuation_frequency[char] = all_text.count(char)
 
         # Capitalization patterns
-        caps_words = [word for line in all_lines for word in line.split() if word and word[0].isupper()]
-        metrics.capitalization_patterns['initial_caps'] = len(caps_words)
-        metrics.capitalization_patterns['all_caps'] = len([w for w in caps_words if w.isupper()])
+        caps_words = [
+            word for line in all_lines for word in line.split() if word and word[0].isupper()
+        ]
+        metrics.capitalization_patterns["initial_caps"] = len(caps_words)
+        metrics.capitalization_patterns["all_caps"] = len([w for w in caps_words if w.isupper()])
 
         return metrics
 
     def _count_syllables(self, word: str) -> int:
         """Simple syllable counting heuristic"""
-        word = word.lower().strip('.,!?;:"\'')
+        word = word.lower().strip(".,!?;:\"'")
         if not word:
             return 0
 
-        vowels = 'aeiouy'
+        vowels = "aeiouy"
         syllables = 0
         prev_was_vowel = False
 
@@ -415,7 +627,7 @@ class PersonalCorpusAnalyzer:
                 prev_was_vowel = False
 
         # Handle silent e
-        if word.endswith('e') and syllables > 1:
+        if word.endswith("e") and syllables > 1:
             syllables -= 1
 
         return max(1, syllables)
@@ -430,13 +642,15 @@ class PersonalCorpusAnalyzer:
 
         for text in all_text:
             # Use more careful word extraction
-            words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+            words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
             # Filter out single characters and fragments
             valid_words = [w for w in words if len(w) >= 2 and self._is_valid_word_for_analysis(w)]
             all_words.extend(valid_words)
 
             # Filter content words (non-stop words)
-            content_words.extend([w for w in valid_words if w not in self.stop_words and len(w) > 2])
+            content_words.extend(
+                [w for w in valid_words if w not in self.stop_words and len(w) > 2]
+            )
 
         # Most common words
         word_counter = Counter(all_words)
@@ -449,7 +663,7 @@ class PersonalCorpusAnalyzer:
         signature_words = []
         for word, count in content_counter.most_common(100):
             if count >= 2:  # Appears at least twice
-                general_freq = word_frequency(word, 'en')
+                general_freq = word_frequency(word, "en")
                 if general_freq > 0:
                     corpus_freq = count / len(content_words)
                     signature_score = corpus_freq / general_freq
@@ -461,7 +675,7 @@ class PersonalCorpusAnalyzer:
         # Rare words (low general frequency but used in corpus)
         rare_words = []
         for word, count in content_counter.items():
-            general_freq = word_frequency(word, 'en')
+            general_freq = word_frequency(word, "en")
             if 0 < general_freq < 1e-6 and count >= 2:  # Rare but used multiple times
                 rare_words.append((word, count))
 
@@ -480,11 +694,11 @@ class PersonalCorpusAnalyzer:
                     if token.is_alpha and not token.is_stop:
                         pos_counter[token.pos_] += 1
 
-                        if token.pos_ == 'ADJ':
+                        if token.pos_ == "ADJ":
                             adjectives[token.lemma_.lower()] += 1
-                        elif token.pos_ == 'VERB':
+                        elif token.pos_ == "VERB":
                             verbs[token.lemma_.lower()] += 1
-                        elif token.pos_ in ['NOUN', 'PROPN']:
+                        elif token.pos_ in ["NOUN", "PROPN"]:
                             nouns[token.lemma_.lower()] += 1
 
             profile.pos_distribution = dict(pos_counter)
@@ -504,15 +718,18 @@ class PersonalCorpusAnalyzer:
             poem_words = []
             for text in all_text:
                 doc = self.nlp(text)
-                words = [token.lemma_.lower() for token in doc
-                        if token.is_alpha and not token.is_stop and len(token.text) > 2]
+                words = [
+                    token.lemma_.lower()
+                    for token in doc
+                    if token.is_alpha and not token.is_stop and len(token.text) > 2
+                ]
                 poem_words.append(words)
 
             # Find words that frequently appear together
             co_occurrence = defaultdict(Counter)
             for words in poem_words:
                 for i, word1 in enumerate(words):
-                    for word2 in words[i+1:i+6]:  # Look at nearby words
+                    for word2 in words[i + 1 : i + 6]:  # Look at nearby words
                         if word1 != word2:
                             co_occurrence[word1][word2] += 1
                             co_occurrence[word2][word1] += 1
@@ -535,7 +752,7 @@ class PersonalCorpusAnalyzer:
             profile.semantic_clusters = clusters[:10]
 
         # Look for metaphor patterns (simple heuristics)
-        metaphor_indicators = ['like', 'as', 'is', 'was', 'becomes', 'turns into']
+        metaphor_indicators = ["like", "as", "is", "was", "becomes", "turns into"]
         metaphor_patterns = []
 
         for line in all_lines:
@@ -543,7 +760,9 @@ class PersonalCorpusAnalyzer:
             for indicator in metaphor_indicators:
                 if indicator in line_lower:
                     # Extract potential metaphor
-                    pattern = re.search(fr'(.{{0,20}}){re.escape(indicator)}(.{{0,30}})', line_lower)
+                    pattern = re.search(
+                        rf"(.{{0,20}}){re.escape(indicator)}(.{{0,30}})", line_lower
+                    )
                     if pattern:
                         metaphor_patterns.append(pattern.group(0).strip())
 
@@ -551,10 +770,10 @@ class PersonalCorpusAnalyzer:
 
         # Emotional register analysis (basic sentiment indicators)
         emotional_words = {
-            'joy': ['joy', 'happy', 'bright', 'light', 'laugh', 'dance', 'sing', 'hope', 'love'],
-            'melancholy': ['dark', 'shadow', 'empty', 'hollow', 'fade', 'lost', 'quiet', 'still'],
-            'intensity': ['fire', 'burn', 'rage', 'storm', 'wild', 'fierce', 'sharp', 'cut'],
-            'contemplation': ['think', 'wonder', 'perhaps', 'maybe', 'consider', 'ponder']
+            "joy": ["joy", "happy", "bright", "light", "laugh", "dance", "sing", "hope", "love"],
+            "melancholy": ["dark", "shadow", "empty", "hollow", "fade", "lost", "quiet", "still"],
+            "intensity": ["fire", "burn", "rage", "storm", "wild", "fierce", "sharp", "cut"],
+            "contemplation": ["think", "wonder", "perhaps", "maybe", "consider", "ponder"],
         }
 
         emotion_scores = dict.fromkeys(emotional_words, 0)
@@ -567,16 +786,20 @@ class PersonalCorpusAnalyzer:
         profile.emotional_register = emotion_scores
 
         # Concrete vs abstract analysis
-        concrete_indicators = ['see', 'hear', 'touch', 'smell', 'taste', 'hand', 'eye', 'skin']
-        abstract_indicators = ['think', 'feel', 'believe', 'hope', 'dream', 'memory', 'soul']
+        concrete_indicators = ["see", "hear", "touch", "smell", "taste", "hand", "eye", "skin"]
+        abstract_indicators = ["think", "feel", "believe", "hope", "dream", "memory", "soul"]
 
-        concrete_count = sum(text.lower().count(word) for text in all_text for word in concrete_indicators)
-        abstract_count = sum(text.lower().count(word) for text in all_text for word in abstract_indicators)
+        concrete_count = sum(
+            text.lower().count(word) for text in all_text for word in concrete_indicators
+        )
+        abstract_count = sum(
+            text.lower().count(word) for text in all_text for word in abstract_indicators
+        )
 
         profile.concrete_vs_abstract = {
-            'concrete': concrete_count,
-            'abstract': abstract_count,
-            'ratio': concrete_count / max(abstract_count, 1)
+            "concrete": concrete_count,
+            "abstract": abstract_count,
+            "ratio": concrete_count / max(abstract_count, 1),
         }
 
         return profile
@@ -610,17 +833,32 @@ class PersonalCorpusAnalyzer:
                     line_ends[last_two] += 1
 
         # Keep patterns that appear multiple times
-        fingerprint.opening_patterns = [pattern for pattern, count in line_starts.most_common(20) if count >= 2]
-        fingerprint.closing_patterns = [pattern for pattern, count in line_ends.most_common(15) if count >= 2]
+        fingerprint.opening_patterns = [
+            pattern for pattern, count in line_starts.most_common(20) if count >= 2
+        ]
+        fingerprint.closing_patterns = [
+            pattern for pattern, count in line_ends.most_common(15) if count >= 2
+        ]
 
         # Transitional phrases
-        transitions = ['but', 'and', 'yet', 'still', 'then', 'now', 'here', 'there', 'when', 'where']
+        transitions = [
+            "but",
+            "and",
+            "yet",
+            "still",
+            "then",
+            "now",
+            "here",
+            "there",
+            "when",
+            "where",
+        ]
         transition_phrases = []
 
         for line in all_lines:
             line_lower = line.lower()
             for trans in transitions:
-                if line_lower.startswith(trans + ' '):
+                if line_lower.startswith(trans + " "):
                     phrase = line_lower[:30]  # First 30 chars
                     transition_phrases.append(phrase)
 
@@ -678,7 +916,7 @@ class PersonalCorpusAnalyzer:
                 if score > 0:
                     report.append(f"    • {emotion}: {score:.4f}")
 
-        concrete_ratio = t.concrete_vs_abstract.get('ratio', 0)
+        concrete_ratio = t.concrete_vs_abstract.get("ratio", 0)
         if concrete_ratio > 0:
             tendency = "concrete" if concrete_ratio > 1 else "abstract"
             report.append(f"  Imagery tendency: {tendency} ({concrete_ratio:.2f}:1 ratio)")
@@ -709,7 +947,9 @@ class PersonalCorpusAnalyzer:
                 length_style = "moderate length"
             else:
                 length_style = "extended, expansive"
-            report.append(f"  Poem length tendency: {length_style} ({avg_poem_length:.1f} lines avg)")
+            report.append(
+                f"  Poem length tendency: {length_style} ({avg_poem_length:.1f} lines avg)"
+            )
 
         return "\n".join(report)
 
@@ -720,7 +960,9 @@ class PersonalCorpusAnalyzer:
         # Based on vocabulary analysis
         if fingerprint.vocabulary.signature_words:
             top_sig_words = [word for word, _ in fingerprint.vocabulary.signature_words[:5]]
-            suggestions.append(f"Explore variations of your signature words: {', '.join(top_sig_words)}")
+            suggestions.append(
+                f"Explore variations of your signature words: {', '.join(top_sig_words)}"
+            )
 
         # Based on thematic clusters
         if fingerprint.themes.semantic_clusters:
@@ -734,24 +976,28 @@ class PersonalCorpusAnalyzer:
         if emotions:
             dominant_emotion = max(emotions.items(), key=lambda x: x[1])
             opposite_emotions = {
-                'joy': 'melancholy',
-                'melancholy': 'joy',
-                'intensity': 'contemplation',
-                'contemplation': 'intensity'
+                "joy": "melancholy",
+                "melancholy": "joy",
+                "intensity": "contemplation",
+                "contemplation": "intensity",
             }
             opposite = opposite_emotions.get(dominant_emotion[0])
             if opposite:
-                suggestions.append(f"Consider exploring {opposite} to balance your {dominant_emotion[0]} tendency")
+                suggestions.append(
+                    f"Consider exploring {opposite} to balance your {dominant_emotion[0]} tendency"
+                )
 
         # Based on structure
         avg_length = fingerprint.metrics.avg_lines_per_poem
         if avg_length < 15:
-            suggestions.append("Try writing a longer piece to explore extended development of ideas")
+            suggestions.append(
+                "Try writing a longer piece to explore extended development of ideas"
+            )
         elif avg_length > 30:
             suggestions.append("Experiment with condensed, haiku-like brevity")
 
         # Based on concrete/abstract ratio
-        ratio = fingerprint.themes.concrete_vs_abstract.get('ratio', 1)
+        ratio = fingerprint.themes.concrete_vs_abstract.get("ratio", 1)
         if ratio > 2:
             suggestions.append("Balance concrete imagery with more abstract concepts")
         elif ratio < 0.5:
@@ -772,15 +1018,21 @@ class PersonalCorpusAnalyzer:
 
                 # Get similar meaning words
                 similar = similar_meaning_words(word, sample_size=6, datamuse_api_max=20)
-                expansion.similar_meaning = [w for w in similar if w != word and self._is_poetry_appropriate(w)][:4]
+                expansion.similar_meaning = [
+                    w for w in similar if w != word and self._is_poetry_appropriate(w)
+                ][:4]
 
                 # Get contextually linked words
                 contextual = contextually_linked_words(word, sample_size=6, datamuse_api_max=20)
-                expansion.contextual_links = [w for w in contextual if w != word and self._is_poetry_appropriate(w)][:4]
+                expansion.contextual_links = [
+                    w for w in contextual if w != word and self._is_poetry_appropriate(w)
+                ][:4]
 
                 # Get sound echoes (similar sounding)
                 sonic = similar_sounding_words(word, sample_size=5, datamuse_api_max=15)
-                expansion.sound_echoes = [w for w in sonic if w != word and self._is_poetry_appropriate(w)][:3]
+                expansion.sound_echoes = [
+                    w for w in sonic if w != word and self._is_poetry_appropriate(w)
+                ][:3]
 
                 # Only add if we found some alternatives
                 if expansion.all_alternatives():
@@ -802,12 +1054,12 @@ class PersonalCorpusAnalyzer:
         signature_words = {word for word, _ in fingerprint.vocabulary.signature_words[:15]}
 
         for line in all_lines:
-            line_words = set(re.findall(r'\b[a-zA-Z]+\b', line.lower()))
+            line_words = set(re.findall(r"\b[a-zA-Z]+\b", line.lower()))
             if signature_words & line_words and len(line.split()) >= 4:
                 source_lines.append(line)
 
         # Generate different types of inspired stanzas
-        for inspiration_type in ['semantic', 'contextual', 'sonic']:
+        for inspiration_type in ["semantic", "contextual", "sonic"]:
             try:
                 stanza = self._create_inspired_stanza(source_lines, fingerprint, inspiration_type)
                 if stanza:
@@ -815,8 +1067,9 @@ class PersonalCorpusAnalyzer:
             except Exception as e:
                 print(f"Could not generate {inspiration_type} stanza: {e}")
 
-    def _create_inspired_stanza(self, source_lines: List[str], fingerprint: StyleFingerprint,
-                               inspiration_type: str) -> Optional[InspiredStanza]:
+    def _create_inspired_stanza(
+        self, source_lines: List[str], fingerprint: StyleFingerprint, inspiration_type: str
+    ) -> Optional[InspiredStanza]:
         """Create a single inspired stanza using vocabulary substitutions"""
         import random
 
@@ -834,11 +1087,11 @@ class PersonalCorpusAnalyzer:
             original_word = expansion.original_word
 
             # Choose replacement based on inspiration type
-            if inspiration_type == 'semantic' and expansion.similar_meaning:
+            if inspiration_type == "semantic" and expansion.similar_meaning:
                 replacement = random.choice(expansion.similar_meaning)
-            elif inspiration_type == 'contextual' and expansion.contextual_links:
+            elif inspiration_type == "contextual" and expansion.contextual_links:
                 replacement = random.choice(expansion.contextual_links)
-            elif inspiration_type == 'sonic' and expansion.sound_echoes:
+            elif inspiration_type == "sonic" and expansion.sound_echoes:
                 replacement = random.choice(expansion.sound_echoes)
             else:
                 continue
@@ -854,19 +1107,25 @@ class PersonalCorpusAnalyzer:
             new_line = line
             for original, replacement in substitution_map.items():
                 # Case-sensitive replacement
-                new_line = re.sub(r'\b' + re.escape(original) + r'\b', replacement, new_line, flags=re.IGNORECASE)
+                new_line = re.sub(
+                    r"\b" + re.escape(original) + r"\b", replacement, new_line, flags=re.IGNORECASE
+                )
                 # Handle capitalization
-                new_line = re.sub(r'\b' + re.escape(original.capitalize()) + r'\b', replacement.capitalize(), new_line)
+                new_line = re.sub(
+                    r"\b" + re.escape(original.capitalize()) + r"\b",
+                    replacement.capitalize(),
+                    new_line,
+                )
 
             new_lines.append(new_line)
 
-        expanded_stanza = '\n'.join(new_lines)
+        expanded_stanza = "\n".join(new_lines)
 
         return InspiredStanza(
             original_fragments=original_fragments,
             expanded_stanza=expanded_stanza,
             substitution_map=substitution_map,
-            inspiration_type=inspiration_type
+            inspiration_type=inspiration_type,
         )
 
     def generate_inspiration_report(self, fingerprint: StyleFingerprint) -> str:
@@ -888,7 +1147,9 @@ class PersonalCorpusAnalyzer:
                     report.append(f"    Similar meaning: {', '.join(expansion.similar_meaning)}")
 
                 if expansion.contextual_links:
-                    report.append(f"    Contextually linked: {', '.join(expansion.contextual_links)}")
+                    report.append(
+                        f"    Contextually linked: {', '.join(expansion.contextual_links)}"
+                    )
 
                 if expansion.sound_echoes:
                     report.append(f"    Sound echoes: {', '.join(expansion.sound_echoes)}")
@@ -919,6 +1180,8 @@ class PersonalCorpusAnalyzer:
 
         if fingerprint.themes.semantic_clusters:
             clusters = fingerprint.themes.semantic_clusters[:2]
-            report.append(f"• Cross-pollinate word groups: {clusters[0][0]} + {clusters[1][0] if len(clusters) > 1 else 'new territory'}")
+            report.append(
+                f"• Cross-pollinate word groups: {clusters[0][0]} + {clusters[1][0] if len(clusters) > 1 else 'new territory'}"
+            )
 
         return "\n".join(report)

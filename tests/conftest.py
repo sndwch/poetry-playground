@@ -1,9 +1,11 @@
 """Pytest configuration and fixtures."""
 
-import pytest
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
+
+import pytest
+
 
 @pytest.fixture
 def temp_dir():
@@ -16,10 +18,10 @@ def temp_dir():
 def mock_api_responses():
     """Mock API responses to avoid hitting real APIs in tests."""
     responses = {
-        'rhyme': ['time', 'chime', 'lime'],
-        'similar_sounding': ['test', 'best', 'rest'],
-        'similar_meaning': ['exam', 'quiz', 'trial'],
-        'frequently_following': ['the', 'and', 'of'],
+        "rhyme": ["time", "chime", "lime"],
+        "similar_sounding": ["test", "best", "rest"],
+        "similar_meaning": ["exam", "quiz", "trial"],
+        "frequently_following": ["the", "and", "of"],
     }
     return responses
 
@@ -27,7 +29,7 @@ def mock_api_responses():
 @pytest.fixture(autouse=True)
 def disable_network_calls():
     """Disable network calls in tests by default."""
-    with patch('requests.get') as mock_get:
+    with patch("requests.get") as mock_get:
         mock_get.side_effect = Exception("Network calls disabled in tests")
         yield mock_get
 
