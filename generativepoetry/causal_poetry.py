@@ -16,7 +16,7 @@ from typing import Dict, List, Set, Tuple, Optional
 from collections import defaultdict
 
 from .word_validator import WordValidator
-from .decomposer import random_gutenberg_document
+from .document_library import get_diverse_gutenberg_documents
 from .vocabulary import vocabulary
 
 
@@ -89,26 +89,28 @@ class ResonantFragmentMiner:
         # Use shared vocabulary for emotional tone classification
 
     def mine_fragments(self, target_count: int = 50, num_texts: int = 5) -> FragmentCollection:
-        """Mine resonant fragments from classic literature"""
-        print(f"🔍 Mining {target_count} resonant fragments from {num_texts} classic texts...")
+        """Mine resonant fragments from classic literature using diverse document library"""
+        print(f"🔍 Mining {target_count} resonant fragments from {num_texts} diverse classic texts...")
 
         collection = FragmentCollection()
         seen_fragments = set()  # Deduplication tracking
-        attempts = 0
-        max_attempts = max(num_texts * 3, target_count // 5)  # Scale with target
         fragments_per_text = max(3, target_count // num_texts)  # Distribute across texts
 
-        while collection.total_count() < target_count and attempts < max_attempts:
-            attempts += 1
+        # Get diverse documents all at once - this ensures variety
+        print(f"  📚 Retrieving {num_texts} diverse documents...")
+        documents = get_diverse_gutenberg_documents(count=num_texts, min_length=5000)
+
+        if not documents:
+            print("❌ Failed to retrieve any documents. Check internet connection.")
+            return collection
+
+        print(f"  ✓ Successfully retrieved {len(documents)} diverse documents")
+
+        # Mine fragments from each document
+        for doc_index, text in enumerate(documents, 1):
+            print(f"  📖 Mining from document {doc_index}/{len(documents)}... (found {collection.total_count()}/{target_count})")
 
             try:
-                # Get a random Gutenberg text
-                text = random_gutenberg_document()
-                if not text or len(text) < 1000:
-                    continue
-
-                print(f"  Scanning text {attempts}... (found {collection.total_count()}/{target_count})")
-
                 # Mine fragments from this text
                 fragments = self._extract_fragments_from_text(text)
 
@@ -133,14 +135,13 @@ class ResonantFragmentMiner:
                         self._add_fragment_to_collection(fragment, collection)
                         added_from_this_text += 1
 
-                # Brief pause
-                time.sleep(0.3)
+                print(f"    ✓ Added {added_from_this_text} fragments from document {doc_index}")
 
             except Exception as e:
-                print(f"    Warning: Error processing text {attempts}: {e}")
+                print(f"    ⚠ Warning: Error processing document {doc_index}: {e}")
                 continue
 
-        print(f"Successfully mined {collection.total_count()} unique fragments from {attempts} texts!")
+        print(f"🎉 Successfully mined {collection.total_count()} unique fragments from {len(documents)} diverse texts!")
         return collection
 
     def _extract_fragments_from_text(self, text: str) -> List[ResonantFragment]:

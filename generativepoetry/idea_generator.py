@@ -13,7 +13,8 @@ from dataclasses import dataclass, field
 from typing import List, Dict, Set, Optional
 from enum import Enum
 
-from .decomposer import random_gutenberg_document, ParsedText
+from .decomposer import ParsedText
+from .document_library import get_diverse_gutenberg_documents
 from .word_validator import WordValidator
 
 

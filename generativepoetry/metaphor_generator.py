@@ -16,9 +16,9 @@ from .lexigen import (
 from .vocabulary import vocabulary
 from .decomposer import (
     get_gutenberg_document,
-    random_gutenberg_document,
     ParsedText
 )
+from .document_library import get_diverse_gutenberg_documents
 from .utils import filter_word_list
 
 from .word_validator import word_validator
