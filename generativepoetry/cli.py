@@ -12,6 +12,7 @@ from generativepoetry.line_seeds import LineSeedGenerator, SeedType
 from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
 from generativepoetry.poem_transformer import PoemTransformer
+from generativepoetry.idea_generator import PoetryIdeaGenerator, IdeaType
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -501,6 +502,122 @@ def poem_transformer_action():
     input()
 
 
+def idea_generator_action():
+    """Generate poetry ideas from classic literature"""
+    generator = PoetryIdeaGenerator()
+
+    print("\n" + "="*60)
+    print("POETRY IDEA GENERATOR")
+    print("="*60)
+    print("\nStruggling with writer's block? Let classic literature spark")
+    print("your creativity! This tool mines Project Gutenberg texts for")
+    print("evocative fragments, scenarios, and concepts to inspire poems.")
+
+    # Get number of ideas to generate
+    try:
+        num_input = input("\nHow many ideas would you like? (default: 20): ").strip()
+        num_ideas = int(num_input) if num_input else 20
+        num_ideas = max(5, min(50, num_ideas))  # Limit 5-50
+    except ValueError:
+        num_ideas = 20
+
+    # Ask about preferred categories
+    print(f"\nIdea categories available:")
+    categories = {
+        1: ("Emotional Moments", IdeaType.EMOTIONAL_MOMENT),
+        2: ("Vivid Imagery", IdeaType.VIVID_IMAGERY),
+        3: ("Character Situations", IdeaType.CHARACTER_SITUATION),
+        4: ("Philosophical Fragments", IdeaType.PHILOSOPHICAL_FRAGMENT),
+        5: ("Setting Descriptions", IdeaType.SETTING_DESCRIPTION),
+        6: ("Dialogue Sparks", IdeaType.DIALOGUE_SPARK),
+        7: ("Opening Lines", IdeaType.OPENING_LINE),
+        8: ("Sensory Details", IdeaType.SENSORY_DETAIL),
+        9: ("Conflict Scenarios", IdeaType.CONFLICT_SCENARIO),
+        10: ("Metaphysical Concepts", IdeaType.METAPHYSICAL_CONCEPT),
+    }
+
+    for num, (name, _) in categories.items():
+        print(f"  {num}. {name}")
+
+    print(f"  11. All categories (mixed)")
+
+    try:
+        category_choice = input(f"\nChoose category (1-11, default: 11): ").strip()
+        choice_num = int(category_choice) if category_choice else 11
+
+        if 1 <= choice_num <= 10:
+            preferred_types = [categories[choice_num][1]]
+            print(f"Focusing on: {categories[choice_num][0]}")
+        else:
+            preferred_types = None  # All categories
+            print("Using all categories")
+
+    except ValueError:
+        preferred_types = None
+        print("Using all categories")
+
+    print(f"\nGenerating {num_ideas} poetry ideas...")
+    print("This may take a moment as we sample from classic literature...")
+
+    try:
+        # Generate the ideas
+        collection = generator.generate_ideas(num_ideas, preferred_types)
+
+        if collection.total_count() > 0:
+            print("\n" + "="*60)
+            print("IDEAS GENERATED")
+            print("="*60)
+
+            # Generate and display the report
+            report = generator.generate_idea_report(collection)
+            print(report)
+
+            # Interactive options
+            print("\n" + "="*60)
+            print("OPTIONS:")
+            print("1. Generate more ideas")
+            print("2. Focus on a different category")
+            print("3. Get random selection for immediate use")
+            print("4. Return to main menu")
+
+            choice = input("\nYour choice (1-4): ").strip()
+
+            if choice == '1':
+                # Generate more ideas
+                more_ideas = generator.generate_ideas(10, preferred_types)
+                print(f"\nGenerated {more_ideas.total_count()} additional ideas:")
+                additional_report = generator.generate_idea_report(more_ideas)
+                print(additional_report)
+
+            elif choice == '2':
+                # Recursive call with different category
+                idea_generator_action()
+                return
+
+            elif choice == '3':
+                # Random selection for immediate use
+                random_ideas = collection.get_random_mixed_selection(5)
+                print("\nRANDOM SELECTION FOR IMMEDIATE USE:")
+                print("-" * 50)
+                for i, idea in enumerate(random_ideas, 1):
+                    category_name = idea.idea_type.value.replace('_', ' ').title()
+                    print(f"{i}. [{category_name}] \"{idea.text}\"")
+                    print(f"   Prompt: {idea.creative_prompt}")
+                    print()
+
+        else:
+            print("\nUnable to generate ideas at this time.")
+            print("This might be due to temporary Gutenberg API issues.")
+            print("Please try again in a moment.")
+
+    except Exception as e:
+        print(f"\nError generating ideas: {e}")
+        print("Please try again with different settings.")
+
+    print("\nPress Enter to return to main menu...")
+    input()
+
+
 def main():
     menu = ConsoleMenu("Generative Poetry Menu", "What kind of poem would you like to generate?")
 
@@ -517,6 +634,7 @@ def main():
     metaphor_item = FunctionItem("🔮 Generate Metaphors (Poetry Ideation)", metaphor_generator_action)
     corpus_item = FunctionItem("📊 Analyze Personal Poetry Corpus", corpus_analyzer_action)
     transformer_item = FunctionItem("🚢 Ship of Theseus Poem Transformer", poem_transformer_action)
+    idea_item = FunctionItem("💡 Poetry Idea Generator (Beat Writer's Block)", idea_generator_action)
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -530,7 +648,8 @@ def main():
     menu.append_item(line_seeds_item)
     menu.append_item(metaphor_item)
     menu.append_item(corpus_item)
-    menu.append_item(transformer_item)  # Add the poem transformer
+    menu.append_item(transformer_item)
+    menu.append_item(idea_item)  # Add the idea generator
     menu.append_item(check_deps_item)
 
     menu.start()
