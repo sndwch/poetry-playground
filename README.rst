@@ -2,14 +2,6 @@ Generative Poetry
 =================
 A library primarily for procedurally generating visual poems
 
-.. image:: https://travis-ci.org/coreybobco/generativepoetry-py.svg?branch=master
-   :target: https://travis-ci.org/coreybobco/generativepoetry-py
-   :alt: Build Status
-
-.. image:: https://coveralls.io/repos/github/coreybobco/generativepoetry-py/badge.svg?branch=master
-   :target: https://coveralls.io/github/coreybobco/generativepoetry-py?branch=master
-   :alt: Coverage Status
-
 .. image:: https://badge.fury.io/py/generativepoetry.svg
    :target: https://badge.fury.io/py/generativepoetry
 
