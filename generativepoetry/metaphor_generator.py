@@ -141,12 +141,24 @@ class MetaphorGenerator:
             List of extracted metaphor patterns from diverse sources
         """
         all_metaphors = []
+        used_text_signatures = set()  # Track texts we've already used
 
-        for _ in range(num_texts):
+        attempts = 0
+        max_attempts = num_texts * 3  # Allow multiple attempts to find diverse texts
+
+        while len(all_metaphors) < num_texts * 10 and attempts < max_attempts:
+            attempts += 1
             try:
                 text = random_gutenberg_document()
                 if not text:
                     continue
+
+                # Create a signature for this text to check if we've seen it before
+                text_signature = self._get_text_signature(text)
+                if text_signature in used_text_signatures:
+                    continue  # Skip this text, we've already processed it
+
+                used_text_signatures.add(text_signature)
 
                 # Parse text
                 parsed = ParsedText(text)
@@ -179,8 +191,12 @@ class MetaphorGenerator:
                     found_metaphors.sort(key=lambda x: len(x[2]))
                     all_metaphors.extend(found_metaphors[:10])  # Take top 10 from each text
 
+                    # Add text info to metaphors for tracking source diversity
+                    text_preview = text[:100].replace('\n', ' ')
+                    logger.debug(f"Extracted {len(found_metaphors)} metaphors from: {text_preview}...")
+
             except Exception as e:
-                logger.debug(f"Error extracting from Gutenberg text {_+1}: {e}")
+                logger.debug(f"Error extracting from Gutenberg text: {e}")
                 continue
 
         # Remove duplicates and store for later use
@@ -193,8 +209,14 @@ class MetaphorGenerator:
                 unique_metaphors.append(metaphor)
 
         self._gutenberg_patterns.extend(unique_metaphors)
-        logger.debug(f"Extracted {len(unique_metaphors)} unique metaphors from {num_texts} texts")
+        logger.debug(f"Extracted {len(unique_metaphors)} unique metaphors from {len(used_text_signatures)} different texts")
         return unique_metaphors
+
+    def _get_text_signature(self, text: str) -> str:
+        """Create a signature for a text to identify unique documents"""
+        # Use first 200 characters as signature (after cleaning)
+        clean_text = re.sub(r'\s+', ' ', text[:500]).strip()
+        return clean_text[:200]
 
     def _is_valid_metaphor_pair(self, source: str, target: str) -> bool:
         """Check if a source-target pair makes a valid metaphor."""

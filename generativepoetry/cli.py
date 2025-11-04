@@ -141,9 +141,27 @@ def metaphor_generator_action():
         if gutenberg_patterns:
             print("\nINSPIRED BY CLASSIC LITERATURE:")
             print("-" * 40)
-            for source, target, sentence in gutenberg_patterns[:3]:
+
+            # Group patterns by source text to show diversity
+            text_groups = {}
+            for source, target, sentence in gutenberg_patterns:
+                text_key = sentence[:50]  # Use first 50 chars as grouping key
+                if text_key not in text_groups:
+                    text_groups[text_key] = []
+                text_groups[text_key].append((source, target, sentence))
+
+            # Show patterns from different texts
+            shown_count = 0
+            for text_key, patterns in text_groups.items():
+                if shown_count >= 3:
+                    break
+                source, target, sentence = patterns[0]  # Take first pattern from this text
                 print(f"  • {source} like {target}")
                 print(f"    From: \"{sentence[:80]}...\"")
+                shown_count += 1
+
+            if len(text_groups) > 1:
+                print(f"    (Patterns from {len(text_groups)} different classic texts)")
 
         # Generate a synesthetic metaphor
         print("\nSYNESTHETIC (CROSS-SENSORY):")
@@ -170,11 +188,28 @@ def metaphor_generator_action():
             print("\nMining additional Gutenberg texts...")
             patterns = generator.extract_metaphor_patterns(num_texts=5)
             if patterns:
-                print(f"Found {len(patterns)} metaphorical patterns from 5 diverse texts")
-                # Show a few examples
-                for source, target, sentence in patterns[:3]:
+                # Group by text source to show diversity
+                text_groups = {}
+                for source, target, sentence in patterns:
+                    text_key = sentence[:60]
+                    if text_key not in text_groups:
+                        text_groups[text_key] = []
+                    text_groups[text_key].append((source, target, sentence))
+
+                print(f"Found {len(patterns)} metaphorical patterns from {len(text_groups)} different texts")
+
+                # Show examples from different texts
+                shown_texts = 0
+                for text_key, group_patterns in text_groups.items():
+                    if shown_texts >= 3:
+                        break
+                    source, target, sentence = group_patterns[0]
                     print(f"  • {source} like {target}")
                     print(f"    From: \"{sentence[:80]}...\"")
+                    shown_texts += 1
+
+                if len(text_groups) > 3:
+                    print(f"    (Plus patterns from {len(text_groups) - 3} more texts)")
             else:
                 print("No additional patterns found")
         else:
