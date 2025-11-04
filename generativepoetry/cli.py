@@ -13,6 +13,8 @@ from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
 from generativepoetry.poem_transformer import PoemTransformer
 from generativepoetry.idea_generator import PoetryIdeaGenerator, IdeaType
+from generativepoetry.six_degrees import SixDegrees
+from generativepoetry.causal_poetry import ResonantFragmentMiner
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -618,6 +620,96 @@ def idea_generator_action():
     input()
 
 
+def six_degrees_action():
+    """Explore word convergence paths"""
+    sd = SixDegrees()
+
+    print("\n" + "="*60)
+    print("SIX DEGREES - WORD CONVERGENCE EXPLORER")
+    print("="*60)
+    print("\nDiscover the hidden pathways between words!")
+    print("This explores how two words can connect through semantic relationships,")
+    print("like the Wikipedia phenomenon where you can reach any page through links.")
+
+    while True:
+        print("\n" + "-"*40)
+        word_a = input("Enter first word (or 'exit' to return): ").strip()
+        if word_a.lower() == 'exit':
+            break
+
+        word_b = input("Enter second word: ").strip()
+        if not word_a or not word_b:
+            print("Please enter both words.")
+            continue
+
+        print(f"\n🔍 Searching for convergence between '{word_a}' and '{word_b}'...")
+
+        try:
+            convergence = sd.find_convergence(word_a, word_b)
+            if convergence:
+                print("\n" + sd.format_convergence_report(convergence))
+            else:
+                print(f"\n❌ No convergence found between '{word_a}' and '{word_b}'")
+                print("These words may be too semantically distant to connect")
+                print("within a reasonable number of steps.")
+
+        except Exception as e:
+            print(f"\nError during convergence search: {e}")
+
+        print("\nTry another pair? (Enter to continue, 'exit' to return)")
+        if input().lower() == 'exit':
+            break
+
+
+def causal_poetry_action():
+    """Mine resonant fragments from classic literature"""
+    miner = ResonantFragmentMiner()
+
+    print("\n" + "="*60)
+    print("RESONANT FRAGMENT MINER")
+    print("="*60)
+    print("\nDiscovers evocative sentence fragments from classic literature")
+    print("that could serve as seeds for compression poetry. Mines multiple")
+    print("sentence patterns for fragments with poetic weight and causal resonance.")
+
+    while True:
+        print("\n" + "-"*40)
+        print("1. Mine 50 fragments (recommended)")
+        print("2. Mine 100 fragments")
+        print("3. Mine with custom count")
+        print("4. Return to main menu")
+
+        choice = input("\nChoice (1-4): ").strip()
+
+        if choice == '1':
+            print("\n🔍 Mining 50 resonant fragments...")
+            collection = miner.mine_fragments(target_count=50, num_texts=5)
+            print("\n" + miner.format_fragment_collection(collection))
+
+        elif choice == '2':
+            print("\n🔍 Mining 100 resonant fragments...")
+            collection = miner.mine_fragments(target_count=100, num_texts=8)
+            print("\n" + miner.format_fragment_collection(collection))
+
+        elif choice == '3':
+            try:
+                count_input = input("How many fragments to mine? (10-200, default 50): ").strip()
+                count = int(count_input) if count_input else 50
+                count = max(10, min(200, count))
+            except ValueError:
+                count = 50
+
+            num_texts = max(3, count // 20)  # Scale text count with fragment target
+            print(f"\n🔍 Mining {count} resonant fragments from {num_texts} texts...")
+            collection = miner.mine_fragments(target_count=count, num_texts=num_texts)
+            print("\n" + miner.format_fragment_collection(collection))
+
+        elif choice == '4':
+            break
+        else:
+            print("Invalid choice. Please enter 1-4.")
+
+
 def main():
     menu = ConsoleMenu("Generative Poetry Menu", "What kind of poem would you like to generate?")
 
@@ -635,6 +727,8 @@ def main():
     corpus_item = FunctionItem("📊 Analyze Personal Poetry Corpus", corpus_analyzer_action)
     transformer_item = FunctionItem("🚢 Ship of Theseus Poem Transformer", poem_transformer_action)
     idea_item = FunctionItem("💡 Poetry Idea Generator (Beat Writer's Block)", idea_generator_action)
+    six_degrees_item = FunctionItem("🔗 Six Degrees - Word Convergence Explorer", six_degrees_action)
+    causal_poetry_item = FunctionItem("🔍 Resonant Fragment Miner (Literary Discovery)", causal_poetry_action)
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -649,7 +743,9 @@ def main():
     menu.append_item(metaphor_item)
     menu.append_item(corpus_item)
     menu.append_item(transformer_item)
-    menu.append_item(idea_item)  # Add the idea generator
+    menu.append_item(idea_item)
+    menu.append_item(six_degrees_item)
+    menu.append_item(causal_poetry_item)
     menu.append_item(check_deps_item)
 
     menu.start()

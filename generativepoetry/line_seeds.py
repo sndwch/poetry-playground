@@ -18,6 +18,7 @@ from .lexigen import (
     related_rare_words
 )
 from .utils import filter_word_list, validate_word
+from .vocabulary import vocabulary
 
 from .word_validator import word_validator
 
@@ -111,14 +112,34 @@ class LineSeedGenerator:
         ]
 
     def _init_sensory_words(self):
-        """Initialize sensory vocabulary."""
-        self.sensory_map = {
-            'sight': ['glimmer', 'shadow', 'gleam', 'blur', 'shimmer'],
-            'sound': ['whisper', 'echo', 'hum', 'rustle', 'murmur'],
-            'touch': ['smooth', 'rough', 'cold', 'warm', 'sharp'],
-            'smell': ['smoke', 'rain', 'metal', 'earth', 'salt'],
-            'taste': ['bitter', 'sweet', 'acid', 'iron', 'ash']
+        """Initialize sensory vocabulary using shared vocabulary."""
+        # Base sensory words, enhanced with atmospheric nouns and evocative verbs
+        base_sensory = {
+            'sight': ['glimmer', 'shadow', 'gleam', 'blur', 'shimmer', 'flicker', 'dazzle', 'fade'],
+            'sound': ['whisper', 'echo', 'hum', 'rustle', 'murmur', 'crackle', 'thrum', 'drone'],
+            'touch': ['smooth', 'rough', 'cold', 'warm', 'sharp', 'tender', 'coarse', 'velvet'],
+            'smell': ['smoke', 'rain', 'metal', 'earth', 'salt', 'musk', 'pine', 'copper'],
+            'taste': ['bitter', 'sweet', 'acid', 'iron', 'ash', 'honey', 'brine', 'mint']
         }
+
+        # Enhance with words from shared vocabulary
+        atmospheric_words = vocabulary.atmospheric_nouns[:50]  # Sample from larger set
+        evocative_words = vocabulary.evocative_verbs[:50]     # Sample from larger set
+
+        # Add evocative words to appropriate sensory categories based on characteristics
+        for word in atmospheric_words + evocative_words:
+            if any(sense in word.lower() for sense in ['light', 'bright', 'dark', 'see', 'glow']):
+                base_sensory['sight'].append(word)
+            elif any(sense in word.lower() for sense in ['sound', 'voice', 'call', 'ring', 'sing']):
+                base_sensory['sound'].append(word)
+            elif any(sense in word.lower() for sense in ['touch', 'feel', 'hold', 'grasp']):
+                base_sensory['touch'].append(word)
+            elif any(sense in word.lower() for sense in ['smell', 'scent', 'aroma']):
+                base_sensory['smell'].append(word)
+            elif any(sense in word.lower() for sense in ['taste', 'sweet', 'bitter']):
+                base_sensory['taste'].append(word)
+
+        self.sensory_map = base_sensory
 
     def generate_opening_line(self, seed_words: List[str],
                             mood: Optional[str] = None) -> LineSeed:

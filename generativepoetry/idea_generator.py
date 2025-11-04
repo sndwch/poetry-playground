@@ -71,7 +71,18 @@ class IdeaCollection:
         return type_map.get(idea_type, [])
 
     def add_idea(self, idea: PoetryIdea):
-        """Add an idea to the appropriate category"""
+        """Add an idea to the appropriate category (with deduplication)"""
+        # Check if this text content already exists in any category
+        normalized_text = idea.text.strip().lower()
+
+        for existing_type in IdeaType:
+            existing_ideas = self.get_ideas_by_type(existing_type)
+            for existing_idea in existing_ideas:
+                if existing_idea.text.strip().lower() == normalized_text:
+                    # Duplicate found - skip this idea
+                    return
+
+        # No duplicate found - add the idea
         ideas_list = self.get_ideas_by_type(idea.idea_type)
         ideas_list.append(idea)
 

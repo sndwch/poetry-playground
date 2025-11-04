@@ -13,6 +13,7 @@ from .lexigen import (
     frequently_following_words,
     related_rare_words
 )
+from .vocabulary import vocabulary
 from .decomposer import (
     get_gutenberg_document,
     random_gutenberg_document,
@@ -475,24 +476,69 @@ class MetaphorGenerator:
         """Find attributes that connect source and target."""
         attributes = []
 
-        # Get descriptive words for both
-        source_context = contextually_linked_words(source, sample_size=10)
-        target_context = contextually_linked_words(target, sample_size=10)
+        # Try multiple approaches to find connections
 
-        # Find overlaps
-        if source_context and target_context:
-            overlap = set(source_context) & set(target_context)
-            attributes.extend(list(overlap))
+        # 1. Get descriptive words for both (expanded search)
+        try:
+            source_context = contextually_linked_words(source, sample_size=15, datamuse_api_max=25)
+            target_context = contextually_linked_words(target, sample_size=15, datamuse_api_max=25)
 
-        # Add some poetic attributes if none found
+            # Find overlaps
+            if source_context and target_context:
+                overlap = set(source_context) & set(target_context)
+                attributes.extend(list(overlap))
+        except:
+            pass
+
+        # 2. If no overlap, try similar meaning words
         if not attributes:
-            poetic_attributes = [
-                'endless', 'silent', 'forgotten', 'luminous', 'fractured',
-                'eternal', 'fleeting', 'hidden', 'transparent', 'infinite'
-            ]
-            attributes = random.sample(poetic_attributes, 2)
+            try:
+                source_similar = similar_meaning_words(source, sample_size=10)
+                target_similar = similar_meaning_words(target, sample_size=10)
+
+                # Check if any similar words overlap
+                if source_similar and target_similar:
+                    overlap = set(source_similar) & set(target_similar)
+                    attributes.extend(list(overlap))
+            except:
+                pass
+
+        # 3. Generate thematic attributes based on word characteristics
+        if not attributes:
+            attributes = self._generate_thematic_attributes(source, target)
+
+        # 4. Last resort: use shared vocabulary for diverse poetic attributes
+        if not attributes:
+            attributes = vocabulary.get_random_attributes(count=3)
 
         return attributes[:3]  # Limit to 3
+
+    def _generate_thematic_attributes(self, source: str, target: str) -> List[str]:
+        """Generate attributes based on the thematic nature of the words."""
+        attributes = []
+
+        # Time-related words
+        time_words = {'morning', 'evening', 'night', 'dawn', 'dusk', 'noon', 'midnight', 'season'}
+        emotion_words = {'disappointment', 'joy', 'sorrow', 'anger', 'fear', 'love', 'hope'}
+        nature_words = {'ocean', 'mountain', 'forest', 'river', 'sky', 'earth', 'storm', 'calm'}
+
+        # Generate contextual attributes
+        all_words = {source.lower(), target.lower()}
+
+        if any(word in time_words for word in all_words):
+            time_attrs = ['cyclical', 'measured', 'inevitable', 'rhythmic', 'eternal', 'fleeting', 'temporal']
+            attributes.extend(random.sample(time_attrs, 2))
+        elif any(word in emotion_words for word in all_words):
+            emotion_attrs = ['deep', 'overwhelming', 'subtle', 'transforming', 'passionate', 'tender', 'raw']
+            attributes.extend(random.sample(emotion_attrs, 2))
+        elif any(word in nature_words for word in all_words):
+            nature_attrs = ['wild', 'untamed', 'persistent', 'changing', 'organic', 'elemental', 'primal']
+            attributes.extend(random.sample(nature_attrs, 2))
+        else:
+            # Use shared vocabulary for general attributes
+            attributes.extend(vocabulary.get_random_attributes(count=2))
+
+        return attributes
 
     def _score_metaphor(self, source: str, target: str, grounds: List[str]) -> float:
         """Score a metaphor for quality."""
