@@ -20,30 +20,8 @@ COPY generativepoetry/ ./generativepoetry/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -e .
 
-# Download and cache NLTK data
-RUN python -c "\
-import nltk; \
-import ssl; \
-try: \
-    _create_unverified_https_context = ssl._create_unverified_context; \
-except AttributeError: \
-    pass; \
-else: \
-    ssl._create_default_https_context = _create_unverified_https_context; \
-for package in ['punkt', 'words', 'brown', 'wordnet', 'stopwords', 'averaged_perceptron_tagger']: \
-    try: \
-        nltk.download(package, quiet=False); \
-        print(f'Downloaded {package}'); \
-    except Exception as e: \
-        print(f'Warning: Failed to download {package}: {e}'); \
-"
-
-# Download and cache spaCy model
-RUN python -m spacy download en_core_web_sm && \
-    echo "spaCy model en_core_web_sm downloaded successfully"
-
-# Run the automated setup to ensure everything is configured
-RUN generative-poetry-cli --setup || true
+# Download and cache NLTK data and spaCy models using the built-in setup
+RUN generative-poetry-cli --setup
 
 # Set environment variables for optimal performance
 ENV PYTHONUNBUFFERED=1 \
