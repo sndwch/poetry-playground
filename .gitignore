@@ -34,3 +34,8 @@ testpypi
 generative-poetry-cli.py
 files.txt
 data/*.txt
+
+# Development plans and notes
+POETRY_IDEATION_ROADMAP.md
+development_notes/
+*.plan.md
