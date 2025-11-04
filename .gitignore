@@ -4,6 +4,8 @@ __pycache__/
 
 # Unit test / coverage reports
 .coverage
+.pytest_cache/
+htmlcov/
 
 # Packages
 *.egg
@@ -26,6 +28,10 @@ testpypi
 
 # Mypy
 .mypy_cache
+.ruff_cache/
+
+# Documentation builds
+docs/build/
 
 *.pdf
 *.png
