@@ -10,6 +10,7 @@ from generativepoetry.utils import get_input_words
 from generativepoetry.system_utils import check_system_dependencies
 from generativepoetry.line_seeds import LineSeedGenerator, SeedType
 from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
+from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -86,9 +87,9 @@ def metaphor_generator_action():
         print("Generating metaphors...")
         metaphors = generator.generate_metaphor_batch(input_words, count=15)
 
-        # Try to extract some patterns from Gutenberg
-        print("Mining literary patterns...")
-        gutenberg_patterns = generator.extract_metaphor_patterns()
+        # Try to extract some patterns from multiple Gutenberg texts
+        print("Mining literary patterns from diverse sources...")
+        gutenberg_patterns = generator.extract_metaphor_patterns(num_texts=3)
 
         # Group by type
         by_type = {}
@@ -166,10 +167,15 @@ def metaphor_generator_action():
             input_words = get_input_words()  # Get new words
         elif choice == '3':
             print("\nMining additional Gutenberg texts...")
-            for _ in range(3):
-                patterns = generator.extract_metaphor_patterns()
-                if patterns:
-                    print(f"Found {len(patterns)} metaphorical patterns")
+            patterns = generator.extract_metaphor_patterns(num_texts=5)
+            if patterns:
+                print(f"Found {len(patterns)} metaphorical patterns from 5 diverse texts")
+                # Show a few examples
+                for source, target, sentence in patterns[:3]:
+                    print(f"  • {source} like {target}")
+                    print(f"    From: \"{sentence[:80]}...\"")
+            else:
+                print("No additional patterns found")
         else:
             exit_loop = True
 
@@ -251,6 +257,84 @@ def line_seeds_action():
             exit_loop = True  # Exit
 
 
+def corpus_analyzer_action():
+    """Analyze a personal poetry corpus for style insights."""
+    analyzer = PersonalCorpusAnalyzer()
+
+    print("\n" + "="*60)
+    print("PERSONAL CORPUS ANALYZER")
+    print("="*60)
+    print("\nThis will analyze your personal poetry collection to identify")
+    print("stylistic patterns, vocabulary preferences, and suggest expansions.")
+
+    # Default to the user's known directory, but allow override
+    default_dir = "/Users/jparker/Desktop/free-verse"
+    print(f"\nDefault directory: {default_dir}")
+    directory = input("Enter poetry directory (or press Enter for default): ").strip()
+
+    if not directory:
+        directory = default_dir
+
+    try:
+        print(f"\nAnalyzing poetry in: {directory}")
+        print("This may take a moment...")
+
+        fingerprint = analyzer.analyze_directory(directory)
+
+        print("\n" + "="*60)
+        print("ANALYSIS COMPLETE")
+        print("="*60)
+
+        # Generate and display the style report
+        report = analyzer.generate_style_report(fingerprint)
+        print(report)
+
+        # Provide expansion suggestions
+        print("\n" + "="*60)
+        print("CREATIVE EXPANSION SUGGESTIONS")
+        print("="*60)
+        suggestions = analyzer.suggest_expansions(fingerprint)
+
+        if suggestions:
+            for i, suggestion in enumerate(suggestions, 1):
+                print(f"\n{i}. {suggestion}")
+        else:
+            print("\nNo specific suggestions at this time.")
+            print("Your style shows good balance and variety!")
+
+        # Vocabulary insights for ideation
+        print("\n" + "="*60)
+        print("IDEATION INSIGHTS")
+        print("="*60)
+
+        if fingerprint.vocabulary.signature_words:
+            print("\nYour most distinctive words:")
+            signature_list = [word for word, _ in fingerprint.vocabulary.signature_words[:8]]
+            print(f"  {', '.join(signature_list)}")
+            print("\nTry building poems around these - they're authentically 'you'")
+
+        if fingerprint.themes.semantic_clusters:
+            print(f"\nThematic word groups you naturally use:")
+            for theme, words in fingerprint.themes.semantic_clusters[:3]:
+                print(f"  • {theme}: {', '.join(words[:4])}")
+            print("\nConsider cross-pollinating between these groups")
+
+        print("\n" + "="*60)
+        print("\nAnalysis saved. You can use these insights with other")
+        print("generative poetry tools to maintain your authentic voice")
+        print("while exploring new creative directions.")
+
+    except FileNotFoundError:
+        print(f"\nError: Directory not found: {directory}")
+        print("Please check the path and try again.")
+    except Exception as e:
+        print(f"\nError during analysis: {e}")
+        print("Please check that the directory contains readable .txt files.")
+
+    print("\nPress Enter to return to main menu...")
+    input()
+
+
 def main():
     menu = ConsoleMenu("Generative Poetry Menu", "What kind of poem would you like to generate?")
 
@@ -265,6 +349,7 @@ def main():
     # New ideation items
     line_seeds_item = FunctionItem("🌱 Generate Line Seeds (Poetry Ideation)", line_seeds_action)
     metaphor_item = FunctionItem("🔮 Generate Metaphors (Poetry Ideation)", metaphor_generator_action)
+    corpus_item = FunctionItem("📊 Analyze Personal Poetry Corpus", corpus_analyzer_action)
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -276,7 +361,8 @@ def main():
     menu.append_item(stopword_soup_function_item)
     menu.append_item(simple_visual_function_item)
     menu.append_item(line_seeds_item)
-    menu.append_item(metaphor_item)  # Add the metaphor generator
+    menu.append_item(metaphor_item)
+    menu.append_item(corpus_item)  # Add the corpus analyzer
     menu.append_item(check_deps_item)
 
     menu.start()

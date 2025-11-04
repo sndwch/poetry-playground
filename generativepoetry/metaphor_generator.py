@@ -131,52 +131,70 @@ class MetaphorGenerator:
             'music': ['harmonizes', 'crescendos', 'resonates', 'echoes', 'syncopates']
         }
 
-    def extract_metaphor_patterns(self, text_id: Optional[int] = None) -> List[str]:
-        """Extract metaphorical patterns from Gutenberg texts.
+    def extract_metaphor_patterns(self, num_texts: int = 3) -> List[str]:
+        """Extract metaphorical patterns from multiple Gutenberg texts.
 
         Args:
-            text_id: Optional Gutenberg text ID. If None, uses random text.
+            num_texts: Number of different texts to sample from (default: 3)
 
         Returns:
-            List of extracted metaphor patterns
+            List of extracted metaphor patterns from diverse sources
         """
-        try:
-            if text_id:
-                text = get_gutenberg_document(text_id)
-            else:
+        all_metaphors = []
+
+        for _ in range(num_texts):
+            try:
                 text = random_gutenberg_document()
+                if not text:
+                    continue
 
-            if not text:
-                return []
+                # Parse text
+                parsed = ParsedText(text)
 
-            # Parse text
-            parsed = ParsedText(text)
+                # Patterns to find metaphors
+                patterns = [
+                    r'(\w+)\s+(?:is|was|are|were)\s+like\s+(?:a\s+|an\s+|the\s+)?(\w+)',
+                    r'(\w+)\s+as\s+(?:a\s+|an\s+|the\s+)?(\w+)',
+                    r'(\w+),\s+(?:a\s+|an\s+|that\s+|this\s+)(\w+)',
+                    r'the\s+(\w+)\s+of\s+(\w+)',
+                    r'(\w+)\s+(?:resembles|mirrors|echoes)\s+(?:a\s+|an\s+|the\s+)?(\w+)',
+                ]
 
-            # Patterns to find metaphors
-            patterns = [
-                r'(\w+)\s+(?:is|was|are|were)\s+like\s+(?:a\s+|an\s+|the\s+)?(\w+)',
-                r'(\w+)\s+as\s+(?:a\s+|an\s+|the\s+)?(\w+)',
-                r'(\w+),\s+(?:a\s+|an\s+|that\s+|this\s+)(\w+)',
-                r'the\s+(\w+)\s+of\s+(\w+)',
-            ]
+                found_metaphors = []
+                # Sample sentences from throughout the text, not just the beginning
+                sentences_to_check = parsed.sentences[:50] + parsed.sentences[len(parsed.sentences)//2:len(parsed.sentences)//2+50]
 
-            found_metaphors = []
-            for sentence in parsed.sentences[:100]:  # Limit to first 100 sentences
-                for pattern in patterns:
-                    matches = re.findall(pattern, sentence.lower())
-                    for match in matches:
-                        if len(match) == 2:
-                            source, target = match
-                            if self._is_valid_metaphor_pair(source, target):
-                                found_metaphors.append((source, target, sentence))
+                for sentence in sentences_to_check:
+                    for pattern in patterns:
+                        matches = re.findall(pattern, sentence.lower())
+                        for match in matches:
+                            if len(match) == 2:
+                                source, target = match
+                                if self._is_valid_metaphor_pair(source, target):
+                                    found_metaphors.append((source, target, sentence))
 
-            # Store for later use
-            self._gutenberg_patterns.extend(found_metaphors)
-            return found_metaphors
+                # Add best metaphors from this text
+                if found_metaphors:
+                    # Sort by quality (prefer shorter, cleaner matches)
+                    found_metaphors.sort(key=lambda x: len(x[2]))
+                    all_metaphors.extend(found_metaphors[:10])  # Take top 10 from each text
 
-        except Exception as e:
-            logger.debug(f"Error extracting from Gutenberg: {e}")
-            return []
+            except Exception as e:
+                logger.debug(f"Error extracting from Gutenberg text {_+1}: {e}")
+                continue
+
+        # Remove duplicates and store for later use
+        unique_metaphors = []
+        seen_pairs = set()
+        for metaphor in all_metaphors:
+            pair = (metaphor[0], metaphor[1])
+            if pair not in seen_pairs:
+                seen_pairs.add(pair)
+                unique_metaphors.append(metaphor)
+
+        self._gutenberg_patterns.extend(unique_metaphors)
+        logger.debug(f"Extracted {len(unique_metaphors)} unique metaphors from {num_texts} texts")
+        return unique_metaphors
 
     def _is_valid_metaphor_pair(self, source: str, target: str) -> bool:
         """Check if a source-target pair makes a valid metaphor."""
