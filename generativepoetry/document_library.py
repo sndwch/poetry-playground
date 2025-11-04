@@ -88,7 +88,7 @@ class DocumentLibrary:
     ) -> Optional[str]:
         """Get a single document with anti-repetition measures"""
 
-        for attempt in range(PerformanceConfig.MAX_PROCESSING_ATTEMPTS):
+        for _ in range(PerformanceConfig.MAX_PROCESSING_ATTEMPTS):
             try:
                 # Choose from quality ranges for better content
                 range_start, range_end = random.choice(self.quality_ranges)

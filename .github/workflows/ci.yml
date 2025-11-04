@@ -1,0 +1,259 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  lint:
+    name: Lint (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ruff
+        run: pip install ruff==0.14.3
+
+      - name: Run ruff linter
+        run: ruff check generativepoetry/
+
+      - name: Run ruff formatter check
+        run: ruff format --check generativepoetry/
+
+  type-check:
+    name: Type Check (mypy)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run mypy
+        run: mypy generativepoetry/ --ignore-missing-imports
+        continue-on-error: true  # Don't fail build on mypy issues yet
+
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.python-version }}-pip-
+
+      - name: Cache NLTK data
+        uses: actions/cache@v4
+        with:
+          path: ~/nltk_data
+          key: ${{ runner.os }}-nltk-data-v1
+          restore-keys: |
+            ${{ runner.os }}-nltk-data-
+
+      - name: Cache spaCy models
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/spacy
+          key: ${{ runner.os }}-spacy-models-v1
+          restore-keys: |
+            ${{ runner.os }}-spacy-models-
+
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Install system dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install poppler
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Download NLTK data
+        run: |
+          python -c "
+          import nltk
+          import ssl
+
+          # Handle SSL certificate issues
+          try:
+              _create_unverified_https_context = ssl._create_unverified_context
+          except AttributeError:
+              pass
+          else:
+              ssl._create_default_https_context = _create_unverified_https_context
+
+          # Download required NLTK data
+          for package in ['punkt', 'words', 'brown', 'wordnet', 'stopwords', 'averaged_perceptron_tagger']:
+              try:
+                  nltk.download(package, quiet=True)
+                  print(f'Downloaded {package}')
+              except Exception as e:
+                  print(f'Warning: Failed to download {package}: {e}')
+          "
+
+      - name: Download spaCy model
+        run: |
+          python -m spacy download en_core_web_sm
+        continue-on-error: true  # Don't fail if model is already cached
+
+      - name: Run tests
+        run: |
+          pytest tests/ -v --tb=short --cov=generativepoetry --cov-report=term --cov-report=xml
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  build-examples:
+    name: Build Example Artifacts
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+
+      - name: Cache NLTK data
+        uses: actions/cache@v4
+        with:
+          path: ~/nltk_data
+          key: ${{ runner.os }}-nltk-data-v1
+
+      - name: Cache spaCy models
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/spacy
+          key: ${{ runner.os }}-spacy-models-v1
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .
+
+      - name: Run setup
+        run: |
+          generative-poetry-cli --setup
+        continue-on-error: true
+
+      - name: Generate example poems
+        run: |
+          mkdir -p examples
+
+          # Generate examples with fixed seeds for reproducibility
+          echo "Generating futurist poem example..."
+          timeout 60 python -c "
+          from generativepoetry.pdf import FuturistPoemPDFGenerator
+          from generativepoetry.seed_manager import set_global_seed
+          import os
+
+          set_global_seed(42)
+          gen = FuturistPoemPDFGenerator()
+          os.makedirs('examples', exist_ok=True)
+          gen.generate_pdf(input_words=['poetry', 'code', 'art'])
+          print(f'Generated: {gen.pdf_filepath}')
+          " || echo "Futurist generation timed out or failed"
+
+          echo "Example generation complete"
+        continue-on-error: true
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+
+      - name: Upload example artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: example-poems
+          path: examples/
+          if-no-files-found: warn
+          retention-days: 30
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: generativepoetry:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker run --rm generativepoetry:test generative-poetry-cli --version
+          docker run --rm generativepoetry:test generative-poetry-cli --list-procedures

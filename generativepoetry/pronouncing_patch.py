@@ -9,7 +9,7 @@ warnings.filterwarnings(
 
 # Alternative: monkey-patch pkg_resources before pronouncing imports it
 try:
-    import importlib.resources as resources
+    import importlib.resources  # noqa: F401
 
     def patch_pronouncing():
         """Monkey-patch pronouncing to use importlib.resources instead of pkg_resources."""

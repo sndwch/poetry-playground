@@ -152,7 +152,7 @@ class PoemGenerator:
             # Directly adding line ender to line now will screw up rhyme pairs so save it & add it in another iteration
             line_enders.append(random.choice(self.markov_line_enders))
             print(line + line_enders[-1])
-        for i, line in enumerate(self.poem.lines):
+        for i, _line in enumerate(self.poem.lines):
             self.poem.lines[i] += line_enders[i]
         poem = self.poem
         return poem

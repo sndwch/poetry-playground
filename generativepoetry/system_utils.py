@@ -156,8 +156,8 @@ def check_system_dependencies():
     if all_ok:
         print("✓ All optional dependencies are installed!")
     else:
-        print("ℹ  Some optional dependencies are missing (see above for instructions)")
-        print("ℹ  Core features will work - these are optional enhancements")
+        print("Note: Some optional dependencies are missing (see above for instructions)")
+        print("Note: Core features will work - these are optional enhancements")
     print("=" * 70 + "\n")
 
     return poppler_installed, hunspell_installed

@@ -94,7 +94,7 @@ Based on comprehensive external code review, the following improvements have bee
    - **Files**: `generativepoetry/system_utils.py`, `generativepoetry/pdf.py`, `generativepoetry/utils.py`
    - **Commit**: 299107c
 
-### **Tier 2: Foundation** 🏗️ (2-4 weeks) - 7/17 Complete
+### **Tier 2: Foundation** 🏗️ (2-4 weeks) - 8/17 Complete
 **Medium-High Impact, Medium Effort - Core Infrastructure**
 
 6. **✅ Modern Configuration System** ⚙️ - COMPLETED (2025-11-04)
@@ -126,13 +126,24 @@ Based on comprehensive external code review, the following improvements have bee
    - **Files**: `pyproject.toml`, all `.py` files, `.pre-commit-config.yaml`
    - **Commits**: 5578ecd (critical fixes), 5cc7a40 (star imports), f30e730 (unsafe fixes), 7f69e68 (pre-commit)
 
-8. **CI/CD Pipeline** ✅
-   - GitHub Actions: lint, type-check, tests on py3.9-3.12
-   - Build example artifacts from test runs
-   - Docker image with pre-cached NLTK/spaCy corpora
-   - **Benefit**: Professional dev workflow, prevents regressions
-   - **Files**: `.github/workflows/ci.yml`, `Dockerfile`
+8. **✅ CI/CD Pipeline** ✅ - COMPLETED (2025-11-04)
+   - ✅ Created comprehensive GitHub Actions workflow (.github/workflows/ci.yml)
+   - ✅ Lint job: Runs ruff linter and formatter checks
+   - ✅ Type-check job: Runs mypy for type safety (non-blocking)
+   - ✅ Test job: Matrix testing on Python 3.9, 3.10, 3.11, 3.12 across Ubuntu and macOS
+   - ✅ Caching strategy: Python deps, NLTK data, spaCy models
+   - ✅ Coverage reporting with Codecov integration
+   - ✅ Build examples job: Generates example poems with fixed seeds (master only)
+   - ✅ Docker build job: Validates image builds and CLI commands work
+   - ✅ Created Dockerfile with pre-cached NLTK data and spaCy models
+   - ✅ Added .dockerignore for optimized builds
+   - ✅ System dependencies included (poppler-utils, git)
+   - ✅ Updated README with comprehensive CI/CD and Docker documentation
+   - **Results**: Full CI/CD pipeline ready, Docker image ~500MB with all dependencies
+   - **Benefit**: Professional dev workflow, prevents regressions, reproducible environments
+   - **Files**: `.github/workflows/ci.yml`, `Dockerfile`, `.dockerignore`, `README.md`
    - **Note**: PyPI publishing removed per user request (keeping project private)
+   - **Commit**: Pending
 
 9. **Comprehensive Test Suite** 🧪
    - Unit tests: rhyme/syllable pickers, deterministic layout with seed

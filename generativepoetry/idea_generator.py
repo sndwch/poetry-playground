@@ -334,12 +334,8 @@ class PoetryIdeaGenerator:
             patterns = self.patterns[idea_type]
 
             for pattern in patterns:
-                # For opening lines, search from the beginning
-                if idea_type == IdeaType.OPENING_LINE:
-                    search_text = text[:2000]  # First part of text
-                else:
-                    # For other types, sample from throughout the text
-                    search_text = text
+                # For opening lines, search from the beginning; otherwise use full text
+                search_text = text[:2000] if idea_type == IdeaType.OPENING_LINE else text
 
                 matches = re.findall(pattern, search_text, re.MULTILINE | re.DOTALL)
 
@@ -402,9 +398,8 @@ class PoetryIdeaGenerator:
             return False
 
         # For dialogue, ensure it's not just attribution
-        if idea_type == IdeaType.DIALOGUE_SPARK:
-            if text.count('"') < 2:  # Should be actual quoted speech
-                return False
+        if idea_type == IdeaType.DIALOGUE_SPARK and text.count('"') < 2:
+            return False  # Should be actual quoted speech
 
         # Must have some interesting words
         interesting_word_count = 0

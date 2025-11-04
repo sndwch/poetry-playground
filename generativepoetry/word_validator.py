@@ -153,12 +153,14 @@ class WordValidator:
             return False
 
         # Check against NLTK words dictionary
-        if self._nltk_words and word_lower not in self._nltk_words:
-            # Also check if it's in Brown corpus (common words)
-            if self._brown_words and word_lower not in self._brown_words:
-                # Allow contractions with apostrophes
-                if "'" not in word_lower:
-                    return False
+        if (
+            self._nltk_words
+            and word_lower not in self._nltk_words
+            and self._brown_words
+            and word_lower not in self._brown_words
+            and "'" not in word_lower
+        ):
+            return False
 
         # Check word frequency
         freq = word_frequency(word_lower, "en")

@@ -409,14 +409,87 @@ This is primarily a personal creative tool. For development:
 # Clone and install in development mode
 git clone https://github.com/sndwch/generativepoetry-py.git
 cd generativepoetry-py
-pip install -e .
+pip install -e ".[dev]"
 
 # Run tests
 pytest tests/
 
+# Run linting and formatting
+ruff check generativepoetry/
+ruff format generativepoetry/
+
+# Run type checking
+mypy generativepoetry/ --ignore-missing-imports
+
+# Install pre-commit hooks
+pre-commit install
+
 # Check dependencies
 generative-poetry-cli  # Select option 13 to verify setup
 ```
+
+## CI/CD & Docker
+
+### Continuous Integration
+
+The project uses GitHub Actions for automated testing and quality checks:
+
+- **Linting**: Ruff checks code quality and style
+- **Type Checking**: mypy verifies type hints (currently informational)
+- **Testing**: pytest on Python 3.9, 3.10, 3.11, 3.12 across Ubuntu and macOS
+- **Coverage**: Codecov integration for test coverage tracking
+- **Example Generation**: Automated poem generation with fixed seeds for reproducibility
+- **Docker Build**: Validates Docker image builds successfully
+
+All checks run automatically on push to master and on pull requests.
+
+### Docker Usage
+
+A Docker image with pre-cached NLTK and spaCy models is available for easy deployment:
+
+```bash
+# Build the Docker image
+docker build -t generativepoetry:latest .
+
+# Run interactively
+docker run --rm -it generativepoetry:latest bash
+
+# List available procedures
+docker run --rm generativepoetry:latest generative-poetry-cli --list-procedures
+
+# Check version
+docker run --rm generativepoetry:latest generative-poetry-cli --version
+
+# Generate poems (mount output directory)
+docker run --rm -v $(pwd)/output:/output generativepoetry:latest generative-poetry-cli
+
+# Run with specific settings
+docker run --rm -v $(pwd)/output:/output generativepoetry:latest \
+  generative-poetry-cli --seed 42 --format png
+```
+
+The Docker image includes:
+- All system dependencies (poppler-utils for PDF conversion)
+- Pre-downloaded NLTK data (punkt, words, brown, wordnet, stopwords)
+- Pre-downloaded spaCy model (en_core_web_sm)
+- Optimized caching for fast startup
+
+### CI/CD Pipeline Details
+
+The CI workflow (`.github/workflows/ci.yml`) includes:
+
+1. **Lint Job**: Runs ruff linter and formatter checks
+2. **Type Check Job**: Runs mypy for type safety (non-blocking)
+3. **Test Job**: Matrix testing across Python versions and OS
+   - Caches dependencies, NLTK data, and spaCy models
+   - Runs pytest with coverage reporting
+   - Uploads coverage to Codecov
+4. **Build Examples Job**: Generates example poems with fixed seeds
+   - Only runs on pushes to master
+   - Uploads artifacts for 30 days
+5. **Docker Build Job**: Validates Docker image
+   - Tests image build successfully
+   - Verifies CLI commands work in container
 
 ## Philosophy & Acknowledgements
 

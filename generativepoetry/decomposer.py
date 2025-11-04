@@ -138,8 +138,8 @@ def get_internet_archive_document(url) -> str:
         # for cases in which lines end without spaces, we will handle this in two lines
         return re.sub(r"(?<=[\S])(\s\s)(?=[\S])", " ", text)
 
-    except Exception:
-        raise Exception(f"Archive.org download failed for url: {url}")
+    except Exception as e:
+        raise Exception(f"Archive.org download failed for url: {url}") from e
 
 
 def get_gutenberg_document(url_or_id) -> str:
@@ -294,9 +294,9 @@ def markov(input: input_type, ngram_size=1, num_output_sentences=5) -> List[str]
     n-gram size: determines what n-gram model to use: x where x is order-x n-gram
     num_output_sentences: number of sentencess to output
     """
-    if type(input) == list:
+    if isinstance(input, list):
         list_of_texts = input
-    elif type(input) == str:
+    elif isinstance(input, str):
         list_of_texts = [input]
     markov_models = []
     for text in list_of_texts:
@@ -320,9 +320,9 @@ def cutup(input, min_cutout_words=3, max_cutout_words=7) -> List[str]:
         min_cutout_words (int) -- minimum number of words in cut out chunk
         max_cutout_words -- maximum number of words in cutout chunk
     """
-    if type(input) == list:
+    if isinstance(input, list):
         list_of_texts = input
-    elif type(input) == str:
+    elif isinstance(input, str):
         list_of_texts = [input]
     # We don't need tokenization for this since physically cutting up text out of books always cuts where whitespace
     # exists--it does not separate words from punctuation as punctuation does. (Also this way is faster.)

@@ -548,10 +548,8 @@ class PersonalCorpusAnalyzer:
 
         # Prefer words that are reasonably common but not too mundane
         freq = word_frequency(word_lower, "en")
-        if freq < 1e-7 or freq > 1e-3:  # Too rare or too common
-            return False
-
-        return True
+        # Return False if too rare or too common
+        return not (freq < 1e-7 or freq > 1e-3)
 
     def _calculate_metrics(self, poem_structures: List[int], all_lines: List[str]) -> PoetryMetrics:
         """Calculate basic structural metrics"""

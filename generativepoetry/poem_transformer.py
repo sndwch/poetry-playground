@@ -182,12 +182,7 @@ class PoemTransformer:
             word, line_idx = word_info
 
             # Choose transformation type (weighted toward maintaining meaning early on)
-            if pass_number <= 2:
-                # Early passes: prefer semantic similarity
-                weights = [0.6, 0.3, 0.1]  # semantic, contextual, sonic
-            else:
-                # Later passes: more experimental
-                weights = [0.4, 0.4, 0.2]
+            weights = [0.6, 0.3, 0.1] if pass_number <= 2 else [0.4, 0.4, 0.2]
 
             transformation_type = random.choices(
                 ["semantic", "contextual", "sonic"], weights=weights

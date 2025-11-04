@@ -1,0 +1,87 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# CI/CD
+.github/
+.circleci/
+.travis.yml
+
+# Documentation
+docs/
+*.md
+!README.md
+*.rst
+!README.rst
+
+# Examples and test data
+examples/
+example_images/
+tests/
+*.txt.gz
+
+# Cache
+.cache/
+.mypy_cache/
+.ruff_cache/
+*.cache
+
+# Pre-commit
+.pre-commit-config.yaml
+
+# Temporary files
+texts/
+*.pdf
+*.png
+*.svg
+output/

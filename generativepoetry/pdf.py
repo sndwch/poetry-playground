@@ -2,7 +2,7 @@ import os
 import random
 import string
 from os.path import isfile
-from typing import List, Optional, Tuple
+from typing import ClassVar, List, Optional, Tuple
 
 from nltk.corpus import stopwords
 from pdf2image import convert_from_path
@@ -34,9 +34,9 @@ class VisualPoemString:
 
 
 class PDFGenerator:
-    default_font_sizes = [12, 14, 16, 18, 24, 32]
+    default_font_sizes: ClassVar[List[int]] = [12, 14, 16, 18, 24, 32]
     # Use only built-in fonts that don't require external TTF files
-    font_choices = [
+    font_choices: ClassVar[List[str]] = [
         "Courier",
         "Courier-Bold",
         "Courier-BoldOblique",
@@ -204,7 +204,7 @@ class CharacterSoupPoemPDFGenerator(PDFGenerator):
 
 
 class StopwordSoupPoemPDFGenerator(PDFGenerator):
-    default_font_sizes = [6, 16, 24, 32, 48]
+    default_font_sizes: ClassVar[List[int]] = [6, 16, 24, 32, 48]
 
     def generate_pdf(self):
         # Ensure stopwords corpus is available
@@ -241,7 +241,7 @@ class StopwordSoupPoemPDFGenerator(PDFGenerator):
 
 
 class MarkovPoemPDFGenerator(PDFGenerator):
-    default_font_sizes = [15, 18, 21, 24, 28]
+    default_font_sizes: ClassVar[List[int]] = [15, 18, 21, 24, 28]
 
     def generate_pdf(
         self, input_words: Optional[List[str]] = None, orientation: string = "landscape"
@@ -301,8 +301,8 @@ class MarkovPoemPDFGenerator(PDFGenerator):
 
 
 class FuturistPoemPDFGenerator(PDFGenerator):
-    connectors = [" + ", " - ", " * ", " % ", " = ", " != ", " :: "]
-    default_font_sizes = [15, 18, 21, 24, 28]
+    connectors: ClassVar[List[str]] = [" + ", " - ", " * ", " % ", " = ", " != ", " :: "]
+    default_font_sizes: ClassVar[List[int]] = [15, 18, 21, 24, 28]
 
     def generate_pdf(self, input_words: Optional[List[str]] = None):
         self.drawn_strings = []

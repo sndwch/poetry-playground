@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional
+from typing import ClassVar, List, Optional
 
 from .lexigen import (
     contextually_linked_word,
@@ -12,7 +12,7 @@ from .utils import has_invalid_characters, too_similar
 
 
 class StochasticJolasticWordGenerator:
-    common_words = [
+    common_words: ClassVar[List[str]] = [
         "the",
         "with",
         "in",

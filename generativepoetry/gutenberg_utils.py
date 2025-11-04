@@ -49,7 +49,6 @@ def get_gutenberg_metadata_cache():
 def get_document_id_from_url(url):
     """Extract document ID from a Gutenberg URL."""
     import re
-    from urllib.parse import urlsplit
 
     # Match various Gutenberg URL patterns
     patterns = [
@@ -58,7 +57,6 @@ def get_document_id_from_url(url):
         r"[?&]id=(\d+)",
     ]
 
-    urlsplit(url).path
     for pattern in patterns:
         match = re.search(pattern, url)
         if match:
