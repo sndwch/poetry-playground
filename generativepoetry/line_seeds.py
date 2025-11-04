@@ -177,9 +177,14 @@ class LineSeedGenerator:
         if USE_VALIDATOR:
             expanded_words = word_validator.clean_word_list(expanded_words)
 
+        # Combine with seed words, ensuring we have something to work with
+        all_words = seed_words + expanded_words
+        if not all_words:
+            all_words = ['word', 'phrase', 'thought']  # Emergency fallback
+
         # Build fragment
         pattern = random.choice(self.fragment_patterns)
-        fragment = self._fill_pattern_fragment(pattern, seed_words + expanded_words)
+        fragment = self._fill_pattern_fragment(pattern, all_words)
 
         quality = self._evaluate_quality(fragment)
 
@@ -212,6 +217,10 @@ class LineSeedGenerator:
 
         if USE_VALIDATOR:
             context_words = word_validator.clean_word_list(context_words)
+
+        # If no context words found, use seed words as fallback
+        if not context_words:
+            context_words = seed_words
 
         # Create image
         templates = [
@@ -418,9 +427,13 @@ class LineSeedGenerator:
         """Fill a pattern with appropriate words."""
         filled = pattern
 
+        # Ensure we have words to work with
+        if not words:
+            words = ['word']  # Fallback word
+
         # Simple replacement logic (can be enhanced)
         replacements = {
-            '{noun}': lambda: random.choice(words),
+            '{noun}': lambda: random.choice(words) if words else 'word',
             '{verb}': lambda: random.choice(['carries', 'holds', 'breaks', 'turns', 'waits']),
             '{adjective}': lambda: random.choice(['distant', 'quiet', 'sharp', 'soft', 'strange']),
             '{pronoun}': lambda: random.choice(['we', 'they', 'it', 'you']),
