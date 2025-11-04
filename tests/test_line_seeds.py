@@ -6,124 +6,181 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import pytest
 from generativepoetry.line_seeds import LineSeed, LineSeedGenerator, SeedType
 
 
 def test_line_seed_generator():
     """Test basic line seed generation."""
-    generator = LineSeedGenerator()
-    seed_words = ["ocean", "memory", "light"]
+    try:
+        try:
+            generator = LineSeedGenerator()
+        except Exception as e:
+            # Skip if network calls are disabled in tests
+            if "Network calls disabled" in str(e):
+                pytest.skip("Network calls disabled in test environment")
+            raise
 
-    # Test opening line generation
-    opening = generator.generate_opening_line(seed_words)
-    assert isinstance(opening, LineSeed)
-    assert opening.seed_type == SeedType.OPENING
-    assert opening.text
-    assert 0 <= opening.quality_score <= 1
-    assert 0 <= opening.momentum <= 1
-    assert 0 <= opening.openness <= 1
-    print(f"Opening line: {opening.text}")
+        seed_words = ["ocean", "memory", "light"]
 
-    # Test fragment generation
-    fragment = generator.generate_fragment(seed_words)
-    assert isinstance(fragment, LineSeed)
-    assert fragment.seed_type == SeedType.FRAGMENT
-    assert fragment.text
-    assert "..." in fragment.text
-    print(f"Fragment: {fragment.text}")
+        # Test opening line generation
+        opening = generator.generate_opening_line(seed_words)
+        assert isinstance(opening, LineSeed)
+        assert opening.seed_type == SeedType.OPENING
+        assert opening.text
+        assert 0 <= opening.quality_score <= 1
+        assert 0 <= opening.momentum <= 1
+        assert 0 <= opening.openness <= 1
+        print(f"Opening line: {opening.text}")
 
-    # Test image seed generation
-    image = generator.generate_image_seed(seed_words)
-    assert isinstance(image, LineSeed)
-    assert image.seed_type == SeedType.IMAGE
-    assert image.text
-    print(f"Image seed: {image.text}")
+        # Test fragment generation
+        fragment = generator.generate_fragment(seed_words)
+        assert isinstance(fragment, LineSeed)
+        assert fragment.seed_type == SeedType.FRAGMENT
+        assert fragment.text
+        assert "..." in fragment.text
+        print(f"Fragment: {fragment.text}")
 
-    # Test pivot line generation
-    pivot = generator.generate_pivot_line(seed_words)
-    assert isinstance(pivot, LineSeed)
-    assert pivot.seed_type == SeedType.PIVOT
-    assert pivot.text
-    print(f"Pivot line: {pivot.text}")
+        # Test image seed generation
+        image = generator.generate_image_seed(seed_words)
+        assert isinstance(image, LineSeed)
+        assert image.seed_type == SeedType.IMAGE
+        assert image.text
+        print(f"Image seed: {image.text}")
 
-    # Test sonic pattern generation
-    sonic = generator.generate_sonic_pattern(seed_words)
-    assert isinstance(sonic, LineSeed)
-    assert sonic.seed_type == SeedType.SONIC
-    assert sonic.text
-    print(f"Sonic pattern: {sonic.text}")
+        # Test pivot line generation
+        pivot = generator.generate_pivot_line(seed_words)
+        assert isinstance(pivot, LineSeed)
+        assert pivot.seed_type == SeedType.PIVOT
+        assert pivot.text
+        print(f"Pivot line: {pivot.text}")
 
-    # Test ending approach
-    ending = generator.generate_ending_approach(seed_words, opening.text)
-    assert isinstance(ending, LineSeed)
-    assert ending.seed_type == SeedType.CLOSING
-    assert ending.text
-    print(f"Ending approach: {ending.text}")
-    if ending.notes:
-        print(f"  Notes: {ending.notes}")
+        # Test sonic pattern generation
+        sonic = generator.generate_sonic_pattern(seed_words)
+        assert isinstance(sonic, LineSeed)
+        assert sonic.seed_type == SeedType.SONIC
+        assert sonic.text
+        print(f"Sonic pattern: {sonic.text}")
 
+        # Test ending approach
+        ending = generator.generate_ending_approach(seed_words, opening.text)
+        assert isinstance(ending, LineSeed)
+        assert ending.seed_type == SeedType.CLOSING
+        assert ending.text
+        print(f"Ending approach: {ending.text}")
+        if ending.notes:
+            print(f"  Notes: {ending.notes}")
+
+
+    except Exception as e:
+        # Skip if network calls are disabled in tests
+        if "Network calls disabled" in str(e):
+            pytest.skip("Network calls disabled in test environment")
+        raise
 
 def test_seed_collection():
     """Test generating a collection of seeds."""
-    generator = LineSeedGenerator()
-    seed_words = ["night", "stars", "silence"]
+    try:
+        try:
+            generator = LineSeedGenerator()
+        except Exception as e:
+            # Skip if network calls are disabled in tests
+            if "Network calls disabled" in str(e):
+                pytest.skip("Network calls disabled in test environment")
+            raise
 
-    seeds = generator.generate_seed_collection(seed_words, num_seeds=10)
-    assert len(seeds) <= 10
-    assert all(isinstance(s, LineSeed) for s in seeds)
+        seed_words = ["night", "stars", "silence"]
 
-    # Check variety of types
-    types = set(s.seed_type for s in seeds)
-    assert len(types) >= 3  # Should have at least 3 different types
+        seeds = generator.generate_seed_collection(seed_words, num_seeds=10)
+        assert len(seeds) <= 10
+        assert all(isinstance(s, LineSeed) for s in seeds)
 
-    print("\nSeed Collection:")
-    print("-" * 40)
-    for seed in seeds[:5]:  # Print first 5
-        print(f"[{seed.seed_type.value}] {seed.text}")
-        print(f"  Quality: {seed.quality_score:.2f}, Momentum: {seed.momentum:.2f}")
+        # Check variety of types
+        types = set(s.seed_type for s in seeds)
+        assert len(types) >= 3  # Should have at least 3 different types
 
+        print("\nSeed Collection:")
+        print("-" * 40)
+        for seed in seeds[:5]:  # Print first 5
+            print(f"[{seed.seed_type.value}] {seed.text}")
+            print(f"  Quality: {seed.quality_score:.2f}, Momentum: {seed.momentum:.2f}")
+
+
+    except Exception as e:
+        # Skip if network calls are disabled in tests
+        if "Network calls disabled" in str(e):
+            pytest.skip("Network calls disabled in test environment")
+        raise
 
 def test_different_moods():
     """Test generation with different seed words suggesting different moods."""
-    generator = LineSeedGenerator()
+    try:
+        try:
+            generator = LineSeedGenerator()
+        except Exception as e:
+            # Skip if network calls are disabled in tests
+            if "Network calls disabled" in str(e):
+                pytest.skip("Network calls disabled in test environment")
+            raise
 
-    # Test with dark/melancholic words
-    dark_words = ["shadow", "grief", "hollow"]
-    dark_opening = generator.generate_opening_line(dark_words)
-    print(f"\nDark opening: {dark_opening.text}")
 
-    # Test with bright/hopeful words
-    bright_words = ["dawn", "bloom", "singing"]
-    bright_opening = generator.generate_opening_line(bright_words)
-    print(f"Bright opening: {bright_opening.text}")
+        # Test with dark/melancholic words
+        dark_words = ["shadow", "grief", "hollow"]
+        dark_opening = generator.generate_opening_line(dark_words)
+        print(f"\nDark opening: {dark_opening.text}")
 
-    # Test with abstract words
-    abstract_words = ["time", "thought", "becoming"]
-    abstract_opening = generator.generate_opening_line(abstract_words)
-    print(f"Abstract opening: {abstract_opening.text}")
+        # Test with bright/hopeful words
+        bright_words = ["dawn", "bloom", "singing"]
+        bright_opening = generator.generate_opening_line(bright_words)
+        print(f"Bright opening: {bright_opening.text}")
 
+        # Test with abstract words
+        abstract_words = ["time", "thought", "becoming"]
+        abstract_opening = generator.generate_opening_line(abstract_words)
+        print(f"Abstract opening: {abstract_opening.text}")
+
+
+    except Exception as e:
+        # Skip if network calls are disabled in tests
+        if "Network calls disabled" in str(e):
+            pytest.skip("Network calls disabled in test environment")
+        raise
 
 def test_quality_evaluation():
     """Test that quality evaluation produces reasonable scores."""
-    generator = LineSeedGenerator()
+    try:
+        try:
+            generator = LineSeedGenerator()
+        except Exception as e:
+            # Skip if network calls are disabled in tests
+            if "Network calls disabled" in str(e):
+                pytest.skip("Network calls disabled in test environment")
+            raise
 
-    # Generate multiple seeds and check quality distribution
-    seed_words = ["rain", "window", "waiting"]
-    seeds = generator.generate_seed_collection(seed_words, num_seeds=20)
 
-    qualities = [s.quality_score for s in seeds]
-    avg_quality = sum(qualities) / len(qualities)
+        # Generate multiple seeds and check quality distribution
+        seed_words = ["rain", "window", "waiting"]
+        seeds = generator.generate_seed_collection(seed_words, num_seeds=20)
 
-    print(
-        f"\nQuality scores - Min: {min(qualities):.2f}, "
-        f"Max: {max(qualities):.2f}, Avg: {avg_quality:.2f}"
-    )
+        qualities = [s.quality_score for s in seeds]
+        avg_quality = sum(qualities) / len(qualities)
 
-    # Should have some variation in quality
-    assert min(qualities) < max(qualities)
-    # Average should be reasonable
-    assert 0.3 < avg_quality < 0.8
+        print(
+            f"\nQuality scores - Min: {min(qualities):.2f}, "
+            f"Max: {max(qualities):.2f}, Avg: {avg_quality:.2f}"
+        )
 
+        # Should have some variation in quality
+        assert min(qualities) < max(qualities)
+        # Average should be reasonable
+        assert 0.3 < avg_quality < 0.8
+
+
+    except Exception as e:
+        # Skip if network calls are disabled in tests
+        if "Network calls disabled" in str(e):
+            pytest.skip("Network calls disabled in test environment")
+        raise
 
 def demonstrate_interactive_session():
     """Demonstrate how a poet might use this interactively."""
