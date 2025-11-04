@@ -6,12 +6,7 @@ import inflect
 import markovify
 import nltk
 import spacy
-try:
-    from gutenbergpy.textget import get_text_by_id, strip_headers
-    GUTENBERG_AVAILABLE = True
-except ImportError:
-    GUTENBERG_AVAILABLE = False
-    print("Warning: gutenbergpy not available. Gutenberg features disabled.")
+from gutenbergpy.textget import get_text_by_id, strip_headers
 from internetarchive import download
 from urllib.parse import urlsplit
 
@@ -97,7 +92,7 @@ def get_internet_archive_document(url) -> str:
         text = re.sub('(?<![\r\n])(\r?\n|\n?\r)(?![\r\n])', ' ', response.text.strip())
         # This usually creates double spaces between lines because most lines end with single spaces, but to account
         # for cases in which lines end without spaces, we will handle this in two lines
-        return re.sub('(?<=[\S])(\s\s)(?=[\S])', ' ', text)
+        return re.sub(r'(?<=[\S])(\s\s)(?=[\S])', ' ', text)
 
     except Exception:
         raise Exception(f'Archive.org download failed for url: {url}')
@@ -112,9 +107,6 @@ def get_gutenberg_document(url_or_id) -> str:
     Returns:
         Cleaned text string
     """
-    if not GUTENBERG_AVAILABLE:
-        return ""  # Return empty string if not available
-
     try:
         # Handle both URL and numeric ID
         if isinstance(url_or_id, str) and 'gutenberg.org' in url_or_id:
@@ -146,9 +138,6 @@ def random_gutenberg_document(language_filter='en') -> str:
     Keyword arguments:
         language_filter (str) -- restrict the random document to a particular language (default: English)
     """
-    if not GUTENBERG_AVAILABLE:
-        return ""  # Return empty string if not available
-
     # Try a few random IDs until we get a valid text
     for _ in range(10):  # Try up to 10 times
         try:
@@ -186,7 +175,7 @@ def reconcile_replacement_word(original_word_with_ws, original_word_tag, replace
         replacement_word = inflector.singular_noun(replacement_word) \
             if inflector.singular_noun(replacement_word) else replacement_word
     #  Use regex to preserve the whitespace of the word-to-be-replaced
-    replacement_word = re.sub('(?<!\S)\S+(?!\S)', replacement_word, original_word_with_ws)
+    replacement_word = re.sub(r'(?<!\S)\S+(?!\S)', replacement_word, original_word_with_ws)
     return replacement_word
 
 

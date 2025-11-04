@@ -19,11 +19,7 @@ from .lexigen import (
 )
 from .utils import filter_word_list, validate_word
 
-try:
-    from .word_validator import word_validator
-    USE_VALIDATOR = True
-except ImportError:
-    USE_VALIDATOR = False
+from .word_validator import word_validator
 
 
 class SeedType(Enum):
@@ -174,8 +170,7 @@ class LineSeedGenerator:
             expanded_words.extend(similar_meaning_words(word, sample_size=3))
             expanded_words.extend(phonetically_related_words(word, sample_size=2))
 
-        if USE_VALIDATOR:
-            expanded_words = word_validator.clean_word_list(expanded_words)
+        expanded_words = word_validator.clean_word_list(expanded_words)
 
         # Combine with seed words, ensuring we have something to work with
         all_words = seed_words + expanded_words
@@ -215,8 +210,7 @@ class LineSeedGenerator:
         for word in seed_words[:2]:
             context_words.extend(contextually_linked_words(word, sample_size=3))
 
-        if USE_VALIDATOR:
-            context_words = word_validator.clean_word_list(context_words)
+        context_words = word_validator.clean_word_list(context_words)
 
         # If no context words found, use seed words as fallback
         if not context_words:
@@ -287,8 +281,7 @@ class LineSeedGenerator:
         for word in seed_words[:2]:
             sound_words.extend(phonetically_related_words(word, sample_size=4))
 
-        if USE_VALIDATOR:
-            sound_words = word_validator.clean_word_list(sound_words)
+        sound_words = word_validator.clean_word_list(sound_words)
 
         if len(sound_words) >= 3:
             # Create alliteration or assonance
