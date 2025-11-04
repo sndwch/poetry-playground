@@ -7,7 +7,11 @@ import markovify
 import nltk
 import spacy
 from gutenbergpy.textget import get_text_by_id, strip_headers
-from internetarchive import download
+try:
+    from internetarchive import download
+    INTERNETARCHIVE_AVAILABLE = True
+except ImportError:
+    INTERNETARCHIVE_AVAILABLE = False
 from urllib.parse import urlsplit
 
 
@@ -80,6 +84,8 @@ def get_internet_archive_document(url) -> str:
        have a text version. PDF text extraction is not supported at this time.
        Returns a ParsedText instance.
     """
+    if not INTERNETARCHIVE_AVAILABLE:
+        raise ImportError("internetarchive package not available")
     validate_url(url, expected_netloc='archive.org')
     url_parts = urlsplit(url).path.split("/")
     if len(url_parts) > 2:
