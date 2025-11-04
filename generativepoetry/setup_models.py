@@ -209,9 +209,14 @@ def setup(quiet: bool = False, force: bool = False) -> bool:
             logger.info(f"  Newly downloaded: {', '.join(nltk_downloaded)}")
         logger.info("")
 
-    # Check if all NLTK packages are available
-    for data_path, package_name, _ in REQUIRED_NLTK_DATA:
-        if not check_nltk_data(data_path):
+    # Check if all NLTK packages were successfully handled
+    all_nltk_packages = {pkg for _, pkg, _ in REQUIRED_NLTK_DATA}
+    handled_packages = set(nltk_installed) | set(nltk_downloaded)
+
+    if not handled_packages.issuperset(all_nltk_packages):
+        # Some packages failed to download
+        missing_packages = all_nltk_packages - handled_packages
+        for package_name in missing_packages:
             success = False
             logger.error(f"  Missing: {package_name}")
 
@@ -228,9 +233,14 @@ def setup(quiet: bool = False, force: bool = False) -> bool:
             logger.info(f"  Newly downloaded: {', '.join(spacy_downloaded)}")
         logger.info("")
 
-    # Check if all spaCy models are available
-    for model_name, _ in REQUIRED_SPACY_MODELS:
-        if not check_spacy_model(model_name):
+    # Check if all spaCy models were successfully handled
+    all_spacy_models = {model for model, _ in REQUIRED_SPACY_MODELS}
+    handled_models = set(spacy_installed) | set(spacy_downloaded)
+
+    if not handled_models.issuperset(all_spacy_models):
+        # Some models failed to download
+        missing_models = all_spacy_models - handled_models
+        for model_name in missing_models:
             success = False
             logger.error(f"  Missing: {model_name}")
 
