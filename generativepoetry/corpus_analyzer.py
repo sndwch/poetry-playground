@@ -99,7 +99,23 @@ class PersonalCorpusAnalyzer:
             nltk.download('punkt')
 
         self.word_validator = WordValidator()
-        self.stop_words = set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall'])
+        # Extended stop words including function words and common contractions
+        self.stop_words = set([
+            'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+            'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
+            'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can',
+            'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
+            'my', 'your', 'his', 'her', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs',
+            'this', 'that', 'these', 'those', 'what', 'which', 'who', 'whom', 'whose', 'where', 'when', 'why', 'how',
+            'not', 'no', 'yes', 'so', 'too', 'very', 'just', 'only', 'even', 'also', 'still', 'more', 'most',
+            'some', 'any', 'all', 'every', 'each', 'few', 'many', 'much', 'several', 'both', 'either', 'neither',
+            'if', 'then', 'else', 'than', 'as', 'like', 'since', 'until', 'while', 'before', 'after', 'during',
+            'up', 'down', 'out', 'off', 'over', 'under', 'again', 'further', 'once', 'here', 'there', 'everywhere',
+            'am', 'get', 'got', 'say', 'said', 'go', 'went', 'come', 'came', 'take', 'took', 'make', 'made',
+            'done', 'doing', 'put', 'know', 'knew', 'think', 'thought', 'see', 'saw', 'look', 'looked',
+            'way', 'one', 'two', 'three', 'first', 'last', 'next', 'back', 'away', 'around', 'about',
+            'into', 'from', 'through', 'across', 'between', 'among', 'within', 'without', 'above', 'below'
+        ])
 
     def analyze_directory(self, directory_path: str) -> StyleFingerprint:
         """Analyze all poetry files in a directory"""
@@ -138,6 +154,8 @@ class PersonalCorpusAnalyzer:
 
         for poem in poems:
             content = self._clean_poem_text(poem['content'])
+            # Expand contractions for better analysis
+            content = self._expand_contractions(content)
             lines = [line.strip() for line in content.split('\n') if line.strip()]
 
             all_text.append(content)
@@ -175,6 +193,93 @@ class PersonalCorpusAnalyzer:
                 cleaned_lines.append(line)
 
         return '\n'.join(cleaned_lines)
+
+    def _expand_contractions(self, text: str) -> str:
+        """Expand contractions to improve analysis accuracy"""
+        # First normalize smart quotes to regular apostrophes
+        text = text.replace("'", "'").replace("'", "'").replace(chr(8217), "'").replace(chr(8216), "'")
+
+        contractions = {
+            "didn't": "did not",
+            "don't": "do not",
+            "won't": "will not",
+            "can't": "cannot",
+            "couldn't": "could not",
+            "wouldn't": "would not",
+            "shouldn't": "should not",
+            "hasn't": "has not",
+            "haven't": "have not",
+            "hadn't": "had not",
+            "isn't": "is not",
+            "aren't": "are not",
+            "wasn't": "was not",
+            "weren't": "were not",
+            "doesn't": "does not",
+            "i'm": "i am",
+            "you're": "you are",
+            "we're": "we are",
+            "they're": "they are",
+            "he's": "he is",
+            "she's": "she is",
+            "it's": "it is",
+            "that's": "that is",
+            "what's": "what is",
+            "where's": "where is",
+            "when's": "when is",
+            "how's": "how is",
+            "who's": "who is",
+            "i've": "i have",
+            "you've": "you have",
+            "we've": "we have",
+            "they've": "they have",
+            "i'll": "i will",
+            "you'll": "you will",
+            "we'll": "we will",
+            "they'll": "they will",
+            "he'll": "he will",
+            "she'll": "she will",
+            "it'll": "it will",
+            "i'd": "i would",
+            "you'd": "you would",
+            "we'd": "we would",
+            "they'd": "they would",
+            "he'd": "he would",
+            "she'd": "she would"
+        }
+
+        # Create pattern that matches contractions (case insensitive)
+        contraction_pattern = r'\b(' + '|'.join(re.escape(key) for key in contractions.keys()) + r')\b'
+
+        def replace_contraction(match):
+            contraction = match.group(1).lower()
+            expansion = contractions.get(contraction, contraction)
+            # Preserve original capitalization
+            if match.group(1)[0].isupper():
+                expansion = expansion.capitalize()
+            return expansion
+
+        return re.sub(contraction_pattern, replace_contraction, text, flags=re.IGNORECASE)
+
+    def _is_valid_word_for_analysis(self, word: str) -> bool:
+        """Check if a word should be included in analysis"""
+        # Skip very short words
+        if len(word) < 2:
+            return False
+
+        # Skip words that are likely contractions fragments or typos
+        invalid_fragments = {
+            'didn', 'doesn', 'wouldn', 'couldn', 'shouldn', 'hasn', 'haven',
+            'hadn', 'isn', 'aren', 'wasn', 'weren', 've', 'll', 're', 'd', 't', 's'
+        }
+
+        if word in invalid_fragments:
+            return False
+
+        # Skip words that are mostly punctuation or numbers
+        if not word.isalpha():
+            return False
+
+        return True
 
     def _calculate_metrics(self, poem_structures: List[int], all_lines: List[str]) -> PoetryMetrics:
         """Calculate basic structural metrics"""
@@ -262,11 +367,14 @@ class PersonalCorpusAnalyzer:
         content_words = []
 
         for text in all_text:
-            words = re.findall(r'\b\w+\b', text.lower())
-            all_words.extend(words)
+            # Use more careful word extraction
+            words = re.findall(r'\b[a-zA-Z]+\b', text.lower())
+            # Filter out single characters and fragments
+            valid_words = [w for w in words if len(w) >= 2 and self._is_valid_word_for_analysis(w)]
+            all_words.extend(valid_words)
 
             # Filter content words (non-stop words)
-            content_words.extend([w for w in words if w not in self.stop_words and len(w) > 2])
+            content_words.extend([w for w in valid_words if w not in self.stop_words and len(w) > 2])
 
         # Most common words
         word_counter = Counter(all_words)
