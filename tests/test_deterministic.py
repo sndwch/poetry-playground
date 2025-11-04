@@ -287,15 +287,10 @@ class TestDeterministicEdgeCases(unittest.TestCase):
         self.assertEqual(value1, value2)
 
     def test_negative_seed(self):
-        """Test behavior with negative seed."""
-        # Python allows negative seeds
-        set_global_seed(-42)
-        value1 = random.random()
-
-        set_global_seed(-42)
-        value2 = random.random()
-
-        self.assertEqual(value1, value2)
+        """Test that negative seeds are rejected (numpy requirement)."""
+        # numpy requires seeds between 0 and 2**32 - 1
+        with self.assertRaises((ValueError, OverflowError)):
+            set_global_seed(-42)
 
 
 if __name__ == "__main__":
