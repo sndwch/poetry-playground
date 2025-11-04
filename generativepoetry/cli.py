@@ -11,6 +11,7 @@ from generativepoetry.system_utils import check_system_dependencies
 from generativepoetry.line_seeds import LineSeedGenerator, SeedType
 from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
+from generativepoetry.poem_transformer import PoemTransformer
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -342,6 +343,129 @@ def corpus_analyzer_action():
     input()
 
 
+def poem_transformer_action():
+    """Transform a poem through Ship of Theseus style replacements"""
+    transformer = PoemTransformer()
+
+    print("\n" + "="*60)
+    print("SHIP OF THESEUS POEM TRANSFORMER")
+    print("="*60)
+    print("\nThis will gradually transform a poem through multiple passes,")
+    print("replacing words with similar meaning, contextual, or sound-alike")
+    print("alternatives, like the old Google Translate telephone game!")
+
+    # Default to the user's known directory, but allow override
+    default_dir = "/Users/jparker/Desktop/free-verse"
+    print(f"\nDefault directory: {default_dir}")
+    directory = input("Enter poetry directory (or press Enter for default): ").strip()
+
+    if not directory:
+        directory = default_dir
+
+    try:
+        # List available poems
+        poems = transformer.list_poems_in_directory(directory)
+
+        if not poems:
+            print(f"No poetry files found in {directory}")
+            print("Make sure the directory contains .txt or .md files")
+            print("\nPress Enter to return to main menu...")
+            input()
+            return
+
+        print(f"\nFound {len(poems)} poems:")
+        for i, (title, path) in enumerate(poems, 1):
+            print(f"  {i}. {title}")
+
+        # Let user choose a poem
+        while True:
+            choice = input(f"\nChoose a poem (1-{len(poems)}): ").strip()
+            try:
+                choice_num = int(choice)
+                if 1 <= choice_num <= len(poems):
+                    selected_title, selected_path = poems[choice_num - 1]
+                    break
+                else:
+                    print(f"Please enter a number between 1 and {len(poems)}")
+            except ValueError:
+                print("Please enter a valid number")
+
+        # Load the selected poem
+        print(f"\nLoading '{selected_title}'...")
+        poem_text = transformer.load_poem(selected_path)
+
+        print(f"\nOriginal poem ({len(poem_text.split())} words):")
+        print("-" * 40)
+        print(poem_text[:300] + ("..." if len(poem_text) > 300 else ""))
+
+        # Get transformation parameters
+        print(f"\nTransformation settings:")
+
+        try:
+            passes = input("Number of transformation passes (default: 5): ").strip()
+            num_passes = int(passes) if passes else 5
+            num_passes = max(1, min(10, num_passes))  # Limit 1-10
+        except ValueError:
+            num_passes = 5
+
+        try:
+            words_per = input("Words to change per pass (default: 8): ").strip()
+            words_per_pass = int(words_per) if words_per else 8
+            words_per_pass = max(1, min(20, words_per_pass))  # Limit 1-20
+        except ValueError:
+            words_per_pass = 8
+
+        print(f"\nStarting transformation: {num_passes} passes, ~{words_per_pass} words per pass")
+        print("This may take a moment due to API calls...")
+
+        # Perform the transformation
+        transformations = transformer.transform_poem_iteratively(
+            poem_text,
+            num_passes=num_passes,
+            words_per_pass=words_per_pass
+        )
+
+        if transformations:
+            # Generate and display the report
+            print("\n" + "="*60)
+            print("TRANSFORMATION COMPLETE")
+            print("="*60)
+
+            report = transformer.generate_transformation_report(transformations)
+            print(report)
+
+            # Offer to save the result
+            save_choice = input("\nSave transformed poem? (y/n): ").strip().lower()
+            if save_choice == 'y':
+                output_filename = f"{selected_title}_transformed.txt"
+                output_path = os.path.join(directory, output_filename)
+
+                with open(output_path, 'w', encoding='utf-8') as f:
+                    f.write(f"# Ship of Theseus Transformation of '{selected_title}'\n\n")
+                    f.write("## Original:\n")
+                    f.write(poem_text)
+                    f.write("\n\n## Transformed:\n")
+                    f.write(transformations[-1].transformed_poem)
+                    f.write("\n\n## Transformation Log:\n")
+                    f.write(report)
+
+                print(f"Saved to: {output_path}")
+
+        else:
+            print("\nNo transformations were applied. The poem may be too short")
+            print("or contain mostly function words that can't be transformed.")
+
+    except FileNotFoundError:
+        print(f"\nError: Directory not found: {directory}")
+        print("Please check the path and try again.")
+    except Exception as e:
+        print(f"\nError during transformation: {e}")
+        print("Please try again with different settings.")
+
+    print("\nPress Enter to return to main menu...")
+    input()
+
+
 def main():
     menu = ConsoleMenu("Generative Poetry Menu", "What kind of poem would you like to generate?")
 
@@ -357,6 +481,7 @@ def main():
     line_seeds_item = FunctionItem("🌱 Generate Line Seeds (Poetry Ideation)", line_seeds_action)
     metaphor_item = FunctionItem("🔮 Generate Metaphors (Poetry Ideation)", metaphor_generator_action)
     corpus_item = FunctionItem("📊 Analyze Personal Poetry Corpus", corpus_analyzer_action)
+    transformer_item = FunctionItem("🚢 Ship of Theseus Poem Transformer", poem_transformer_action)
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -369,7 +494,8 @@ def main():
     menu.append_item(simple_visual_function_item)
     menu.append_item(line_seeds_item)
     menu.append_item(metaphor_item)
-    menu.append_item(corpus_item)  # Add the corpus analyzer
+    menu.append_item(corpus_item)
+    menu.append_item(transformer_item)  # Add the poem transformer
     menu.append_item(check_deps_item)
 
     menu.start()
