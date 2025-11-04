@@ -24,7 +24,7 @@ class TestWordValidator(unittest.TestCase):
         common_words = ["cat", "dog", "house", "tree", "water"]
         for word in common_words:
             self.assertTrue(
-                self.validator.is_valid_word(word),
+                self.validator.is_valid_english_word(word),
                 f"'{word}' should be valid"
             )
 
@@ -33,7 +33,7 @@ class TestWordValidator(unittest.TestCase):
         invalid_words = ["xyzabc", "qwerty123", "aaaaaaaaa"]
         for word in invalid_words:
             # These should likely be rejected (very rare or nonsense)
-            result = self.validator.is_valid_word(word)
+            result = self.validator.is_valid_english_word(word)
             # Note: Some might pass if they're in dictionaries
             self.assertIsInstance(result, bool)
 
@@ -42,7 +42,7 @@ class TestWordValidator(unittest.TestCase):
         words_with_numbers = ["cat1", "2dogs", "h3llo"]
         for word in words_with_numbers:
             self.assertFalse(
-                self.validator.is_valid_word(word),
+                self.validator.is_valid_english_word(word),
                 f"'{word}' should be invalid (contains numbers)"
             )
 
@@ -50,19 +50,19 @@ class TestWordValidator(unittest.TestCase):
         """Test that validation is case-insensitive."""
         words = ["Cat", "CAT", "cAt", "cat"]
         # All should return same result
-        results = [self.validator.is_valid_word(w) for w in words]
+        results = [self.validator.is_valid_english_word(w) for w in words]
         self.assertTrue(all(r == results[0] for r in results))
 
     def test_validate_empty_string(self):
         """Test validation of empty string."""
-        self.assertFalse(self.validator.is_valid_word(""))
+        self.assertFalse(self.validator.is_valid_english_word(""))
 
     def test_validate_contractions(self):
         """Test validation of contractions."""
         contractions = ["don't", "can't", "won't", "it's"]
         for contraction in contractions:
             # Contractions should be handled gracefully
-            result = self.validator.is_valid_word(contraction)
+            result = self.validator.is_valid_english_word(contraction)
             self.assertIsInstance(result, bool)
 
     def test_validate_hyphenated_words(self):
@@ -70,7 +70,7 @@ class TestWordValidator(unittest.TestCase):
         hyphenated = ["mother-in-law", "well-known", "up-to-date"]
         for word in hyphenated:
             # Hyphenated words should be handled
-            result = self.validator.is_valid_word(word)
+            result = self.validator.is_valid_english_word(word)
             self.assertIsInstance(result, bool)
 
 
@@ -146,16 +146,16 @@ class TestWordValidatorFrequency(unittest.TestCase):
     def test_frequency_filtering(self):
         """Test that frequency filtering works."""
         # Very common word
-        self.assertTrue(self.validator.is_valid_word("the"))
+        self.assertTrue(self.validator.is_valid_english_word("the"))
 
         # Less common but valid word
-        self.assertTrue(self.validator.is_valid_word("garden"))
+        self.assertTrue(self.validator.is_valid_english_word("garden"))
 
     def test_allow_rare_parameter(self):
         """Test allow_rare parameter effect."""
         # Should work regardless of allow_rare for common words
-        self.assertTrue(self.validator.is_valid_word("cat", allow_rare=True))
-        self.assertTrue(self.validator.is_valid_word("cat", allow_rare=False))
+        self.assertTrue(self.validator.is_valid_english_word("cat", allow_rare=True))
+        self.assertTrue(self.validator.is_valid_english_word("cat", allow_rare=False))
 
 
 class TestWordValidatorExclusions(unittest.TestCase):
@@ -171,7 +171,7 @@ class TestWordValidatorExclusions(unittest.TestCase):
         proper_nouns = ["John", "London", "Microsoft"]
         for noun in proper_nouns:
             # May or may not be excluded depending on dictionary
-            result = self.validator.is_valid_word(noun)
+            result = self.validator.is_valid_english_word(noun)
             self.assertIsInstance(result, bool)
 
     def test_exclude_specific_words(self):
@@ -196,14 +196,14 @@ class TestWordValidatorSingleton(unittest.TestCase):
 
     def test_singleton_is_usable(self):
         """Test that singleton instance is usable."""
-        result = word_validator.is_valid_word("cat")
+        result = word_validator.is_valid_english_word("cat")
         self.assertIsInstance(result, bool)
         self.assertTrue(result)
 
     def test_singleton_consistency(self):
         """Test that singleton returns consistent results."""
-        result1 = word_validator.is_valid_word("example")
-        result2 = word_validator.is_valid_word("example")
+        result1 = word_validator.is_valid_english_word("example")
+        result2 = word_validator.is_valid_english_word("example")
         self.assertEqual(result1, result2)
 
 
@@ -218,7 +218,7 @@ class TestWordValidatorEdgeCases(unittest.TestCase):
         """Test validation of single character words."""
         single_chars = ["a", "I", "x", "z"]
         for char in single_chars:
-            result = self.validator.is_valid_word(char)
+            result = self.validator.is_valid_english_word(char)
             self.assertIsInstance(result, bool)
             # "a" and "I" should be valid
             if char in ["a", "I"]:
@@ -228,12 +228,12 @@ class TestWordValidatorEdgeCases(unittest.TestCase):
         """Test validation of very long words."""
         # Real long word
         long_word = "antidisestablishmentarianism"
-        result = self.validator.is_valid_word(long_word)
+        result = self.validator.is_valid_english_word(long_word)
         self.assertIsInstance(result, bool)
 
         # Fake very long word
         fake_long = "a" * 50
-        result = self.validator.is_valid_word(fake_long)
+        result = self.validator.is_valid_english_word(fake_long)
         self.assertFalse(result)
 
     def test_unicode_characters(self):
@@ -241,22 +241,22 @@ class TestWordValidatorEdgeCases(unittest.TestCase):
         unicode_words = ["café", "naïve", "résumé"]
         for word in unicode_words:
             # Should handle gracefully
-            result = self.validator.is_valid_word(word)
+            result = self.validator.is_valid_english_word(word)
             self.assertIsInstance(result, bool)
 
     def test_whitespace_handling(self):
         """Test handling of words with whitespace."""
         # Words with spaces should be rejected
-        self.assertFalse(self.validator.is_valid_word("hello world"))
-        self.assertFalse(self.validator.is_valid_word(" hello"))
-        self.assertFalse(self.validator.is_valid_word("hello "))
+        self.assertFalse(self.validator.is_valid_english_word("hello world"))
+        self.assertFalse(self.validator.is_valid_english_word(" hello"))
+        self.assertFalse(self.validator.is_valid_english_word("hello "))
 
     def test_special_characters(self):
         """Test handling of special characters."""
         special = ["hello!", "world?", "@test", "#hashtag"]
         for word in special:
             # Should reject words with special characters
-            result = self.validator.is_valid_word(word)
+            result = self.validator.is_valid_english_word(word)
             # Most should be invalid
             self.assertIsInstance(result, bool)
 
@@ -281,7 +281,7 @@ class TestWordValidatorPerformance(unittest.TestCase):
     def test_validator_is_reusable(self):
         """Test that validator can be called multiple times."""
         for _ in range(10):
-            result = self.validator.is_valid_word("test")
+            result = self.validator.is_valid_english_word("test")
             self.assertIsInstance(result, bool)
 
 
