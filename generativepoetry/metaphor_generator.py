@@ -120,17 +120,8 @@ class MetaphorGenerator:
         ]
 
     def _init_verb_associations(self):
-        """Initialize verb associations for implied metaphors."""
-        self.verb_associations = {
-            'ocean': ['drowns', 'floods', 'ebbs', 'flows', 'crashes', 'swells'],
-            'fire': ['burns', 'consumes', 'flickers', 'ignites', 'smolders'],
-            'bird': ['soars', 'nests', 'migrates', 'sings', 'preens'],
-            'machine': ['grinds', 'processes', 'outputs', 'breaks down', 'calibrates'],
-            'plant': ['grows', 'blooms', 'withers', 'roots', 'branches'],
-            'fabric': ['unravels', 'frays', 'weaves', 'tears', 'mends'],
-            'light': ['illuminates', 'blinds', 'reveals', 'pierces', 'fades'],
-            'music': ['harmonizes', 'crescendos', 'resonates', 'echoes', 'syncopates']
-        }
+        """Initialize verb associations using shared vocabulary."""
+        self.verb_associations = vocabulary.domain_verb_associations
 
     def extract_metaphor_patterns(self, num_texts: int = 3) -> List[str]:
         """Extract metaphorical patterns from multiple Gutenberg texts.
@@ -380,8 +371,8 @@ class MetaphorGenerator:
 
         # Add object if appropriate
         if random.random() > 0.5:
-            objects = ['silence', 'memory', 'time', 'space', 'meaning']
-            text += f" {random.choice(objects)}"
+            abstract_object = random.choice(vocabulary.abstract_entities)
+            text += f" {abstract_object}"
 
         grounds = self._find_connecting_attributes(source, target)
         quality = self._score_metaphor(source, target, grounds) * 0.9  # Slightly lower for implied
@@ -430,7 +421,7 @@ class MetaphorGenerator:
         target_verbs = self.verb_associations.get(target.lower(), ['moves', 'shifts', 'changes'])
         if target_verbs:
             verb = random.choice(target_verbs)
-            lines.append(f"It {verb} through {random.choice(['time', 'space', 'memory', 'silence'])}.")
+            lines.append(f"It {verb} through {random.choice(vocabulary.abstract_entities[:8])}.")
 
         # Closing transformation
         transformation = random.choice([
@@ -526,14 +517,11 @@ class MetaphorGenerator:
         all_words = {source.lower(), target.lower()}
 
         if any(word in time_words for word in all_words):
-            time_attrs = ['cyclical', 'measured', 'inevitable', 'rhythmic', 'eternal', 'fleeting', 'temporal']
-            attributes.extend(random.sample(time_attrs, 2))
+            attributes.extend(vocabulary.get_thematic_words('temporal', count=2))
         elif any(word in emotion_words for word in all_words):
-            emotion_attrs = ['deep', 'overwhelming', 'subtle', 'transforming', 'passionate', 'tender', 'raw']
-            attributes.extend(random.sample(emotion_attrs, 2))
+            attributes.extend(vocabulary.get_thematic_words('emotional', count=2))
         elif any(word in nature_words for word in all_words):
-            nature_attrs = ['wild', 'untamed', 'persistent', 'changing', 'organic', 'elemental', 'primal']
-            attributes.extend(random.sample(nature_attrs, 2))
+            attributes.extend(vocabulary.get_thematic_words('natural', count=2))
         else:
             # Use shared vocabulary for general attributes
             attributes.extend(vocabulary.get_random_attributes(count=2))
@@ -573,18 +561,10 @@ class MetaphorGenerator:
 
     def generate_synesthetic_metaphor(self, source: str) -> Optional[Metaphor]:
         """Generate a cross-sensory (synesthetic) metaphor."""
-        sensory_domains = {
-            'sight': ['color', 'bright', 'dark', 'shimmer', 'blur'],
-            'sound': ['loud', 'quiet', 'melody', 'echo', 'whisper'],
-            'touch': ['rough', 'smooth', 'cold', 'warm', 'sharp'],
-            'taste': ['sweet', 'bitter', 'sour', 'salt', 'umami'],
-            'smell': ['fragrant', 'pungent', 'fresh', 'musty', 'acrid']
-        }
-
         # Pick two different senses
-        senses = random.sample(list(sensory_domains.keys()), 2)
-        sense1_word = random.choice(sensory_domains[senses[0]])
-        sense2_word = random.choice(sensory_domains[senses[1]])
+        senses = random.sample(list(vocabulary.enhanced_sensory_domains.keys()), 2)
+        sense1_word = vocabulary.get_sensory_words(senses[0], count=1)[0]
+        sense2_word = vocabulary.get_sensory_words(senses[1], count=1)[0]
 
         text = f"{source}, {sense1_word} as {sense2_word}"
 

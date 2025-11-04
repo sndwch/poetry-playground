@@ -88,6 +88,80 @@ class SharedVocabulary:
                 all_attributes.extend(attrs)
             return random.sample(all_attributes, min(count, len(all_attributes)))
 
+    @property
+    def domain_verb_associations(self):
+        """Expanded verb associations for different domains/concepts"""
+        return {
+            'ocean': ['drowns', 'floods', 'ebbs', 'flows', 'crashes', 'swells', 'surges', 'recedes', 'churns', 'laps', 'engulfs', 'breaks'],
+            'fire': ['burns', 'consumes', 'flickers', 'ignites', 'smolders', 'blazes', 'crackles', 'spreads', 'scorches', 'glows', 'kindles', 'sears'],
+            'bird': ['soars', 'nests', 'migrates', 'sings', 'preens', 'glides', 'dives', 'perches', 'flutters', 'circles', 'hovers', 'swoops'],
+            'machine': ['grinds', 'processes', 'outputs', 'breaks down', 'calibrates', 'hums', 'whirs', 'clicks', 'churns', 'operates', 'malfunctions'],
+            'plant': ['grows', 'blooms', 'withers', 'roots', 'branches', 'spreads', 'climbs', 'unfolds', 'flourishes', 'wilts', 'germinates'],
+            'fabric': ['unravels', 'frays', 'weaves', 'tears', 'mends', 'ripples', 'flows', 'drapes', 'wraps', 'tangles', 'stretches'],
+            'light': ['illuminates', 'blinds', 'reveals', 'pierces', 'fades', 'dazzles', 'glimmers', 'radiates', 'shifts', 'filters', 'refracts'],
+            'music': ['harmonizes', 'crescendos', 'resonates', 'echoes', 'syncopates', 'vibrates', 'builds', 'fades', 'soars', 'pulses', 'flows'],
+            'wind': ['whispers', 'howls', 'carries', 'scatters', 'bends', 'rustles', 'gusts', 'sweeps', 'caresses', 'buffets', 'stirs'],
+            'water': ['trickles', 'cascades', 'pools', 'reflects', 'ripples', 'streams', 'drips', 'gurgles', 'rushes', 'seeps', 'swirls'],
+            'time': ['passes', 'stretches', 'compresses', 'heals', 'erodes', 'accumulates', 'fragments', 'loops', 'accelerates', 'freezes'],
+            'memory': ['haunts', 'fades', 'crystallizes', 'surfaces', 'fragments', 'layers', 'echoes', 'distorts', 'preserves', 'dissolves']
+        }
+
+    @property
+    def enhanced_sensory_domains(self):
+        """Enhanced sensory word collections for synesthetic metaphors"""
+        return {
+            'sight': ['luminous', 'shadowy', 'brilliant', 'dim', 'vivid', 'pale', 'dazzling', 'murky', 'gleaming', 'hazy', 'sharp', 'blurred', 'iridescent', 'opaque'],
+            'sound': ['thunderous', 'whispered', 'melodic', 'harsh', 'resonant', 'muffled', 'shrill', 'velvety', 'crystalline', 'hollow', 'rhythmic', 'discordant'],
+            'touch': ['silky', 'coarse', 'burning', 'icy', 'electric', 'velvet', 'jagged', 'feathery', 'metallic', 'liquid', 'granite', 'gossamer'],
+            'taste': ['honeyed', 'acrid', 'metallic', 'earthy', 'effervescent', 'smoky', 'crisp', 'rich', 'delicate', 'robust', 'tangy', 'sublime'],
+            'smell': ['intoxicating', 'pungent', 'ethereal', 'woodsy', 'floral', 'sharp', 'warm', 'green', 'ancient', 'fresh', 'spicy', 'clean']
+        }
+
+    @property
+    def abstract_entities(self):
+        """Expanded collection of abstract concepts for metaphors"""
+        return [
+            'silence', 'memory', 'time', 'space', 'meaning', 'truth', 'beauty', 'chaos', 'order', 'infinity',
+            'solitude', 'eternity', 'mystery', 'wonder', 'longing', 'desire', 'fear', 'hope', 'despair', 'joy',
+            'shadow', 'light', 'darkness', 'emptiness', 'fullness', 'presence', 'absence', 'essence', 'spirit',
+            'breath', 'heartbeat', 'pulse', 'rhythm', 'harmony', 'discord', 'tension', 'release', 'flow', 'stillness'
+        ]
+
+    @property
+    def thematic_attributes(self):
+        """Expanded thematic attribute collections"""
+        return {
+            'temporal': ['cyclical', 'measured', 'inevitable', 'rhythmic', 'eternal', 'fleeting', 'temporal', 'momentary', 'endless', 'recurring', 'suspended', 'accelerating'],
+            'emotional': ['deep', 'overwhelming', 'subtle', 'transforming', 'passionate', 'tender', 'raw', 'intense', 'gentle', 'fierce', 'vulnerable', 'electric'],
+            'natural': ['wild', 'untamed', 'persistent', 'changing', 'organic', 'elemental', 'primal', 'rooted', 'flowing', 'ancient', 'weathered', 'resilient'],
+            'physical': ['rough', 'smooth', 'sharp', 'soft', 'dense', 'light', 'solid', 'fluid', 'brittle', 'flexible', 'heavy', 'weightless'],
+            'metaphysical': ['mysterious', 'transparent', 'hidden', 'revealed', 'sacred', 'profane', 'infinite', 'bounded', 'luminous', 'dark', 'pure', 'complex']
+        }
+
+    def get_domain_verbs(self, domain: str, count: int = 3):
+        """Get verbs associated with a specific domain"""
+        import random
+        domain_verbs = self.domain_verb_associations.get(domain.lower(), [])
+        if domain_verbs:
+            return random.sample(domain_verbs, min(count, len(domain_verbs)))
+        return []
+
+    def get_sensory_words(self, sense: str, count: int = 5):
+        """Get words from a specific sensory domain"""
+        import random
+        sensory_words = self.enhanced_sensory_domains.get(sense.lower(), [])
+        if sensory_words:
+            return random.sample(sensory_words, min(count, len(sensory_words)))
+        return []
+
+    def get_thematic_words(self, theme: str, count: int = 3):
+        """Get words from a specific thematic category"""
+        import random
+        theme_words = self.thematic_attributes.get(theme.lower(), [])
+        if theme_words:
+            return random.sample(theme_words, min(count, len(theme_words)))
+        return []
+
 
 # Global instance for easy access
 vocabulary = SharedVocabulary()
