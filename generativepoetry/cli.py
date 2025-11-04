@@ -12,7 +12,7 @@ from generativepoetry.config import init_config
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
 from generativepoetry.idea_generator import IdeaType, PoetryIdeaGenerator
 from generativepoetry.line_seeds import LineSeedGenerator, SeedType
-from generativepoetry.logger import set_log_level
+from generativepoetry.logger import enable_profiling, set_log_level
 from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
 from generativepoetry.pdf import (
     ChaoticConcretePoemPDFGenerator,
@@ -800,6 +800,13 @@ def main():
         "--dry-run", action="store_true", help="Preview actions without generating files"
     )
 
+    parser.add_argument(
+        "--profile",
+        "-p",
+        action="store_true",
+        help="Enable performance profiling with detailed timing and cache statistics",
+    )
+
     # Utility commands
     parser.add_argument("--list-fonts", action="store_true", help="List available fonts and exit")
 
@@ -938,6 +945,9 @@ def main():
     if args.dry_run:
         cli_overrides["dry_run"] = True
 
+    if args.profile:
+        cli_overrides["profile"] = True
+
     # Initialize config with proper priority: CLI > YAML > pyproject.toml > env > defaults
     config_file = Path(args.config) if args.config else None
     config = init_config(config_file=config_file, cli_overrides=cli_overrides)
@@ -948,6 +958,13 @@ def main():
 
     # Set logging level based on config
     set_log_level(quiet=config.quiet, verbose=config.verbose)
+
+    # Enable profiling if requested
+    profiler = None
+    if config.profile:
+        profiler = enable_profiling()
+        if not config.quiet:
+            print("🔬 Performance profiling enabled\n")
 
     # Set random seed if provided
     seed = config.seed
@@ -960,6 +977,10 @@ def main():
         seed = set_global_seed()
         if not config.quiet:
             print(f"\n{format_seed_message()}\n")
+
+    # Store seed in profiler if profiling is enabled
+    if profiler:
+        profiler.set_metadata("seed", seed)
 
     # Show output directory if specified
     if args.out and not config.quiet:
@@ -1031,6 +1052,10 @@ def main():
 
     menu.start()
     menu.join()
+
+    # Print profiling report if profiling was enabled
+    if profiler:
+        profiler.print_report()
 
     # Echo seed at exit
     print(f"\n{format_seed_message()}")

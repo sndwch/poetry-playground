@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from .jolastic import StochasticJolasticWordGenerator
 from .lexigen import phonetically_related_words
+from .logger import timed
 from .utils import correct_a_vs_an, too_similar
 
 
@@ -88,6 +89,7 @@ class PoemGenerator:
         correct_a_vs_an(output_words)
         return " ".join(output_words)
 
+    @timed("poem_generation.markov")
     def poem_from_markov(
         self,
         input_words,
@@ -188,6 +190,7 @@ class PoemGenerator:
             last_connector = connector
         return output
 
+    @timed("poem_generation.word_list")
     def poem_from_word_list(
         self,
         input_word_list: List[str],

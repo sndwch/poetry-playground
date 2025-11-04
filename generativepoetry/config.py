@@ -95,6 +95,9 @@ class Config(BaseModel):
     verbose: bool = Field(default=False, description="Show detailed output")
     no_color: bool = Field(default=False, description="Disable colored output")
     dry_run: bool = Field(default=False, description="Preview without generating files")
+    profile: bool = Field(
+        default=False, description="Enable performance profiling and timing reports"
+    )
 
     # Caching
     enable_cache: bool = Field(default=True, description="Enable API response caching")
@@ -164,6 +167,7 @@ class Config(BaseModel):
             "GP_VERBOSE": ("verbose", lambda x: x.lower() == "true"),
             "GP_NO_COLOR": ("no_color", lambda x: x.lower() == "true"),
             "GP_DRY_RUN": ("dry_run", lambda x: x.lower() == "true"),
+            "GP_PROFILE": ("profile", lambda x: x.lower() == "true"),
             "GP_ENABLE_CACHE": ("enable_cache", lambda x: x.lower() == "true"),
             "GP_CACHE_DIR": ("cache_dir", Path),
             "GP_MAX_API_RETRIES": ("max_api_retries", int),

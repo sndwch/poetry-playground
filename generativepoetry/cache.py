@@ -22,7 +22,7 @@ except ImportError:
     Cache = None
 
 from .config import get_config
-from .logger import logger
+from .logger import get_profiler, logger
 
 # API version for cache invalidation
 API_VERSION = "1.0"
@@ -170,9 +170,15 @@ class PersistentAPICache:
             value = self.cache.get(key)
             if value is not None:
                 logger.debug(f"Cache hit: {key[:16]}...")
+                # Record cache hit for profiling
+                profiler = get_profiler()
+                profiler.record_cache_hit("persistent_cache")
                 return value
             else:
                 logger.debug(f"Cache miss: {key[:16]}...")
+                # Record cache miss for profiling
+                profiler = get_profiler()
+                profiler.record_cache_miss("persistent_cache")
                 return None
         except Exception as e:
             logger.warning(f"Cache read error: {e}")
@@ -247,6 +253,8 @@ def cached_api_call(endpoint: str, ttl: int = 3600, offline_mode: bool = False):
     def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
+            profiler = get_profiler()
+
             # Generate cache key from endpoint and parameters
             params = {"args": args, "kwargs": kwargs}
             cache_key = CacheKeyGenerator.generate(endpoint, params)
@@ -254,7 +262,12 @@ def cached_api_call(endpoint: str, ttl: int = 3600, offline_mode: bool = False):
             # Try to get from cache
             cached_result = cache.get(cache_key)
             if cached_result is not None:
+                # Record cache hit for this specific endpoint
+                profiler.record_cache_hit(endpoint)
                 return cached_result
+
+            # Record cache miss for this specific endpoint
+            profiler.record_cache_miss(endpoint)
 
             # If offline mode and no cache hit, raise error
             if offline_mode:
@@ -263,6 +276,9 @@ def cached_api_call(endpoint: str, ttl: int = 3600, offline_mode: bool = False):
 
             # Call the function with retry logic
             try:
+                # Record API call
+                profiler.record_api_call(endpoint)
+
                 result = cache.retry_strategy.execute(func, *args, **kwargs)
 
                 # Cache the result if successful
