@@ -482,7 +482,7 @@ class MetaphorGenerator:
             if source_context and target_context:
                 overlap = set(source_context) & set(target_context)
                 attributes.extend(list(overlap))
-        except:
+        except Exception:
             pass
 
         # 2. If no overlap, try similar meaning words
@@ -495,7 +495,7 @@ class MetaphorGenerator:
                 if source_similar and target_similar:
                     overlap = set(source_similar) & set(target_similar)
                     attributes.extend(list(overlap))
-            except:
+            except Exception:
                 pass
 
         # 3. Generate thematic attributes based on word characteristics

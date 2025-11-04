@@ -29,14 +29,14 @@ class WordValidator:
         # Load English word lists
         try:
             self._nltk_words = set(word.lower() for word in words.words())
-        except:
+        except Exception:
             self._nltk_words = set()
 
         try:
             # Get common words from Brown corpus
             self._brown_words = set(word.lower() for word in brown.words()
                                    if word.isalpha() and len(word) > 2)
-        except:
+        except Exception:
             self._brown_words = set()
 
         # Common proper nouns and names to exclude

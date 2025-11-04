@@ -34,7 +34,7 @@ def get_poppler_install_instructions():
                     return "Install with: sudo yum install poppler-utils"
                 else:
                     return "Install poppler-utils using your distribution's package manager"
-        except:
+        except OSError:
             return "Install poppler-utils using your distribution's package manager"
     elif system == "Windows":
         return "Download from: https://github.com/oschwartz10612/poppler-windows/releases/"
@@ -53,14 +53,14 @@ def check_hunspell_installed():
             try:
                 hunspell.HunSpell('/Library/Spelling/en_US.dic', '/Library/Spelling/en_US.aff')
                 return True
-            except:
+            except Exception:
                 return False
         elif system == "Linux":
             # Try Linux default location
             try:
                 hunspell.HunSpell('/usr/share/hunspell/en_US.dic', '/usr/share/hunspell/en_US.aff')
                 return True
-            except:
+            except Exception:
                 return False
         else:
             # Windows or other OS
@@ -95,7 +95,7 @@ def get_hunspell_install_instructions():
                     return """Install hunspell using your distribution's package manager:
   1. Install hunspell development libraries and dictionaries
   2. pip install hunspell"""
-        except:
+        except OSError:
             return """Install hunspell using your distribution's package manager:
   1. Install hunspell development libraries and dictionaries
   2. pip install hunspell"""

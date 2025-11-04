@@ -123,7 +123,7 @@ def validate_word(input_val):
         raise ValueError('Word may not contain digits, spaces, or special characters.')
 
 
-def filter_word(string, spellcheck=True, exclude_words=[], word_frequency_threshold=4e-08):
+def filter_word(string, spellcheck=True, exclude_words=None, word_frequency_threshold=4e-08):
     """Filter out a word if it is too short, has invalid characters, is too archaic, or (optionally) cannot be found in
     a spelling dictionary.
 
@@ -139,6 +139,8 @@ def filter_word(string, spellcheck=True, exclude_words=[], word_frequency_thresh
     # adding to filter out. Although there is an appropriate and even critical way for humans to write poetry using some
     # of these words that might be considered edge cases (e.g. Hottentot), a stochastic text generator does not have
     # a historical sense to do that, so I have decided to exclude these.
+    if exclude_words is None:
+        exclude_words = []
     unfitting_words = pkgutil.get_data('generativepoetry', 'data/hate_words.txt').decode("utf-8").splitlines()
     unfitting_words.extend(pkgutil.get_data('generativepoetry', 'data/abbreviations_etc.txt').decode("utf-8")
                            .splitlines())
@@ -157,12 +159,14 @@ def filter_word(string, spellcheck=True, exclude_words=[], word_frequency_thresh
     return True
 
 
-def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_words: List[str] = []) -> List[str]:
+def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_words: List[str] = None) -> List[str]:
     """Filter a list of words using the filter_word method.
 
     :param word_list: list of words to filter
     :param spellcheck (bool) -- Use a spelling dictionary as filter (helps eliminate abbreviations and Internet slang).
     """
+    if exclude_words is None:
+        exclude_words = []
     results: List[str] = list(
         filter(
             lambda word: filter_word(word, spellcheck=spellcheck, exclude_words=exclude_words), word_list

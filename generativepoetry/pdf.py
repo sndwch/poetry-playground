@@ -121,8 +121,10 @@ class PDFGenerator:
 
 class ChaoticConcretePoemPDFGenerator(PDFGenerator):
 
-    def generate_pdf(self, input_words: Optional[List[str]] = [], max_words=Optional[int]):
+    def generate_pdf(self, input_words: Optional[List[str]] = None, max_words=Optional[int]):
         self.drawn_strings = []
+        if input_words is None:
+            input_words = []
         input_words = get_input_words() if not len(input_words) else input_words
         output_words = input_words + phonetically_related_words(input_words)
         random.shuffle(output_words)
@@ -201,8 +203,10 @@ class StopwordSoupPoemPDFGenerator(PDFGenerator):
 class MarkovPoemPDFGenerator(PDFGenerator):
     default_font_sizes = [15, 18, 21, 24, 28]
 
-    def generate_pdf(self, input_words: Optional[List[str]] = [], orientation: string = 'landscape'):
+    def generate_pdf(self, input_words: Optional[List[str]] = None, orientation: string = 'landscape'):
         self.drawn_strings = []
+        if input_words is None:
+            input_words = []
         self.orientation = orientation
         if self.orientation.lower() == 'landscape':
             num_lines = 14
@@ -251,8 +255,10 @@ class FuturistPoemPDFGenerator(PDFGenerator):
     connectors = [' + ', ' - ', ' * ', ' % ', ' = ', ' != ', ' :: ']
     default_font_sizes = [15, 18, 21, 24, 28]
 
-    def generate_pdf(self, input_words: Optional[List[str]] = [],):
+    def generate_pdf(self, input_words: Optional[List[str]] = None):
         self.drawn_strings = []
+        if input_words is None:
+            input_words = []
         input_words = get_input_words() if not len(input_words) else input_words
         word_list = input_words + phonetically_related_words(input_words)
         poem_lines = []

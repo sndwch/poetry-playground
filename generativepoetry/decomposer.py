@@ -16,6 +16,7 @@ except ImportError:
     INTERNETARCHIVE_AVAILABLE = False
 from urllib.parse import urlsplit
 
+from .gutenberg_utils import get_document_id_from_url
 from .setup_models import lazy_ensure_nltk_data, lazy_ensure_spacy_model
 
 
@@ -221,7 +222,7 @@ def reconcile_replacement_word(original_word_with_ws, original_word_tag, replace
     return replacement_word
 
 
-def swap_parts_of_speech(text1, text2, parts_of_speech=['ADJ', 'NOUN']) -> (str, str):
+def swap_parts_of_speech(text1, text2, parts_of_speech=None) -> (str, str):
     """Swap all the words of certain parts of speech from one text with those (with the same part of speech) from
     another text.
 
@@ -229,6 +230,8 @@ def swap_parts_of_speech(text1, text2, parts_of_speech=['ADJ', 'NOUN']) -> (str,
         parts_of_speech (list) -- list of parts of speech tags to swap out. Must be from the list provided by spaCy:
                                   https://spacy.io/api/annotation#pos-tagging
     """
+    if parts_of_speech is None:
+        parts_of_speech = ['ADJ', 'NOUN']
     nlp = get_spacy_nlp()
     doc1 = nlp(text1)
     doc2 = nlp(text2)

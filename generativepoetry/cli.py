@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import argparse
-
-# Import the pronouncing patch first to suppress pkg_resources warning
-import generativepoetry.pronouncing_patch  # noqa: F401
+import os
 
 from consolemenu import ConsoleMenu
 from consolemenu.items import FunctionItem
 
+# Import the pronouncing patch first to suppress pkg_resources warning
+import generativepoetry.pronouncing_patch  # noqa: F401
 from generativepoetry.causal_poetry import ResonantFragmentMiner
 from generativepoetry.config import config
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
@@ -15,8 +15,8 @@ from generativepoetry.line_seeds import LineSeedGenerator, SeedType
 from generativepoetry.logger import set_log_level
 from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
 from generativepoetry.pdf import (
-    CharacterSoupPoemPDFGenerator,
     ChaoticConcretePoemPDFGenerator,
+    CharacterSoupPoemPDFGenerator,
     FuturistPoemPDFGenerator,
     MarkovPoemPDFGenerator,
     StopwordSoupPoemPDFGenerator,
@@ -834,7 +834,7 @@ def main():
                 custom = [f for f in registered if f not in standard_fonts]
                 for i, font in enumerate(sorted(custom), 1):
                     print(f"  {i:2}. {font}")
-        except:
+        except Exception:
             pass
 
         print("\nNote: Custom fonts can be registered using reportlab.pdfbase.pdfmetrics")

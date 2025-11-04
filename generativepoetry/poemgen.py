@@ -38,7 +38,7 @@ class PoemGenerator:
 
 
     def poem_line_from_markov(self, starting_word: str, num_words: int = 4, rhyme_with: Optional[str] = None,
-                              words_for_sampling: List[str] = [], max_line_length: Optional[int] = 35) -> str:
+                              words_for_sampling: List[str] = None, max_line_length: Optional[int] = 35) -> str:
         """Generate a line of poetry using a markov chain that optionally tries to make a line rhyme with the last one
 
         Different algorithms handle the last word and all the other words: both algorithms use a mix of random
@@ -53,6 +53,8 @@ class PoemGenerator:
         :param max_line_length: an upper limit in characters for the line -- important for PDF generation to keep
                                 everything on the page.
         """
+        if words_for_sampling is None:
+            words_for_sampling = []
         output_words, previous_word = [starting_word], starting_word
         markovgen = StochasticJolasticWordGenerator(previous_lines=self.poem.lines)
         for i in range(num_words - 1):
@@ -126,7 +128,7 @@ class PoemGenerator:
         poem = self.poem
         return poem
 
-    def poem_line_from_word_list(self, word_list: List[str], max_line_length=35, connectors: List[str] = []) -> str:
+    def poem_line_from_word_list(self, word_list: List[str], max_line_length=35, connectors: List[str] = None) -> str:
         """Generate a line of a visual poem from a list of words by gluing them together with random connectors
            (whitespace, conjunctions, punctuation, and symbols).
 
@@ -134,6 +136,8 @@ class PoemGenerator:
         :param max_line_length: upper limit on the length of the return value in characters
         :param connectors (list): list of glue strings
         """
+        if connectors is None:
+            connectors = []
         connectors = connectors if len(connectors) else self.default_connectors
         output, last_word = word_list[0], word_list[0]
         last_connector = ''
@@ -153,7 +157,7 @@ class PoemGenerator:
         return output
 
     def poem_from_word_list(self, input_word_list: List[str], num_lines: int = 6, max_line_length: int = 35,
-                            connectors: List[str] = [], limit_line_to_one_input_word: bool = False):
+                            connectors: List[str] = None, limit_line_to_one_input_word: bool = False):
         """Generate a visual poem from a list of words by taking a given input word list, adding the phonetically
            related words to that word list, and then using those words to create a visual/concrete poem.
 
@@ -165,6 +169,8 @@ class PoemGenerator:
         :param limit_line_to_one_input_word: If true, when generating a line of poetry, only use words that are
                                              phonetically related to one input word.
         """
+        if connectors is None:
+            connectors = []
         connectors = self.default_connectors if not len(connectors) else connectors
         output, line_indent = '', ''
         if limit_line_to_one_input_word:
