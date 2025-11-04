@@ -2,7 +2,7 @@ console-menu==0.6.0
 gutenbergpy>=0.3.5
 beautifulsoup4>=4.9.0
 inflect==4.1.0
-internetarchive>=5.7.1  # Updated to support Python 3.12
+# internetarchive>=5.7.1  # Removed - not used by core poetry features
 markovify==0.8.0
 nltk>=3.8
 pdf2image==1.12.1
