@@ -415,10 +415,7 @@ class LineSeedGenerator:
         """Generate opening using temporal shift."""
         temporal = random.choice(self.temporal_markers)
         verb_options = frequently_following_words(seed_words[0], sample_size=3)
-        if verb_options:
-            verb = verb_options[0]
-        else:
-            verb = "was"
+        verb = verb_options[0] if verb_options else "was"
         return f"{temporal} {seed_words[0]} {verb}..."
 
     def _generate_metaphor_opening(self, seed_words: List[str]) -> str:

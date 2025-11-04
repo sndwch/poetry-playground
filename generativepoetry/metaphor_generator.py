@@ -276,7 +276,7 @@ class MetaphorGenerator:
         targets = []
 
         # Method 1: Use semantic opposites or contrasts
-        for domain, words in self.domains.items():
+        for _domain, words in self.domains.items():
             if source not in words:
                 targets.extend(random.sample(words, min(2, len(words))))
 

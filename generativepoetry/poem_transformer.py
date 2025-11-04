@@ -229,10 +229,7 @@ class PoemTransformer:
             return False
 
         # Use word validator
-        if not self.word_validator.is_valid_english_word(replacement):
-            return False
-
-        return True
+        return self.word_validator.is_valid_english_word(replacement)
 
     def _replace_word_in_line(self, line: str, old_word: str, new_word: str) -> str:
         """Replace a word in a line, preserving capitalization and punctuation"""
@@ -386,7 +383,7 @@ class PoemTransformer:
             report.append("\nWORD EVOLUTION CHAINS:")
             report.append("-" * 30)
             for original, replacements in sorted(all_changes.items()):
-                chain = " → ".join([original] + replacements)
+                chain = " → ".join([original, *replacements])
                 report.append(f"  {chain}")
 
         return "\n".join(report)

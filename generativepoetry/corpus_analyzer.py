@@ -128,12 +128,12 @@ class PersonalCorpusAnalyzer:
         self.datamuse_api = datamuse.Datamuse()
 
         # Extended stop words including function words and common contractions
-        self.stop_words = set([
+        self.stop_words = {
             'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
             'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
             'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can',
             'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
-            'my', 'your', 'his', 'her', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs',
+            'my', 'your', 'his', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs',
             'this', 'that', 'these', 'those', 'what', 'which', 'who', 'whom', 'whose', 'where', 'when', 'why', 'how',
             'not', 'no', 'yes', 'so', 'too', 'very', 'just', 'only', 'even', 'also', 'still', 'more', 'most',
             'some', 'any', 'all', 'every', 'each', 'few', 'many', 'much', 'several', 'both', 'either', 'neither',
@@ -143,7 +143,7 @@ class PersonalCorpusAnalyzer:
             'done', 'doing', 'put', 'know', 'knew', 'think', 'thought', 'see', 'saw', 'look', 'looked',
             'way', 'one', 'two', 'three', 'first', 'last', 'next', 'back', 'away', 'around', 'about',
             'into', 'from', 'through', 'across', 'between', 'among', 'within', 'without', 'above', 'below'
-        ])
+        }
 
     def analyze_directory(self, directory_path: str) -> StyleFingerprint:
         """Analyze all poetry files in a directory"""
@@ -308,10 +308,7 @@ class PersonalCorpusAnalyzer:
             return False
 
         # Skip words that are mostly punctuation or numbers
-        if not word.isalpha():
-            return False
-
-        return True
+        return word.isalpha()
 
     def _is_poetry_appropriate(self, word: str) -> bool:
         """Filter out words that might not be appropriate for poetry inspiration"""
@@ -590,8 +587,6 @@ class PersonalCorpusAnalyzer:
             return
 
         # Opening patterns (first lines or first few words)
-        opening_patterns = []
-        closing_patterns = []
 
         # This is simplified - in a real implementation, you'd group by poems
         # For now, we'll look at patterns in line beginnings and endings
@@ -804,7 +799,7 @@ class PersonalCorpusAnalyzer:
 
         # Find interesting source lines with signature words
         source_lines = []
-        signature_words = set(word for word, _ in fingerprint.vocabulary.signature_words[:15])
+        signature_words = {word for word, _ in fingerprint.vocabulary.signature_words[:15]}
 
         for line in all_lines:
             line_words = set(re.findall(r'\b[a-zA-Z]+\b', line.lower()))

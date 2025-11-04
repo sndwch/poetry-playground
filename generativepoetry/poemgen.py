@@ -39,7 +39,7 @@ class PoemGenerator:
 
 
     def poem_line_from_markov(self, starting_word: str, num_words: int = 4, rhyme_with: Optional[str] = None,
-                              words_for_sampling: List[str] = None, max_line_length: Optional[int] = 35) -> str:
+                              words_for_sampling: Optional[List[str]] = None, max_line_length: Optional[int] = 35) -> str:
         """Generate a line of poetry using a markov chain that optionally tries to make a line rhyme with the last one
 
         Different algorithms handle the last word and all the other words: both algorithms use a mix of random
@@ -56,7 +56,7 @@ class PoemGenerator:
         """
         if words_for_sampling is None:
             words_for_sampling = []
-        output_words, previous_word = [starting_word], starting_word
+        output_words, _previous_word = [starting_word], starting_word
         markovgen = StochasticJolasticWordGenerator(previous_lines=self.poem.lines)
         for i in range(num_words - 1):
             if (i == num_words - 2) or (max_line_length and (max_line_length > 14 and
@@ -129,7 +129,7 @@ class PoemGenerator:
         poem = self.poem
         return poem
 
-    def poem_line_from_word_list(self, word_list: List[str], max_line_length=35, connectors: List[str] = None) -> str:
+    def poem_line_from_word_list(self, word_list: List[str], max_line_length=35, connectors: Optional[List[str]] = None) -> str:
         """Generate a line of a visual poem from a list of words by gluing them together with random connectors
            (whitespace, conjunctions, punctuation, and symbols).
 
@@ -158,7 +158,7 @@ class PoemGenerator:
         return output
 
     def poem_from_word_list(self, input_word_list: List[str], num_lines: int = 6, max_line_length: int = 35,
-                            connectors: List[str] = None, limit_line_to_one_input_word: bool = False):
+                            connectors: Optional[List[str]] = None, limit_line_to_one_input_word: bool = False):
         """Generate a visual poem from a list of words by taking a given input word list, adding the phonetically
            related words to that word list, and then using those words to create a visual/concrete poem.
 
@@ -175,7 +175,7 @@ class PoemGenerator:
         connectors = self.default_connectors if not len(connectors) else connectors
         output, line_indent = '', ''
         if limit_line_to_one_input_word:
-            for i in range(num_lines - 1):
+            for _i in range(num_lines - 1):
                 linked_word = random.choice(input_word_list)
                 output += self.poem_line_from_word_list(phonetically_related_words(linked_word), connectors=connectors,
                                                         max_line_length=max_line_length)
@@ -186,7 +186,7 @@ class PoemGenerator:
             word_list = input_word_list.copy()
             for word in input_word_list:
                 word_list.extend(phonetically_related_words(word))
-            for i in range(num_lines - 1):
+            for _i in range(num_lines - 1):
                 random.shuffle(word_list)
                 output += self.poem_line_from_word_list(word_list, connectors=connectors,
                                                         max_line_length=max_line_length)

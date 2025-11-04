@@ -2,7 +2,7 @@ import pkgutil
 import platform
 import random
 import re
-from typing import List, TypeVar
+from typing import List, Optional, TypeVar
 
 from consolemenu.screen import Screen
 from wordfreq import word_frequency
@@ -154,12 +154,10 @@ def filter_word(string, spellcheck=True, exclude_words=None, word_frequency_thre
         return False
     if spellcheck and hobj is not None and not hobj.spell(string):
         return False
-    if string in exclude_words:
-        return False
-    return True
+    return string not in exclude_words
 
 
-def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_words: List[str] = None) -> List[str]:
+def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_words: Optional[List[str]] = None) -> List[str]:
     """Filter a list of words using the filter_word method.
 
     :param word_list: list of words to filter
@@ -178,11 +176,7 @@ def filter_word_list(word_list: List[str], spellcheck: bool = True, exclude_word
 def sort_by_rarity(word_list: List[str]) -> List[str]:
     if len(word_list) <= 1:
         return word_list
-    return sort_by_rarity(
-        [word for word in word_list[1:] if word_frequency(word, 'en') < word_frequency(word_list[0], 'en')]
-    ) + [word_list[0]] + \
-           sort_by_rarity(
-               [word for word in word_list[1:] if word_frequency(word, 'en') >= word_frequency(word_list[0], 'en')])
+    return [*sort_by_rarity([word for word in word_list[1:] if word_frequency(word, 'en') < word_frequency(word_list[0], 'en')]), word_list[0], *sort_by_rarity([word for word in word_list[1:] if word_frequency(word, 'en') >= word_frequency(word_list[0], 'en')])]
 
 
 def too_similar(word1: str, comparison_val: str_or_list_of_str) -> bool:
@@ -223,8 +217,7 @@ def correct_a_vs_an(phrase_as_list: List[str]) -> List[str]:
         if last_word == 'a':
             if word[0] in vowels:
                 phrase_as_list[i - 1] = 'an'
-        elif last_word == 'an':
-            if word[0] in consonants:
-                phrase_as_list[i - 1] = 'a'
+        elif last_word == 'an' and word[0] in consonants:
+            phrase_as_list[i - 1] = 'a'
         last_word = word
     return phrase_as_list

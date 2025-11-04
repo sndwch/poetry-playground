@@ -306,7 +306,7 @@ class PoetryIdeaGenerator:
         source_preview = text[:100].replace('\n', ' ').strip()
 
         # Parse the text
-        parsed = ParsedText(text)
+        ParsedText(text)
 
         # Look for different types of ideas
         for idea_type in target_types:
@@ -384,10 +384,7 @@ class PoetryIdeaGenerator:
             if len(word) > 4 and self.word_validator.is_valid_english_word(word):
                 interesting_word_count += 1
 
-        if interesting_word_count < 3:
-            return False
-
-        return True
+        return not interesting_word_count < 3
 
     def _extract_keywords(self, text: str) -> List[str]:
         """Extract key words from the idea text"""

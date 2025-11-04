@@ -28,14 +28,14 @@ class WordValidator:
         """Initialize word validator with dictionaries."""
         # Load English word lists
         try:
-            self._nltk_words = set(word.lower() for word in words.words())
+            self._nltk_words = {word.lower() for word in words.words()}
         except Exception:
             self._nltk_words = set()
 
         try:
             # Get common words from Brown corpus
-            self._brown_words = set(word.lower() for word in brown.words()
-                                   if word.isalpha() and len(word) > 2)
+            self._brown_words = {word.lower() for word in brown.words()
+                                   if word.isalpha() and len(word) > 2}
         except Exception:
             self._brown_words = set()
 
@@ -98,15 +98,11 @@ class WordValidator:
 
         # Check word frequency
         freq = word_frequency(word_lower, 'en')
-        if freq < self.min_frequency:
-            if not allow_rare:
-                return False
-
-        # Additional check: must start with a common letter pattern
-        if word_lower[:2] in ['xz', 'qx', 'qz', 'zx', 'vx']:
+        if freq < self.min_frequency and not allow_rare:
             return False
 
-        return True
+        # Additional check: must start with a common letter pattern
+        return word_lower[:2] not in ['xz', 'qx', 'qz', 'zx', 'vx']
 
     def is_proper_noun(self, word: str) -> bool:
         """Check if word is likely a proper noun."""
@@ -115,10 +111,7 @@ class WordValidator:
             return True
 
         # Check if it's capitalized and not in dictionary
-        if word[0].isupper() and word.lower() not in self._nltk_words:
-            return True
-
-        return False
+        return bool(word[0].isupper() and word.lower() not in self._nltk_words)
 
     def clean_word_list(self, words: list, allow_rare: bool = False) -> list:
         """

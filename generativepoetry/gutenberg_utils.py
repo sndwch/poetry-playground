@@ -58,7 +58,7 @@ def get_document_id_from_url(url):
         r'[?&]id=(\d+)',
     ]
 
-    path = urlsplit(url).path
+    urlsplit(url).path
     for pattern in patterns:
         match = re.search(pattern, url)
         if match:

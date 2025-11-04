@@ -174,10 +174,7 @@ class DocumentLibrary:
         # Must have reasonable sentence structure
         sentences = re.split(r'[.!?]+', text[:2000])
         avg_sentence_length = sum(len(s.split()) for s in sentences) / max(len(sentences), 1)
-        if avg_sentence_length < 5 or avg_sentence_length > 50:
-            return False
-
-        return True
+        return not (avg_sentence_length < 5 or avg_sentence_length > 50)
 
     def _cache_document(self, document_id: int, text: str):
         """Cache document with size management"""

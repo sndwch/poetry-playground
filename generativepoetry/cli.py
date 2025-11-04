@@ -425,7 +425,7 @@ def poem_transformer_action():
             return
 
         print(f"\nFound {len(poems)} poems:")
-        for i, (title, path) in enumerate(poems, 1):
+        for i, (title, _path) in enumerate(poems, 1):
             print(f"  {i}. {title}")
 
         # Let user choose a poem

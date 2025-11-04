@@ -88,7 +88,7 @@ def rhymes(input_val: str_or_list_of_str, sample_size=None) -> List[str]:
     for input_word in input_words:
         # Use cached wrapper for CMU lookups
         cached_rhymes = _cached_pronouncing_rhymes(input_word)
-        rhyme_words.extend(filter_word_list([word for word in set(cached_rhymes)]))
+        rhyme_words.extend(filter_word_list(list(set(cached_rhymes))))
     return extract_sample(rhyme_words, sample_size=sample_size)
 
 

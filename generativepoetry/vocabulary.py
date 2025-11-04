@@ -5,7 +5,7 @@ Centralized collection of evocative words, atmospheric nouns, emotional keywords
 and other vocabulary sets used across multiple poetry generation modules.
 """
 
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 
 class SharedVocabulary:
@@ -75,7 +75,7 @@ class SharedVocabulary:
                 return tone
         return 'neutral'
 
-    def get_random_attributes(self, category: str = None, count: int = 2) -> List[str]:
+    def get_random_attributes(self, category: Optional[str] = None, count: int = 2) -> List[str]:
         """Get random poetic attributes from a category"""
         import random
 

@@ -150,7 +150,7 @@ class CharacterSoupPoemPDFGenerator(PDFGenerator):
 
     def generate_pdf(self):
         c = canvas.Canvas("character_soup.pdf")
-        for i in range(20):
+        for _i in range(20):
             char_sequence = random.choice([string.ascii_lowercase, string.digits, string.punctuation])
             for char in char_sequence:
                 char = random.choice([char, char, char.upper(), char.upper()]) \
@@ -177,11 +177,11 @@ class StopwordSoupPoemPDFGenerator(PDFGenerator):
         lazy_ensure_nltk_data('corpora/stopwords', 'stopwords', 'Stopwords corpus')
 
         c = canvas.Canvas("stopword_soup.pdf")
-        punctuation = [char for char in string.punctuation]
+        punctuation = list(string.punctuation)
         words_to_use = filter_word_list(stopwords.words('english')) + punctuation  # filter removes 1/2s of contractions
         for word in ['him', 'her', 'his', 'they', 'won']:
             words_to_use.remove(word)
-        for i in range(3):
+        for _i in range(3):
             words_to_use.extend(['hmm', 'ah', 'umm', 'uh', 'ehh.', 'psst..', 'what?', 'oh?', 'ahem..'])
         random.shuffle(words_to_use)
         for word in words_to_use:
@@ -235,7 +235,7 @@ class MarkovPoemPDFGenerator(PDFGenerator):
         else:
             c = canvas.Canvas(filename)
         for line in poem.lines:
-            text = random.choice([line, line, line, line.upper()])
+            random.choice([line, line, line, line.upper()])
             font_size = self.get_font_size(line)
             while font_choice is None or last_font_choice == font_choice:
                 font_choice = random.choice(self.font_choices)
@@ -263,7 +263,7 @@ class FuturistPoemPDFGenerator(PDFGenerator):
         word_list = input_words + phonetically_related_words(input_words)
         poem_lines = []
         pgen = PoemGenerator()
-        for i in range(25):
+        for _i in range(25):
             random.shuffle(word_list)
             poem_lines.append(pgen.poem_line_from_word_list(word_list, connectors=self.connectors, max_line_length=40))
         filename = self.set_filename(input_words)
