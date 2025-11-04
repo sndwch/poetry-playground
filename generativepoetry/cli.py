@@ -9,6 +9,7 @@ from generativepoetry.poemgen import *
 from generativepoetry.utils import get_input_words
 from generativepoetry.system_utils import check_system_dependencies
 from generativepoetry.line_seeds import LineSeedGenerator, SeedType
+from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -68,6 +69,109 @@ def check_dependencies_action():
     check_system_dependencies()
     print("\nPress Enter to continue...")
     input()
+
+
+def metaphor_generator_action():
+    """Generate metaphors for poetry ideation."""
+    generator = MetaphorGenerator()
+    exit_loop = False
+    input_words = get_input_words()
+
+    while not exit_loop:
+        print("\n" + "="*60)
+        print(f"Metaphor Generation for: {', '.join(input_words)}")
+        print("="*60 + "\n")
+
+        # Generate metaphors
+        print("Generating metaphors...")
+        metaphors = generator.generate_metaphor_batch(input_words, count=15)
+
+        # Try to extract some patterns from Gutenberg
+        print("Mining literary patterns...")
+        gutenberg_patterns = generator.extract_metaphor_patterns()
+
+        # Group by type
+        by_type = {}
+        for metaphor in metaphors:
+            if metaphor.metaphor_type not in by_type:
+                by_type[metaphor.metaphor_type] = []
+            by_type[metaphor.metaphor_type].append(metaphor)
+
+        # Display results
+        print("\nSIMILES & COMPARISONS:")
+        print("-" * 40)
+        similes = by_type.get(MetaphorType.SIMILE, [])
+        for m in similes[:4]:
+            print(f"  • {m.text}")
+            if m.grounds:
+                print(f"    (connecting: {', '.join(m.grounds[:2])})")
+
+        print("\nDIRECT METAPHORS:")
+        print("-" * 40)
+        direct = by_type.get(MetaphorType.DIRECT, [])
+        for m in direct[:4]:
+            print(f"  • {m.text}")
+
+        print("\nIMPLIED METAPHORS:")
+        print("-" * 40)
+        implied = by_type.get(MetaphorType.IMPLIED, [])
+        for m in implied[:4]:
+            print(f"  • {m.text}")
+
+        print("\nPOSSESSIVE FORMS:")
+        print("-" * 40)
+        possessive = by_type.get(MetaphorType.POSSESSIVE, [])
+        for m in possessive[:3]:
+            print(f"  • {m.text}")
+
+        # Generate and show an extended metaphor for the first word
+        if input_words:
+            print("\nEXTENDED METAPHOR:")
+            print("-" * 40)
+            # Find a good target for extended metaphor
+            targets = generator._find_target_domains(input_words[0])
+            if targets:
+                extended = generator.generate_extended_metaphor(input_words[0], targets[0])
+                for line in extended.text.split('\n'):
+                    print(f"  {line}")
+
+        # Show some Gutenberg-inspired patterns if found
+        if gutenberg_patterns:
+            print("\nINSPIRED BY CLASSIC LITERATURE:")
+            print("-" * 40)
+            for source, target, sentence in gutenberg_patterns[:3]:
+                print(f"  • {source} like {target}")
+                print(f"    From: \"{sentence[:80]}...\"")
+
+        # Generate a synesthetic metaphor
+        print("\nSYNESTHETIC (CROSS-SENSORY):")
+        print("-" * 40)
+        for word in input_words[:2]:
+            synesthetic = generator.generate_synesthetic_metaphor(word)
+            if synesthetic:
+                print(f"  • {synesthetic.text}")
+
+        print("\n" + "="*60)
+        print("\nOptions:")
+        print("  1. Generate new metaphors with same words")
+        print("  2. Use different words")
+        print("  3. Mine more Gutenberg texts")
+        print("  4. Return to main menu")
+
+        choice = input("\nYour choice (1-4): ").strip()
+
+        if choice == '1':
+            continue  # Regenerate with same words
+        elif choice == '2':
+            input_words = get_input_words()  # Get new words
+        elif choice == '3':
+            print("\nMining additional Gutenberg texts...")
+            for _ in range(3):
+                patterns = generator.extract_metaphor_patterns()
+                if patterns:
+                    print(f"Found {len(patterns)} metaphorical patterns")
+        else:
+            exit_loop = True
 
 
 def line_seeds_action():
@@ -160,6 +264,7 @@ def main():
 
     # New ideation items
     line_seeds_item = FunctionItem("🌱 Generate Line Seeds (Poetry Ideation)", line_seeds_action)
+    metaphor_item = FunctionItem("🔮 Generate Metaphors (Poetry Ideation)", metaphor_generator_action)
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -170,7 +275,8 @@ def main():
     menu.append_item(character_soup_function_item)
     menu.append_item(stopword_soup_function_item)
     menu.append_item(simple_visual_function_item)
-    menu.append_item(line_seeds_item)  # Add the new feature
+    menu.append_item(line_seeds_item)
+    menu.append_item(metaphor_item)  # Add the metaphor generator
     menu.append_item(check_deps_item)
 
     menu.start()

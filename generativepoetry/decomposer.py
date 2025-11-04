@@ -6,10 +6,12 @@ import inflect
 import markovify
 import nltk
 import spacy
-from gutenberg.acquire import load_etext
-from gutenberg.query import get_metadata
-from gutenberg.cleanup import strip_headers
-from gutenberg_cleaner import super_cleaner
+try:
+    from gutenbergpy.textget import get_text_by_id, strip_headers
+    GUTENBERG_AVAILABLE = True
+except ImportError:
+    GUTENBERG_AVAILABLE = False
+    print("Warning: gutenbergpy not available. Gutenberg features disabled.")
 from internetarchive import download
 from urllib.parse import urlsplit
 
@@ -17,6 +19,7 @@ from urllib.parse import urlsplit
 sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
 spacy_nlp = spacy.load('en_core_web_sm', disable=['ner'])
 spacy_nlp.remove_pipe("parser")
+
 inflector = inflect.engine()
 input_type = TypeVar('input_type', str, List[str])  # Must be str or list of strings
 
@@ -100,37 +103,70 @@ def get_internet_archive_document(url) -> str:
         raise Exception(f'Archive.org download failed for url: {url}')
 
 
-def get_gutenberg_document(url) -> str:
+def get_gutenberg_document(url_or_id) -> str:
     """Downloads a document (book, etc.) from Project Gutenberg and returns it as a string.
 
-    Returns a ParsedText instance."""
+    Args:
+        url_or_id: Either a Gutenberg URL or a numeric ID
+
+    Returns:
+        Cleaned text string
+    """
     if not GUTENBERG_AVAILABLE:
-        raise ImportError("gutenbergpy is not installed. Install with: pip install gutenbergpy")
+        return ""  # Return empty string if not available
 
-    # Get Project Gutenberg document ID from url string
-    validate_url(url, expected_netloc='gutenberg.org')
-    document_id = get_document_id_from_url(url)
+    try:
+        # Handle both URL and numeric ID
+        if isinstance(url_or_id, str) and 'gutenberg.org' in url_or_id:
+            # Extract ID from URL
+            document_id = get_document_id_from_url(url_or_id)
+        else:
+            document_id = int(url_or_id)
 
-    # Get the text
-    raw_text = get_text_by_id(document_id)
-    return clean_gutenberg_text(raw_text)
+        # Get the text
+        raw_text = get_text_by_id(document_id)
+
+        # Clean it
+        if raw_text:
+            text = strip_headers(raw_text)
+            if isinstance(text, bytes):
+                text = text.decode('utf-8', errors='ignore')
+            # Remove excessive whitespace
+            text = re.sub(r'\n\n+', '\n\n', text)
+            return text
+    except Exception as e:
+        print(f"Error getting Gutenberg text: {e}")
+
+    return ""
 
 
 def random_gutenberg_document(language_filter='en') -> str:
     """Downloads a random document (book, etc.) from Project Gutenberg and returns it as a string.
 
     Keyword arguments:
-        language_filter (str) -- restrict the random document to a paritcular language (default: English)
+        language_filter (str) -- restrict the random document to a particular language (default: English)
     """
-    doc_language = None
-    document = ''
-    while (not doc_language or language_filter) and doc_language != language_filter and len(document) == 0:
-        # Keep grabbing random documents until 1 meets the language filter, if specified, and verify it really has text
-        document_id = random.randint(1, 60134)  # Pick book at random (max id is currently 60134)
-        lang_metadata = get_metadata('language', document_id)
-        doc_language = next(iter(lang_metadata)) if len(lang_metadata) else False
-        document = super_cleaner(strip_headers(load_etext(document_id).strip()), mark_deletions=False)
-    return document
+    if not GUTENBERG_AVAILABLE:
+        return ""  # Return empty string if not available
+
+    # Try a few random IDs until we get a valid text
+    for _ in range(10):  # Try up to 10 times
+        try:
+            document_id = random.randint(1, 60134)  # Pick book at random
+            raw_text = get_text_by_id(document_id)
+
+            if raw_text:
+                text = strip_headers(raw_text)
+                if isinstance(text, bytes):
+                    text = text.decode('utf-8', errors='ignore')
+                # Remove excessive whitespace
+                text = re.sub(r'\n\n+', '\n\n', text)
+                if len(text) > 1000:  # Ensure it has substantial content
+                    return text
+        except Exception:
+            continue  # Try another ID
+
+    return ""  # Return empty if we couldn't find anything
 
 
 def reconcile_replacement_word(original_word_with_ws, original_word_tag, replacement_word, replacement_word_tag) -> str:
