@@ -1,6 +1,6 @@
 """Type definitions for generativepoetry."""
 
-from typing import List, Optional, Union, Tuple, Dict, Any
+from typing import List, Tuple, Union
 
 # Type aliases
 WordList = List[str]

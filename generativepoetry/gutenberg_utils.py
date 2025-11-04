@@ -1,10 +1,10 @@
 """Utility functions for working with Project Gutenberg texts using gutenbergpy."""
 
 import re
-import random
+
 from bs4 import BeautifulSoup
 from gutenbergpy.gutenbergcache import GutenbergCache
-from gutenbergpy.textget import get_text_by_id, strip_headers
+from gutenbergpy.textget import strip_headers
 
 
 def clean_gutenberg_text(text):

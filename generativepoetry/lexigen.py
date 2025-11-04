@@ -1,10 +1,12 @@
 import random
-from typing import List, TypeVar, Optional
+from typing import List, Optional, TypeVar
+
 import pronouncing
 from datamuse import datamuse
+
+from .cache import cached_api_call
 from .utils import *
 from .word_validator import word_validator
-from .cache import cached_api_call
 
 
 def clean_api_results(word_list, exclude_words=None, use_validator=True):

@@ -2,8 +2,9 @@ import pkgutil
 import platform
 import random
 import re
-from consolemenu.screen import Screen
 from typing import List, TypeVar
+
+from consolemenu.screen import Screen
 from wordfreq import word_frequency
 
 # Try to import hunspell, but make it optional
@@ -33,14 +34,14 @@ def setup_spellchecker():
         # macOS - try default dictionary location
         try:
             return hunspell.HunSpell('/Library/Spelling/en_US.dic', '/Library/Spelling/en_US.aff')
-        except Exception as e:
+        except Exception:
             # Optional feature, fail gracefully
             return None
     else:
         # Linux - try default dictionary location
         try:
             return hunspell.HunSpell('/usr/share/hunspell/en_US.dic', '/usr/share/hunspell/en_US.aff')
-        except Exception as e:
+        except Exception:
             # Optional feature, fail gracefully
             return None
 

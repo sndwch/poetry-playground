@@ -5,13 +5,14 @@ Provides robust, diverse document retrieval with caching, metadata filtering,
 and anti-repetition tracking to solve the "same document" problem across modules.
 """
 
+import logging
 import random
 import re
 import time
-from typing import List, Set, Optional, Dict, Tuple
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Set
+
 from gutenbergpy.textget import get_text_by_id, strip_headers
-import logging
 
 from .config import DocumentConfig, PerformanceConfig
 
@@ -132,7 +133,7 @@ class DocumentLibrary:
 
                 return text
 
-            except Exception as e:
+            except Exception:
                 if 'document_id' in locals():
                     self.bad_document_ids.add(document_id)
                 continue

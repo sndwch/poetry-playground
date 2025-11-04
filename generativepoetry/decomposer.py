@@ -2,11 +2,13 @@ import random
 import re
 from collections import defaultdict
 from typing import List, TypeVar
+
 import inflect
 import markovify
 import nltk
 import spacy
 from gutenbergpy.textget import get_text_by_id, strip_headers
+
 try:
     from internetarchive import download
     INTERNETARCHIVE_AVAILABLE = True
@@ -125,7 +127,7 @@ def get_internet_archive_document(url) -> str:
     if len(url_parts) > 2:
         document_id = url_parts[2]
     else:
-        raise Exception(f'Not a valid url')
+        raise Exception('Not a valid url')
     try:
         response = download(document_id, glob_pattern="*txt", return_responses=True)[0]
         # Remove single newlines, preserve double  newlines (because they demarcate paragraphs
@@ -233,7 +235,7 @@ def swap_parts_of_speech(text1, text2, parts_of_speech=['ADJ', 'NOUN']) -> (str,
     # First build two dictionaries (one for each text) whose keys are parts of speech and values are lists of words
     doc1_words_keyed_by_pos, doc2_words_keyed_by_pos = defaultdict(lambda: []), defaultdict(lambda: [])
     for token in doc1:
-        if token.pos_ in parts_of_speech and not token.text in doc1_words_keyed_by_pos[token.pos_]:
+        if token.pos_ in parts_of_speech and token.text not in doc1_words_keyed_by_pos[token.pos_]:
             doc1_words_keyed_by_pos[token.pos_].append((token.text, token.tag_))
     for pos in parts_of_speech:
         random.shuffle(doc1_words_keyed_by_pos[pos])  # For variety's sake

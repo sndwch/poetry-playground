@@ -9,16 +9,13 @@ Example fragments: "The door slammed", "When silence fell", "Every shadow whispe
 """
 
 import re
-import random
-import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple, Optional
-from collections import defaultdict
+from typing import List
 
-from .word_validator import WordValidator
+from .config import DocumentConfig, QualityConfig
 from .document_library import get_diverse_gutenberg_documents
 from .vocabulary import vocabulary
-from .config import DocumentConfig, QualityConfig
+from .word_validator import WordValidator
 
 
 @dataclass

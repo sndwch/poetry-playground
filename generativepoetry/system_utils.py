@@ -1,8 +1,7 @@
 """System utilities for checking dependencies."""
 
-import subprocess
-import sys
 import platform
+import subprocess
 
 
 def check_poppler_installed():
@@ -27,7 +26,7 @@ def get_poppler_install_instructions():
     elif system == "Linux":
         # Try to detect Linux distribution
         try:
-            with open('/etc/os-release', 'r') as f:
+            with open('/etc/os-release') as f:
                 content = f.read().lower()
                 if 'ubuntu' in content or 'debian' in content:
                     return "Install with: sudo apt-get install poppler-utils"
@@ -82,7 +81,7 @@ def get_hunspell_install_instructions():
     elif system == "Linux":
         # Try to detect Linux distribution
         try:
-            with open('/etc/os-release', 'r') as f:
+            with open('/etc/os-release') as f:
                 content = f.read().lower()
                 if 'ubuntu' in content or 'debian' in content:
                     return """Install with:

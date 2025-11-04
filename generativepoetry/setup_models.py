@@ -4,15 +4,13 @@ This module provides centralized model management to eliminate new user friction
 All models are downloaded automatically when needed, with clear progress reporting.
 """
 
-import sys
 import subprocess
-from pathlib import Path
+import sys
 from typing import List, Tuple
 
 import nltk
 
 from .logger import logger
-
 
 # Required NLTK data packages
 REQUIRED_NLTK_DATA = [
@@ -96,7 +94,7 @@ def download_spacy_model(model_name: str, description: str, quiet: bool = False)
     try:
         if not quiet:
             logger.info(f"Downloading spaCy {description}...")
-            logger.info(f"This may take a few minutes...")
+            logger.info("This may take a few minutes...")
 
         # Use python -m spacy download to ensure it uses the correct Python environment
         result = subprocess.run(
@@ -281,5 +279,5 @@ def lazy_ensure_spacy_model(model_name: str, description: str) -> bool:
         return True
 
     logger.warning(f"spaCy {description} not found. Attempting to download...")
-    logger.warning(f"This may take a few minutes on first run.")
+    logger.warning("This may take a few minutes on first run.")
     return download_spacy_model(model_name, description, quiet=False)

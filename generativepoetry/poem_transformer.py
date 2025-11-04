@@ -6,16 +6,16 @@ creating variations that drift from the original while attempting to maintain
 some semantic coherence. Like the old Google Translate telephone game.
 """
 
-import os
-import re
 import random
+import re
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Optional, Set
 from pathlib import Path
+from typing import List, Optional, Tuple
 
 from datamuse import datamuse
-from .lexigen import similar_meaning_words, contextually_linked_words, similar_sounding_words
+
+from .lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
 from .word_validator import WordValidator
 
 
@@ -52,7 +52,7 @@ class PoemTransformer:
             'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did',
             'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can',
             'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
-            'my', 'your', 'his', 'her', 'its', 'our', 'their',
+            'my', 'your', 'his', 'its', 'our', 'their',
             'this', 'that', 'these', 'those', 'what', 'which', 'who', 'where', 'when', 'why', 'how',
             'not', 'no', 'yes', 'so', 'if', 'then', 'else', 'than', 'as', 'like'
         }
@@ -292,7 +292,7 @@ class PoemTransformer:
         poems = []
         for file_path in directory.glob("*.txt"):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, encoding='utf-8') as f:
                     content = f.read().strip()
                     if content:  # Skip empty files
                         poems.append((file_path.stem, str(file_path)))
@@ -302,7 +302,7 @@ class PoemTransformer:
         # Also check for .md files
         for file_path in directory.glob("*.md"):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, encoding='utf-8') as f:
                     content = f.read().strip()
                     if content:
                         poems.append((file_path.stem, str(file_path)))
@@ -313,7 +313,7 @@ class PoemTransformer:
 
     def load_poem(self, file_path: str) -> str:
         """Load and clean a poem from a file"""
-        with open(file_path, 'r', encoding='utf-8') as f:
+        with open(file_path, encoding='utf-8') as f:
             content = f.read()
 
         # Remove markdown formatting but preserve line breaks
@@ -345,12 +345,12 @@ class PoemTransformer:
         original = transformations[0].original_poem
         final = transformations[-1].transformed_poem
 
-        report.append(f"\nORIGINAL POEM:")
+        report.append("\nORIGINAL POEM:")
         report.append("-" * 30)
         report.append(original)
 
         # Show transformation summary
-        report.append(f"\nTRANSFORMATION SUMMARY:")
+        report.append("\nTRANSFORMATION SUMMARY:")
         report.append("-" * 30)
 
         total_changes = sum(len(t.steps) for t in transformations)
@@ -370,7 +370,7 @@ class PoemTransformer:
                 report.append(f"  Line {step.line_number}: '{step.original_word}' → '{step.new_word}' ({step.transformation_type}) {conf_str}")
 
         # Show final result
-        report.append(f"\nFINAL TRANSFORMED POEM:")
+        report.append("\nFINAL TRANSFORMED POEM:")
         report.append("-" * 30)
         report.append(final)
 
@@ -383,7 +383,7 @@ class PoemTransformer:
                 all_changes[step.original_word].append(step.new_word)
 
         if all_changes:
-            report.append(f"\nWORD EVOLUTION CHAINS:")
+            report.append("\nWORD EVOLUTION CHAINS:")
             report.append("-" * 30)
             for original, replacements in sorted(all_changes.items()):
                 chain = " → ".join([original] + replacements)

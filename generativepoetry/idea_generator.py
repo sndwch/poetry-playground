@@ -6,17 +6,16 @@ Generates configurable numbers of ideas across different categories to overcome
 writer's block and spark creative inspiration.
 """
 
-import re
 import random
-import time
+import re
 from dataclasses import dataclass, field
-from typing import List, Dict, Set, Optional
 from enum import Enum
+from typing import List, Optional
 
+from .config import DocumentConfig
 from .decomposer import ParsedText
 from .document_library import get_diverse_gutenberg_documents
 from .word_validator import WordValidator
-from .config import DocumentConfig, QualityConfig, PerformanceConfig
 
 
 class IdeaType(Enum):

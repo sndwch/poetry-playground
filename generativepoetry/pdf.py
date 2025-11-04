@@ -2,27 +2,24 @@ import os
 import random
 import string
 from os.path import isfile
-from typing import List, TypeVar, Tuple
-from reportlab.pdfgen import canvas
-from generativepoetry.poemgen import *
-from reportlab.pdfbase.pdfmetrics import registerFont, registerFontFamily
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.pagesizes import letter, landscape
+from typing import List, Tuple
+
 from nltk.corpus import stopwords
 from pdf2image import convert_from_path
-from .system_utils import check_poppler_installed, get_poppler_install_instructions
+from pdf2image.exceptions import PDFInfoNotInstalledError, PDFPageCountError, PDFSyntaxError
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.pdfgen import canvas
+
+from generativepoetry.poemgen import *
+
 from .setup_models import lazy_ensure_nltk_data
-from pdf2image.exceptions import (
-    PDFInfoNotInstalledError,
-    PDFPageCountError,
-    PDFSyntaxError
-)
+from .system_utils import check_poppler_installed, get_poppler_install_instructions
 from .utils import filter_word_list
 
 rgb_tuple = Tuple[float]
 
 
-class VisualPoemString():
+class VisualPoemString:
     """The text drawn by reportlab at an XY coordinate--can be a line, a word, or just a character."""
 
     def __init__(self, text, x: int, y: int, font: str, font_size: int, rgb: Optional[Tuple] = None):

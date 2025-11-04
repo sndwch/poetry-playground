@@ -1,26 +1,22 @@
 """Dynamic Metaphor Generator using Project Gutenberg texts and cross-domain connections."""
 
+import logging
 import random
 import re
-from typing import List, Dict, Tuple, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
-import logging
+from typing import List, Optional, Tuple
 
+from .config import DocumentConfig, QualityConfig
+from .decomposer import ParsedText
+from .document_library import get_diverse_gutenberg_documents
 from .lexigen import (
-    similar_meaning_words,
     contextually_linked_words,
     frequently_following_words,
-    related_rare_words
+    related_rare_words,
+    similar_meaning_words,
 )
 from .vocabulary import vocabulary
-from .decomposer import (
-    get_gutenberg_document,
-    ParsedText
-)
-from .document_library import get_diverse_gutenberg_documents
-from .utils import filter_word_list
-from .config import DocumentConfig, QualityConfig
 from .word_validator import word_validator
 
 logger = logging.getLogger(__name__)
@@ -234,7 +230,7 @@ class MetaphorGenerator:
                 else:
                     print(f"    ✓ Found {len(found_metaphors)} metaphor patterns")
             else:
-                print(f"    ✓ Found 0 metaphor patterns")
+                print("    ✓ Found 0 metaphor patterns")
 
             return found_metaphors
 

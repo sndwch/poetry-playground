@@ -1,7 +1,8 @@
 import itertools
 from typing import List, Optional
-from .lexigen import *
+
 from .jolastic import StochasticJolasticWordGenerator
+from .lexigen import *
 from .utils import too_similar
 
 

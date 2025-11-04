@@ -6,22 +6,20 @@ and vocabulary characteristics. Provides insights for maintaining authentic voic
 while exploring creative expansions.
 """
 
-import os
 import re
-import math
 import statistics
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Tuple, Set, Optional, Any
 from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import nltk
 import spacy
-from wordfreq import word_frequency
 from datamuse import datamuse
+from wordfreq import word_frequency
 
+from .lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
 from .word_validator import WordValidator
-from .lexigen import similar_meaning_words, contextually_linked_words, similar_sounding_words
 
 
 @dataclass
@@ -156,7 +154,7 @@ class PersonalCorpusAnalyzer:
         poems = []
         for file_path in directory.glob("*.txt"):
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, encoding='utf-8') as f:
                     content = f.read().strip()
                     if content:  # Skip empty files
                         poems.append({
@@ -282,7 +280,7 @@ class PersonalCorpusAnalyzer:
         }
 
         # Create pattern that matches contractions (case insensitive)
-        contraction_pattern = r'\b(' + '|'.join(re.escape(key) for key in contractions.keys()) + r')\b'
+        contraction_pattern = r'\b(' + '|'.join(re.escape(key) for key in contractions) + r')\b'
 
         def replace_contraction(match):
             contraction = match.group(1).lower()
@@ -562,7 +560,7 @@ class PersonalCorpusAnalyzer:
             'contemplation': ['think', 'wonder', 'perhaps', 'maybe', 'consider', 'ponder']
         }
 
-        emotion_scores = {emotion: 0 for emotion in emotional_words}
+        emotion_scores = dict.fromkeys(emotional_words, 0)
         total_words = sum(len(text.split()) for text in all_text)
 
         for emotion, words in emotional_words.items():
@@ -642,7 +640,7 @@ class PersonalCorpusAnalyzer:
 
         # Basic metrics
         m = fingerprint.metrics
-        report.append(f"\nCORPUS OVERVIEW:")
+        report.append("\nCORPUS OVERVIEW:")
         report.append(f"  Total poems: {m.total_poems}")
         report.append(f"  Total lines: {m.total_lines}")
         report.append(f"  Total words: {m.total_words}")
@@ -653,34 +651,34 @@ class PersonalCorpusAnalyzer:
 
         # Vocabulary insights
         v = fingerprint.vocabulary
-        report.append(f"\nVOCABULARY PROFILE:")
+        report.append("\nVOCABULARY PROFILE:")
 
         if v.signature_words:
-            report.append(f"  Signature words (distinctively yours):")
+            report.append("  Signature words (distinctively yours):")
             for word, score in v.signature_words[:10]:
                 report.append(f"    • {word} (signature strength: {score:.1f}x)")
 
         if v.most_common_content_words:
-            report.append(f"  Most frequent content words:")
+            report.append("  Most frequent content words:")
             for word, count in v.most_common_content_words[:10]:
                 report.append(f"    • {word} ({count} times)")
 
         if v.preferred_adjectives:
-            report.append(f"  Preferred adjectives:")
+            report.append("  Preferred adjectives:")
             adj_list = [f"{word}({count})" for word, count in v.preferred_adjectives[:8]]
             report.append(f"    {', '.join(adj_list)}")
 
         # Thematic analysis
         t = fingerprint.themes
-        report.append(f"\nTHEMATIC PATTERNS:")
+        report.append("\nTHEMATIC PATTERNS:")
 
         if t.semantic_clusters:
-            report.append(f"  Word clusters (related concepts):")
+            report.append("  Word clusters (related concepts):")
             for theme, words in t.semantic_clusters[:5]:
                 report.append(f"    • {theme}: {', '.join(words[:5])}")
 
         if t.emotional_register:
-            report.append(f"  Emotional register:")
+            report.append("  Emotional register:")
             for emotion, score in t.emotional_register.items():
                 if score > 0:
                     report.append(f"    • {emotion}: {score:.4f}")
@@ -691,15 +689,15 @@ class PersonalCorpusAnalyzer:
             report.append(f"  Imagery tendency: {tendency} ({concrete_ratio:.2f}:1 ratio)")
 
         # Compositional patterns
-        report.append(f"\nCOMPOSITIONAL STYLE:")
+        report.append("\nCOMPOSITIONAL STYLE:")
 
         if fingerprint.opening_patterns:
-            report.append(f"  Common opening patterns:")
+            report.append("  Common opening patterns:")
             for pattern in fingerprint.opening_patterns[:8]:
                 report.append(f"    • '{pattern}'")
 
         if fingerprint.transitional_phrases:
-            report.append(f"  Transitional phrases:")
+            report.append("  Transitional phrases:")
             for phrase in fingerprint.transitional_phrases[:6]:
                 report.append(f"    • '{phrase}'")
 
@@ -885,7 +883,7 @@ class PersonalCorpusAnalyzer:
 
         # Vocabulary expansions
         if fingerprint.vocabulary_expansions:
-            report.append(f"\nVOCABULARY EXPANSIONS:")
+            report.append("\nVOCABULARY EXPANSIONS:")
             report.append("Explore these alternatives to your signature words:")
 
             for expansion in fingerprint.vocabulary_expansions[:8]:
@@ -902,7 +900,7 @@ class PersonalCorpusAnalyzer:
 
         # Inspired stanzas
         if fingerprint.inspired_stanzas:
-            report.append(f"\n\nINSPIRED STANZA VARIATIONS:")
+            report.append("\n\nINSPIRED STANZA VARIATIONS:")
             report.append("Sample stanzas reimagined with expanded vocabulary:")
 
             for i, stanza in enumerate(fingerprint.inspired_stanzas, 1):
@@ -915,7 +913,7 @@ class PersonalCorpusAnalyzer:
                     report.append(f"    Substitutions: {', '.join(subs)}")
 
         # Creative prompts
-        report.append(f"\n\nCREATIVE PROMPTS:")
+        report.append("\n\nCREATIVE PROMPTS:")
         report.append("-" * 30)
 
         if fingerprint.vocabulary.signature_words:

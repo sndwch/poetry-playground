@@ -1,10 +1,8 @@
 """Enhanced word validation to ensure quality output."""
 
-import re
-from typing import Set, Optional
-from wordfreq import word_frequency
 import nltk
-from nltk.corpus import words, brown, wordnet
+from nltk.corpus import brown, words
+from wordfreq import word_frequency
 
 # Try to ensure NLTK data is available
 try:
@@ -50,7 +48,7 @@ class WordValidator:
             'albion', 'cambs', 'gms', 'fuehrer', 'futur', 'knut', 'nair',
             'amma', 'mani', 'nere', 'narc', 'nare', 'lublin', 'vale',
             'fletcher', 'griff', 'tennent', 'tenant', 'tope', 'swope',
-            'fenner', 'feiner', 'fancher', 'fuser', 'bamburgh'
+            'fuser'
         }
 
         # Non-English or problematic words

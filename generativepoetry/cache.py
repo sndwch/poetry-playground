@@ -7,11 +7,11 @@ and offline mode support.
 
 import hashlib
 import json
-import time
-from pathlib import Path
-from typing import Any, Optional, Callable, Tuple
-from functools import wraps
 import random
+import time
+from functools import wraps
+from pathlib import Path
+from typing import Any, Callable, Optional
 
 try:
     from diskcache import Cache
@@ -22,7 +22,6 @@ except ImportError:
 
 from .config import config
 from .logger import logger
-
 
 # API version for cache invalidation
 API_VERSION = "1.0"

@@ -7,11 +7,11 @@ conceptual pathways between seemingly unrelated words.
 """
 
 import time
-from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple, Optional, Any
-from collections import defaultdict, deque
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
 
 from datamuse import datamuse
+
 from .word_validator import WordValidator
 
 

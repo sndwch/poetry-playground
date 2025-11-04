@@ -1,25 +1,33 @@
 #!/usr/bin/env python3
-# Import the patch first to suppress pkg_resources warning before pronouncing is loaded
-from generativepoetry.pronouncing_patch import *
-
 import argparse
+
+# Import the pronouncing patch first to suppress pkg_resources warning
+import generativepoetry.pronouncing_patch  # noqa: F401
+
 from consolemenu import ConsoleMenu
 from consolemenu.items import FunctionItem
-from generativepoetry.pdf import *
-from generativepoetry.poemgen import *
-from generativepoetry.utils import get_input_words
-from generativepoetry.system_utils import check_system_dependencies
-from generativepoetry.line_seeds import LineSeedGenerator, SeedType
-from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
-from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
-from generativepoetry.poem_transformer import PoemTransformer
-from generativepoetry.idea_generator import PoetryIdeaGenerator, IdeaType
-from generativepoetry.six_degrees import SixDegrees
+
 from generativepoetry.causal_poetry import ResonantFragmentMiner
-from generativepoetry.seed_manager import set_global_seed, format_seed_message
 from generativepoetry.config import config
+from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
+from generativepoetry.idea_generator import IdeaType, PoetryIdeaGenerator
+from generativepoetry.line_seeds import LineSeedGenerator, SeedType
 from generativepoetry.logger import set_log_level
+from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
+from generativepoetry.pdf import (
+    CharacterSoupPoemPDFGenerator,
+    ChaoticConcretePoemPDFGenerator,
+    FuturistPoemPDFGenerator,
+    MarkovPoemPDFGenerator,
+    StopwordSoupPoemPDFGenerator,
+)
+from generativepoetry.poem_transformer import PoemTransformer
+from generativepoetry.poemgen import PoemGenerator, print_poem
+from generativepoetry.seed_manager import format_seed_message, set_global_seed
 from generativepoetry.setup_models import setup as setup_models
+from generativepoetry.six_degrees import SixDegrees
+from generativepoetry.system_utils import check_system_dependencies
+from generativepoetry.utils import get_input_words
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -27,7 +35,7 @@ reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit
 def interactive_loop(poetry_generator):
     exit_loop = False
     input_words = get_input_words()
-    while exit_loop == False:
+    while not exit_loop:
         poetry_generator.generate_pdf(input_words=input_words)
         png_created = poetry_generator.generate_png(poetry_generator.pdf_filepath)
         if png_created:
@@ -68,7 +76,7 @@ def visual_puzzle_poem_action():
     exit_loop = False
     pg = PoemGenerator()
     input_words = get_input_words()
-    while exit_loop == False:
+    while not exit_loop:
         print_poem(pg.poem_from_word_list(input_words))
         print(reuse_words_prompt)
         if input() != 'yes':
@@ -365,7 +373,7 @@ def corpus_analyzer_action():
             print("\nTry building poems around these - they're authentically 'you'")
 
         if fingerprint.themes.semantic_clusters:
-            print(f"\nThematic word groups you naturally use:")
+            print("\nThematic word groups you naturally use:")
             for theme, words in fingerprint.themes.semantic_clusters[:3]:
                 print(f"  • {theme}: {', '.join(words[:4])}")
             print("\nConsider cross-pollinating between these groups")
@@ -442,7 +450,7 @@ def poem_transformer_action():
         print(poem_text[:300] + ("..." if len(poem_text) > 300 else ""))
 
         # Get transformation parameters
-        print(f"\nTransformation settings:")
+        print("\nTransformation settings:")
 
         try:
             passes = input("Number of transformation passes (default: 5): ").strip()
@@ -529,7 +537,7 @@ def idea_generator_action():
         num_ideas = 20
 
     # Ask about preferred categories
-    print(f"\nIdea categories available:")
+    print("\nIdea categories available:")
     categories = {
         1: ("Emotional Moments", IdeaType.EMOTIONAL_MOMENT),
         2: ("Vivid Imagery", IdeaType.VIVID_IMAGERY),
@@ -546,10 +554,10 @@ def idea_generator_action():
     for num, (name, _) in categories.items():
         print(f"  {num}. {name}")
 
-    print(f"  11. All categories (mixed)")
+    print("  11. All categories (mixed)")
 
     try:
-        category_choice = input(f"\nChoose category (1-11, default: 11): ").strip()
+        category_choice = input("\nChoose category (1-11, default: 11): ").strip()
         choice_num = int(category_choice) if category_choice else 11
 
         if 1 <= choice_num <= 10:
