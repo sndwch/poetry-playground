@@ -3,6 +3,35 @@ from typing import List, TypeVar, Optional
 import pronouncing
 from datamuse import datamuse
 from .utils import *
+try:
+    from .word_validator import word_validator
+    USE_VALIDATOR = True
+except ImportError:
+    USE_VALIDATOR = False
+
+
+def clean_api_results(word_list, exclude_words=None, use_validator=True):
+    """Clean and validate words from API results.
+
+    Args:
+        word_list: List of words to clean
+        exclude_words: Words to exclude
+        use_validator: Whether to use enhanced validation
+
+    Returns:
+        List of valid, cleaned words
+    """
+    if exclude_words is None:
+        exclude_words = []
+
+    # First pass: basic filtering
+    filtered = filter_word_list(word_list, spellcheck=False, exclude_words=exclude_words)
+
+    # Second pass: enhanced validation if available
+    if USE_VALIDATOR and use_validator:
+        filtered = word_validator.clean_word_list(filtered, allow_rare=False)
+
+    return filtered
 
 api = datamuse.Datamuse()
 str_or_list_of_str = TypeVar('str_or_list_of_str', str, List[str])
@@ -72,7 +101,7 @@ def similar_sounding_words(input_val: str_or_list_of_str, sample_size: Optional[
     for input_word in input_words:
         response = api.words(sl=input_word, max=datamuse_api_max) if datamuse_api_max else api.words(sl=input_word)
         exclude_words = input_words + ss_words
-        ss_words.extend(filter_word_list([obj['word'] for obj in response], exclude_words=exclude_words))
+        ss_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
     return extract_sample(ss_words, sample_size=sample_size)
 
 
@@ -105,8 +134,7 @@ def similar_meaning_words(input_val: str_or_list_of_str, sample_size: Optional[i
     for input_word in input_words:
         response = api.words(ml=input_word, max=datamuse_api_max) if datamuse_api_max else api.words(ml=input_word)
         exclude_words = sm_words.copy()
-        sm_words.extend(filter_word_list([obj['word'] for obj in response], spellcheck=False,
-                                         exclude_words=exclude_words))
+        sm_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
     return extract_sample(sm_words, sample_size=sample_size)
 
 
@@ -141,9 +169,7 @@ def contextually_linked_words(input_val: str_or_list_of_str, sample_size: Option
         response = api.words(rel_trg=input_word, max=datamuse_api_max) if datamuse_api_max else \
             api.words(rel_trg=input_word)
         exclude_words = cl_words.copy()
-        # Spellcheck removes proper nouns so don't.
-        cl_words.extend(filter_word_list([obj['word'] for obj in response], spellcheck=False,
-                                         exclude_words=exclude_words))
+        cl_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
     return extract_sample(cl_words, sample_size=sample_size)
 
 
@@ -177,10 +203,8 @@ def frequently_following_words(input_val: str_or_list_of_str, sample_size: Optio
     ff_words: List[str] = []
     for input_word in input_words:
         response = api.words(lc=input_word, max=datamuse_api_max) if datamuse_api_max else api.words(lc=input_word)
-        # Filter but don't use spellcheck -- it removes important words (for the markov chain use case) like 'of'
         exclude_words = ff_words.copy()
-        ff_words.extend(filter_word_list([obj['word'] for obj in response], spellcheck=False,
-                                         exclude_words=exclude_words))
+        ff_words.extend(clean_api_results([obj['word'] for obj in response], exclude_words=exclude_words))
         random.shuffle(ff_words)
     if sample_size and sample_size > 4:
         # Pick 3 at random from the top X rarest and the rest from the whole
@@ -226,8 +250,12 @@ def phonetically_related_words(input_val: str_or_list_of_str, sample_size=None, 
     for word in input_words:
         results.extend(rhymes(word, sample_size=max_results_per_input_word))
         exclude_words = results.copy()
-        nonrhymes = filter_word_list(similar_sounding_words(
-            word, sample_size=sample_size, datamuse_api_max=datamuse_api_max), exclude_words=exclude_words)
+        similar_words = similar_sounding_words(
+            word, sample_size=sample_size, datamuse_api_max=datamuse_api_max)
+        # Apply enhanced filtering if available
+        if USE_VALIDATOR:
+            similar_words = word_validator.clean_word_list(similar_words, allow_rare=False)
+        nonrhymes = filter_word_list(similar_words, exclude_words=exclude_words)
         results.extend(nonrhymes[:max_results_per_input_word])
     results = extract_sample(results, sample_size=sample_size)
     return results

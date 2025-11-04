@@ -9,7 +9,8 @@ from reportlab.pdfbase.pdfmetrics import registerFont, registerFontFamily
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.pagesizes import letter, landscape
 from nltk.corpus import stopwords
-from pdf2image import convert_from_path, convert_from_bytes
+from pdf2image import convert_from_path
+from .system_utils import check_poppler_installed, get_poppler_install_instructions
 from pdf2image.exceptions import (
     PDFInfoNotInstalledError,
     PDFPageCountError,
@@ -34,21 +35,14 @@ class VisualPoemString():
 
 class PDFGenerator:
     default_font_sizes = [12, 14, 16, 18, 24, 32]
-    font_choices = ['arial', 'arial-bold', 'arial-italic', 'arial-bolditalic',
-                    'Courier-Bold', 'Courier-Bold', 'Courier-BoldOblique','Courier-BoldOblique',
-                    'Helvetica', 'Helvetica-BoldOblique', 'Helvetica-Bold', 'Helvetica-Oblique',
-                    'Times-Bold', 'Times-BoldItalic', 'Times-Italic', 'Times-Roman',
-                    'Vera', 'VeraBd', 'VeraBI', 'VeraIt']
+    # Use only built-in fonts that don't require external TTF files
+    font_choices = ['Courier', 'Courier-Bold', 'Courier-BoldOblique', 'Courier-Oblique',
+                    'Helvetica', 'Helvetica-Bold', 'Helvetica-BoldOblique', 'Helvetica-Oblique',
+                    'Times-Bold', 'Times-BoldItalic', 'Times-Italic', 'Times-Roman']
 
     def __init__(self):
-        registerFont(TTFont('arial', 'arial.ttf'))
-        registerFont(TTFont('arial-bold', 'arialbd.ttf'), )
-        registerFont(TTFont('arial-italic', 'ariali.ttf'), )
-        registerFont(TTFont('arial-bolditalic', 'arialbi.ttf'), )
-        registerFont(TTFont('Vera', 'Vera.ttf'))
-        registerFont(TTFont('VeraBd', 'VeraBd.ttf'))
-        registerFont(TTFont('VeraIt', 'VeraIt.ttf'))
-        registerFont(TTFont('VeraBI', 'VeraBI.ttf'))
+        # Skip font registration - use built-in fonts only
+        # The font_choices list above contains only standard PDF fonts
         self.orientation = 'landscape'
         self.drawn_strings: List[VisualPoemString] = []
 
@@ -79,9 +73,19 @@ class PDFGenerator:
         return filename
 
     def generate_png(self, input_filepath=None):
-        pages = convert_from_path(input_filepath)
-        for page in pages:
-            page.save(f'{input_filepath[:-3]}png', 'PNG')
+        if not check_poppler_installed():
+            print(f"Note: PNG generation skipped. {get_poppler_install_instructions()}")
+            return False
+
+        try:
+            pages = convert_from_path(input_filepath)
+            for page in pages:
+                page.save(f'{input_filepath[:-3]}png', 'PNG')
+            print(f"PNG generated: {input_filepath[:-3]}png")
+            return True
+        except Exception as e:
+            print(f"Error generating PNG: {e}")
+            return False
 
 
 class ChaoticConcretePoemPDFGenerator(PDFGenerator):

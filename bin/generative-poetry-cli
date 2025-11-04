@@ -68,5 +68,9 @@ menu.append_item(character_soup_function_item)
 menu.append_item(stopword_soup_function_item)
 menu.append_item(simple_visual_function_item)
 
-menu.start()
-menu.join()
+def main():
+    menu.start()
+    menu.join()
+
+if __name__ == '__main__':
+    main()

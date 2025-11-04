@@ -84,7 +84,7 @@ class PoemGenerator:
                                 everything on the page.
             """
         self.poem = None
-        words_for_sampling = input_words + phonetically_related_words(input_words, limit_results_per_input_word=20)
+        words_for_sampling = input_words + phonetically_related_words(input_words, max_results_per_input_word=20)
         # Check for undesirable similarity overlap in the words for sampling list
         similarity_checks = list(itertools.combinations(words_for_sampling, 2))
         words_removed = []
@@ -102,12 +102,16 @@ class PoemGenerator:
         for i in range(num_lines):
             rhyme_with = last_line_last_word if i % 2 == 1 else None
             # 67.5 % chance the line starts with an input word or something relate, 32.5% with a common word
-            line_starter = words_for_sampling.pop() if random.random() > .4 else \
-                    random.choice(StochasticJolasticWordGenerator.common_words)
+            if words_for_sampling and random.random() > .4:
+                line_starter = words_for_sampling.pop()
+            else:
+                line_starter = random.choice(StochasticJolasticWordGenerator.common_words)
             while i >= 1 and too_similar(line_starter, self.poem.lines[i - 1].split(' ')[0]):
                 # while statement prevents repetition of line starters
-                line_starter = words_for_sampling.pop() if random.random() > .4 else \
-                    random.choice(StochasticJolasticWordGenerator.common_words)
+                if words_for_sampling and random.random() > .4:
+                    line_starter = words_for_sampling.pop()
+                else:
+                    line_starter = random.choice(StochasticJolasticWordGenerator.common_words)
             line = self.poem_line_from_markov(line_starter, words_for_sampling=words_for_sampling,
                                               num_words=random.randint(min_line_words, max_line_words),
                                               rhyme_with=rhyme_with, max_line_length=max_line_length)

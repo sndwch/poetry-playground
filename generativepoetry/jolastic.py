@@ -99,7 +99,10 @@ class StochasticJolasticWordGenerator:
                 word = self.random_nonrhyme(previous_words[:-1])
             else:
                 while word is None or too_similar(word, previous_words):
-                    word = random.choice(words_for_sampling)
+                    if words_for_sampling:
+                        word = random.choice(words_for_sampling)
+                    else:
+                        word = self.random_nonrhyme(previous_words)
         else:
             threshold = .6 if len(words_for_sampling) else 1
             while word is None or too_similar(word,  previous_words):
@@ -107,7 +110,10 @@ class StochasticJolasticWordGenerator:
                     if random.random() <= .5:
                         word = random.choice(self.connector_choices)
                     else:
-                        word = random.choice(words_for_sampling)
+                        if words_for_sampling:
+                            word = random.choice(words_for_sampling)
+                        else:
+                            word = self.random_nonrhyme(previous_words)
                 else:
                     word = self.random_nonrhyme(previous_words)
         return word

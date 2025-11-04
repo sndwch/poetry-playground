@@ -104,13 +104,16 @@ def get_gutenberg_document(url) -> str:
     """Downloads a document (book, etc.) from Project Gutenberg and returns it as a string.
 
     Returns a ParsedText instance."""
+    if not GUTENBERG_AVAILABLE:
+        raise ImportError("gutenbergpy is not installed. Install with: pip install gutenbergpy")
+
     # Get Project Gutenberg document ID from url string
     validate_url(url, expected_netloc='gutenberg.org')
-    match = re.search("(?:files|ebooks|epub)\/(\d+)", urlsplit(url).path)
-    if not match:
-        raise Exception('Not a valid url')
-    document_id = int(match.group(1))
-    return super_cleaner(strip_headers(load_etext(document_id).strip()), mark_deletions=False)
+    document_id = get_document_id_from_url(url)
+
+    # Get the text
+    raw_text = get_text_by_id(document_id)
+    return clean_gutenberg_text(raw_text)
 
 
 def random_gutenberg_document(language_filter='en') -> str:

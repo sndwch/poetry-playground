@@ -2,25 +2,36 @@ import pkgutil
 import platform
 import random
 import re
-import hunspell
 from consolemenu.screen import Screen
 from typing import List, TypeVar
 from wordfreq import word_frequency
 
+# Try to import hunspell, but make it optional
+try:
+    import hunspell
+    HUNSPELL_AVAILABLE = True
+except ImportError:
+    HUNSPELL_AVAILABLE = False
+
 
 def setup_spellchecker():
+    if not HUNSPELL_AVAILABLE:
+        return None
+
     if platform.system() == 'Windows':
         raise Exception('Your OS is not currently supported.')
     elif platform.system() == 'Darwin':
         try:
             return hunspell.HunSpell('/Library/Spelling/en_US.dic', '/Library/Spelling/en_US.aff')
         except Exception:
-            raise Exception('This module requires the installation of the hunspell dictionary.')
+            print("Warning: Hunspell dictionary not found. Spellchecking disabled.")
+            return None
     else:
         try:
             return hunspell.HunSpell('/usr/share/hunspell/en_US.dic', '/usr/share/hunspell/en_US.aff')
         except Exception:
-            raise Exception('This module requires the installation of the hunspell dictionary.')
+            print("Warning: Hunspell dictionary not found. Spellchecking disabled.")
+            return None
 
 
 hobj = setup_spellchecker()
@@ -127,7 +138,7 @@ def filter_word(string, spellcheck=True, exclude_words=[], word_frequency_thresh
         return False
     if word_frequency(string, 'en') < word_frequency_threshold:
         return False
-    if spellcheck and not hobj.spell(string):
+    if spellcheck and hobj is not None and not hobj.spell(string):
         return False
     if string in exclude_words:
         return False

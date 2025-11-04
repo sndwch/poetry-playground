@@ -10,12 +10,13 @@ with open('README.rst') as readme_file:
 
 requirements = [
     'console-menu==0.6.0',
-    'Gutenberg==0.8.0',
-    'hunspell>=0.5.5',
+    'gutenbergpy>=0.3.5',
+    'beautifulsoup4>=4.9.0',
+    # 'hunspell>=0.5.5',  # Optional - requires system dependencies
     'inflect==4.1.0',
     'internetarchive==1.8.5',
     'markovify==0.8.0',
-    'nltk==3.4.5',
+    'nltk>=3.8',
     'pdf2image==1.12.1',
     'rdflib==4.2.2',
     'pronouncing>=0.2.0',
@@ -37,7 +38,6 @@ setup(
     packages=[
         'generativepoetry',
     ],
-    dependency_links = ['https://github.com/coreybobco/gutenberg_cleaner@master#egg=gutenberg_cleaner'],
     package_dir={'generativepoetry':
                  'generativepoetry'},
     package_data={'generativepoetry': ['data/hate_words.txt', 'data/abbreviations_etc.txt']},
