@@ -224,7 +224,7 @@ class LineSeedGenerator:
 
         try:
             # Generate using template system
-            line, template = self.template_generator.generate_line(
+            line, _template = self.template_generator.generate_line(
                 target_syllables, max_attempts=100
             )
 
