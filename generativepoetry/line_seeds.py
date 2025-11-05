@@ -59,11 +59,25 @@ class LineSeed:
 class LineSeedGenerator:
     """Generate evocative line beginnings and fragments for poetry."""
 
-    def __init__(self):
-        """Initialize the line seed generator."""
+    def __init__(self, use_templates: bool = True):
+        """Initialize the line seed generator.
+
+        Args:
+            use_templates: If True, use grammatical templates for fragment generation.
+                          If False, use legacy pattern-based generation.
+        """
+        self.use_templates = use_templates
+        self.template_generator = None
+        self.pos_vocab = None
+
+        # Always initialize pattern-based generation (used as fallback)
         self._init_patterns()
         self._init_connectives()
         self._init_sensory_words()
+
+        # Initialize template-based generation if requested
+        if self.use_templates:
+            self._init_template_generation()
 
     def _init_patterns(self):
         """Initialize phrase patterns for different seed types."""
@@ -160,6 +174,68 @@ class LineSeedGenerator:
 
         self.sensory_map = base_sensory
 
+    def _init_template_generation(self):
+        """Initialize template-based generation components.
+
+        Uses lazy imports to avoid circular dependencies.
+        """
+        try:
+            from .grammatical_templates import TemplateGenerator
+            from .logger import logger
+            from .pos_vocabulary import POSVocabulary
+
+            logger.info("Initializing template-based line seed generation...")
+            self.pos_vocab = POSVocabulary()
+            self.template_generator = TemplateGenerator(self.pos_vocab)
+            logger.info("Template-based line seed generation ready")
+        except Exception as e:
+            from .logger import logger
+
+            logger.warning(
+                f"Failed to initialize template generation: {e}. "
+                "Falling back to pattern-based generation."
+            )
+            self.use_templates = False
+            self.template_generator = None
+            self.pos_vocab = None
+
+    def _generate_template_based_fragment(
+        self, seed_words: List[str], target_syllables: Optional[int] = None
+    ) -> Optional[str]:
+        """Generate grammatical fragment using POS templates.
+
+        Args:
+            seed_words: Words to guide generation (currently not used in template selection)
+            target_syllables: Optional syllable constraint (2-5 for fragments)
+
+        Returns:
+            Grammatically coherent fragment like "lonely commuter" or "wind whispers",
+            or None if generation fails
+        """
+        if not self.template_generator:
+            return None
+
+        # Choose syllable count if not specified (2-5 syllables for fragments)
+        if target_syllables is None:
+            target_syllables = random.choice([2, 3, 4, 5])
+
+        # Constrain to reasonable fragment length
+        target_syllables = max(2, min(5, target_syllables))
+
+        try:
+            # Generate using template system
+            line, template = self.template_generator.generate_line(
+                target_syllables, max_attempts=100
+            )
+
+            return line if line else None
+
+        except Exception as e:
+            from .logger import logger
+
+            logger.debug(f"Template fragment generation failed: {e}")
+            return None
+
     def generate_opening_line(self, seed_words: List[str], mood: Optional[str] = None) -> LineSeed:
         """Generate a strong opening line with forward momentum.
 
@@ -195,6 +271,8 @@ class LineSeedGenerator:
     def generate_fragment(self, seed_words: List[str], position: str = "any") -> LineSeed:
         """Generate an evocative incomplete fragment.
 
+        Uses template-based generation if enabled, with fallback to pattern-based.
+
         Args:
             seed_words: Words to base generation on
             position: Where in poem ('opening', 'middle', 'closing', 'any')
@@ -202,6 +280,23 @@ class LineSeedGenerator:
         Returns:
             LineSeed with fragment
         """
+        # Try template-based generation first if available
+        if self.use_templates and self.template_generator:
+            # Try fragments of different lengths (2-5 syllables)
+            for _ in range(3):  # Multiple attempts for variety
+                template_fragment = self._generate_template_based_fragment(seed_words)
+                if template_fragment:
+                    quality = self._evaluate_quality(template_fragment)
+                    return LineSeed(
+                        text=template_fragment,
+                        seed_type=SeedType.FRAGMENT,
+                        strategy=None,
+                        momentum=random.uniform(0.4, 0.7),
+                        openness=random.uniform(0.7, 1.0),
+                        quality_score=quality,
+                    )
+
+        # Fall back to pattern-based generation
         # Get related words for variety
         expanded_words = []
         for word in seed_words[:2]:  # Limit for performance
@@ -233,12 +328,34 @@ class LineSeedGenerator:
     def generate_image_seed(self, seed_words: List[str]) -> LineSeed:
         """Generate a vivid but incomplete sensory description.
 
+        Uses template-based generation if enabled, with fallback to pattern-based.
+
         Args:
             seed_words: Words to base generation on
 
         Returns:
             LineSeed with image
         """
+        # Try template-based generation first if available
+        if self.use_templates and self.template_generator:
+            # Try generating a 3-4 syllable sensory fragment
+            for _ in range(3):  # Multiple attempts for variety
+                target_syllables = random.choice([3, 4])
+                template_image = self._generate_template_based_fragment(
+                    seed_words, target_syllables
+                )
+                if template_image:
+                    quality = self._evaluate_quality(template_image)
+                    return LineSeed(
+                        text=template_image,
+                        seed_type=SeedType.IMAGE,
+                        strategy=GenerationStrategy.SYNESTHESIA if random.random() > 0.5 else None,
+                        momentum=random.uniform(0.3, 0.6),
+                        openness=random.uniform(0.5, 0.8),
+                        quality_score=quality,
+                    )
+
+        # Fall back to pattern-based generation
         # Choose sensory mode
         sense = random.choice(list(self.sensory_map.keys()))
         sensory_words = self.sensory_map[sense]

@@ -159,6 +159,31 @@ class TemplateLibrary:
             ),
         ]
 
+        # 2-syllable templates (for very short fragments)
+        self.templates[2] = [
+            GrammaticalTemplate(
+                pattern=["NOUN"],
+                name="single-noun",
+                description="Single noun",
+                examples=["moonlight", "silence", "mountain"],
+                weight=1.5,
+            ),
+            GrammaticalTemplate(
+                pattern=["ADJ"],
+                name="single-adj",
+                description="Single adjective",
+                examples=["ancient", "distant", "hollow"],
+                weight=1.0,
+            ),
+            GrammaticalTemplate(
+                pattern=["VERB"],
+                name="single-verb",
+                description="Single verb",
+                examples=["whispers", "falling", "turning"],
+                weight=1.0,
+            ),
+        ]
+
         # 3-syllable templates (for shorter phrases)
         self.templates[3] = [
             GrammaticalTemplate(

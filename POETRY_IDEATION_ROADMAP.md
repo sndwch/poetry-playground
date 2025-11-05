@@ -212,7 +212,7 @@ Based on comprehensive external code review, the following improvements have bee
     - **Known Issue**: Current implementation creates "syllable soup" - grammatically incoherent word sequences that meet syllable counts but lack syntactic structure
 
 12a. **Grammatical Templates for Forms** 🎯 - IN PROGRESS (HIGH PRIORITY)
-    **Status:** Phase 1 COMPLETE ✅ | Phase 2 COMPLETE ✅ | Phase 3 COMPLETE ✅ | Phase 4 PLANNED 📋 (Gemini Expansion) | Phases 5-7 planned
+    **Status:** Phase 1 COMPLETE ✅ | Phase 2 COMPLETE ✅ | Phase 3 COMPLETE ✅ | Phase 4 IN PROGRESS 🚧 (4.1-4.2 COMPLETE ✅, 4.3-4.4 PLANNED) | Phases 5-7 planned
     **Priority:** High - Addresses critical quality issue in haiku/tanka/senryu generation
     **Estimated Effort:** 3-4 weeks total (Phases 1-3: 2 weeks DONE, Phase 4: 1-2 weeks, Phases 5-7: 1 week)
 
@@ -586,15 +586,15 @@ Based on comprehensive external code review, the following improvements have bee
         return lines, validation
     ```
 
-    #### Phase 4: Template Expansion (GEMINI SUGGESTIONS) 📋 NEW!
-    **Status: PLANNED** | **Estimated Effort: 1-2 weeks**
+    #### Phase 4: Template Expansion (GEMINI SUGGESTIONS) 🚧 IN PROGRESS!
+    **Status: Phase 4.1 COMPLETE ✅ | Phase 4.2 COMPLETE ✅ | Phases 4.3-4.4 PLANNED** | **Estimated Effort: 1-2 weeks (2 days completed)**
     **Source: Gemini AI code review - All suggestions validated and prioritized**
     **Documentation: See GEMINI_TEMPLATE_SUGGESTIONS_EVALUATION.md for detailed analysis**
 
     Based on comprehensive external code review, expand template system usage across the codebase to maximize return on investment from Phases 1-3.
 
-    **4.1 Template-Based Line Seeds ⚡ HIGHEST PRIORITY**
-    **Estimated Effort: 1-2 days**
+    **4.1 Template-Based Line Seeds ⚡ HIGHEST PRIORITY - ✅ COMPLETE (2025-11-05)**
+    **Estimated Effort: 1-2 days** | **Actual: 1 day**
 
     **Problem**: Current line seeds generator (`line_seeds.py`) uses pattern filling with random word selection:
     ```python
@@ -607,12 +607,13 @@ Based on comprehensive external code review, the following improvements have bee
 
     **Solution**: Integrate TemplateGenerator into LineSeedGenerator
 
-    - [ ] Add `_generate_template_based_fragment()` method to `line_seeds.py`
-    - [ ] Update `generate_fragment()` to use templates by default
-    - [ ] Update `generate_image_seed()` for grammatical seed images
-    - [ ] Add `use_templates` parameter for backward compatibility
-    - [ ] Write tests comparing template-based vs pattern-based seeds
-    - [ ] Update CLI to showcase improved seed quality
+    - [x] Add `_generate_template_based_fragment()` method to `line_seeds.py`
+    - [x] Update `generate_fragment()` to use templates by default
+    - [x] Update `generate_image_seed()` for grammatical seed images
+    - [x] Add `use_templates` parameter for backward compatibility
+    - [x] Write tests comparing template-based vs pattern-based seeds
+    - [x] Added 2-syllable templates to template library for better fragment coverage
+    - [ ] Update CLI to showcase improved seed quality (deferred to Phase 5)
 
     ```python
     def _generate_template_based_fragment(
