@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import os
+import re
 
 from consolemenu import ConsoleMenu
 from consolemenu.items import FunctionItem
@@ -10,6 +11,7 @@ import generativepoetry.pronouncing_patch  # noqa: F401
 from generativepoetry.causal_poetry import ResonantFragmentMiner
 from generativepoetry.config import init_config
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
+from generativepoetry.forms import FormGenerator
 from generativepoetry.idea_generator import IdeaType, PoetryIdeaGenerator
 from generativepoetry.line_seeds import LineSeedGenerator, SeedType
 from generativepoetry.logger import enable_profiling, set_log_level
@@ -309,6 +311,167 @@ def line_seeds_action():
             input_words = get_input_words()  # Get new words
         else:
             exit_loop = True  # Exit
+
+
+def haiku_action():
+    """Generate haiku poems (5-7-5 syllable pattern)."""
+    generator = FormGenerator()
+    exit_loop = False
+
+    # Get optional seed words
+    print("\n" + "=" * 50)
+    print("HAIKU GENERATOR (5-7-5 syllable pattern)")
+    print("=" * 50)
+    print("\nOptional: Enter seed words to guide generation")
+    print("(or press Enter to generate without seeds)")
+    seed_input = input("\nSeed words (space or comma separated): ").strip()
+    seed_words = [w for w in re.split(r"[\s,]", seed_input) if w] if seed_input else None
+
+    while not exit_loop:
+        print("\n" + "=" * 50)
+        print("Generating Haiku...")
+        print("=" * 50 + "\n")
+
+        try:
+            lines, validation = generator.generate_haiku(seed_words=seed_words, strict=True)
+
+            # Display the haiku
+            for line in lines:
+                print(f"  {line}")
+
+            # Show validation if verbose
+            if validation.valid:
+                print("\n✓ Valid haiku (5-7-5 syllables)")
+            else:
+                print("\n" + validation.get_report())
+
+        except ValueError as e:
+            print(f"\nError generating haiku: {e}")
+            print("Try again or use different seed words.")
+
+        print("\n" + "=" * 50)
+        print("\nOptions:")
+        print("  1. Generate another haiku with same seeds")
+        print("  2. Use different seed words")
+        print("  3. Return to main menu")
+
+        choice = input("\nYour choice (1-3): ").strip()
+
+        if choice == "1":
+            continue  # Loop with same seeds
+        elif choice == "2":
+            seed_input = input("\nSeed words (space or comma separated): ").strip()
+            seed_words = [w for w in re.split(r"[\s,]", seed_input) if w] if seed_input else None
+        else:
+            exit_loop = True
+
+
+def tanka_action():
+    """Generate tanka poems (5-7-5-7-7 syllable pattern)."""
+    generator = FormGenerator()
+    exit_loop = False
+
+    # Get optional seed words
+    print("\n" + "=" * 50)
+    print("TANKA GENERATOR (5-7-5-7-7 syllable pattern)")
+    print("=" * 50)
+    print("\nOptional: Enter seed words to guide generation")
+    print("(or press Enter to generate without seeds)")
+    seed_input = input("\nSeed words (space or comma separated): ").strip()
+    seed_words = [w for w in re.split(r"[\s,]", seed_input) if w] if seed_input else None
+
+    while not exit_loop:
+        print("\n" + "=" * 50)
+        print("Generating Tanka...")
+        print("=" * 50 + "\n")
+
+        try:
+            lines, validation = generator.generate_tanka(seed_words=seed_words, strict=True)
+
+            # Display the tanka
+            for line in lines:
+                print(f"  {line}")
+
+            # Show validation if verbose
+            if validation.valid:
+                print("\n✓ Valid tanka (5-7-5-7-7 syllables)")
+            else:
+                print("\n" + validation.get_report())
+
+        except ValueError as e:
+            print(f"\nError generating tanka: {e}")
+            print("Try again or use different seed words.")
+
+        print("\n" + "=" * 50)
+        print("\nOptions:")
+        print("  1. Generate another tanka with same seeds")
+        print("  2. Use different seed words")
+        print("  3. Return to main menu")
+
+        choice = input("\nYour choice (1-3): ").strip()
+
+        if choice == "1":
+            continue  # Loop with same seeds
+        elif choice == "2":
+            seed_input = input("\nSeed words (space or comma separated): ").strip()
+            seed_words = [w for w in re.split(r"[\s,]", seed_input) if w] if seed_input else None
+        else:
+            exit_loop = True
+
+
+def senryu_action():
+    """Generate senryu poems (5-7-5 syllable pattern, human-focused)."""
+    generator = FormGenerator()
+    exit_loop = False
+
+    # Get optional seed words
+    print("\n" + "=" * 50)
+    print("SENRYU GENERATOR (5-7-5 syllable pattern)")
+    print("=" * 50)
+    print("\nSenryu uses the same structure as haiku but focuses on")
+    print("human nature, emotions, and relationships.")
+    print("\nOptional: Enter seed words to guide generation")
+    print("(or press Enter to generate without seeds)")
+    seed_input = input("\nSeed words (space or comma separated): ").strip()
+    seed_words = [w for w in re.split(r"[\s,]", seed_input) if w] if seed_input else None
+
+    while not exit_loop:
+        print("\n" + "=" * 50)
+        print("Generating Senryu...")
+        print("=" * 50 + "\n")
+
+        try:
+            lines, validation = generator.generate_senryu(seed_words=seed_words, strict=True)
+
+            # Display the senryu
+            for line in lines:
+                print(f"  {line}")
+
+            # Show validation if verbose
+            if validation.valid:
+                print("\n✓ Valid senryu (5-7-5 syllables)")
+            else:
+                print("\n" + validation.get_report())
+
+        except ValueError as e:
+            print(f"\nError generating senryu: {e}")
+            print("Try again or use different seed words.")
+
+        print("\n" + "=" * 50)
+        print("\nOptions:")
+        print("  1. Generate another senryu with same seeds")
+        print("  2. Use different seed words")
+        print("  3. Return to main menu")
+
+        choice = input("\nYour choice (1-3): ").strip()
+
+        if choice == "1":
+            continue  # Loop with same seeds
+        elif choice == "2":
+            seed_input = input("\nSeed words (space or comma separated): ").strip()
+            seed_words = [w for w in re.split(r"[\s,]", seed_input) if w] if seed_input else None
+        else:
+            exit_loop = True
 
 
 def corpus_analyzer_action():
@@ -751,6 +914,14 @@ def main():
         help="spaCy model size: sm (13MB, fast), md (40MB, balanced), lg (560MB, accurate)",
     )
 
+    parser.add_argument(
+        "--form",
+        type=str,
+        choices=["haiku", "tanka", "senryu", "free"],
+        metavar="FORM",
+        help="Poem form with syllable constraints: haiku (5-7-5), tanka (5-7-5-7-7), senryu (5-7-5), free (no constraints)",
+    )
+
     # Reproducibility
     parser.add_argument(
         "--seed",
@@ -885,6 +1056,10 @@ def main():
         print("  11. Poetry Idea Generator - Mine classic literature for creative seeds")
         print("  12. Six Degrees - Explore connections between concepts")
         print("  13. Resonant Fragment Miner - Extract poetic fragments from Gutenberg")
+        print("\nSyllable-Constrained Forms:")
+        print("  14. Haiku Generator - Traditional 5-7-5 syllable form")
+        print("  15. Tanka Generator - Extended 5-7-5-7-7 syllable form")
+        print("  16. Senryu Generator - Human-focused 5-7-5 form")
         print("\nUse generative-poetry-cli to access all procedures interactively.")
         return
 
@@ -932,6 +1107,9 @@ def main():
 
     if args.spacy_model:
         cli_overrides["spacy_model"] = args.spacy_model
+
+    if args.form:
+        cli_overrides["poem_form"] = args.form
 
     if args.quiet:
         cli_overrides["quiet"] = True
@@ -1032,6 +1210,11 @@ def main():
         "🔍 Resonant Fragment Miner (Literary Discovery)", causal_poetry_action
     )
 
+    # Syllable-constrained form generators
+    haiku_item = FunctionItem("🌸 Generate Haiku (5-7-5 syllables)", haiku_action)
+    tanka_item = FunctionItem("🎋 Generate Tanka (5-7-5-7-7 syllables)", tanka_action)
+    senryu_item = FunctionItem("🌿 Generate Senryu (5-7-5 syllables)", senryu_action)
+
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
 
@@ -1048,6 +1231,9 @@ def main():
     menu.append_item(idea_item)
     menu.append_item(six_degrees_item)
     menu.append_item(causal_poetry_item)
+    menu.append_item(haiku_item)
+    menu.append_item(tanka_item)
+    menu.append_item(senryu_item)
     menu.append_item(check_deps_item)
 
     menu.start()

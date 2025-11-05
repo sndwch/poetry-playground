@@ -47,6 +47,15 @@ class SpaCyModel(str, Enum):
     LARGE = "lg"  # en_core_web_lg (~560MB) - Best accuracy, slower
 
 
+class PoemForm(str, Enum):
+    """Available syllable-constrained poem forms."""
+
+    HAIKU = "haiku"  # 5-7-5 syllables, traditional Japanese
+    TANKA = "tanka"  # 5-7-5-7-7 syllables, Japanese emotional expression
+    SENRYU = "senryu"  # 5-7-5 syllables, focus on human nature
+    FREE = "free"  # No syllable constraints (default)
+
+
 class Config(BaseModel):
     """Main configuration model with validation."""
 
@@ -66,6 +75,10 @@ class Config(BaseModel):
     max_line_words: int = Field(default=9, ge=1, le=50, description="Maximum words per line")
     max_line_length: int = Field(
         default=35, ge=10, le=200, description="Maximum line length in characters"
+    )
+    poem_form: PoemForm = Field(
+        default=PoemForm.FREE,
+        description="Poem form with syllable constraints (haiku/tanka/senryu/free)",
     )
 
     # Reproducibility
