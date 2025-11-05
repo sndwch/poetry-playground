@@ -212,9 +212,9 @@ Based on comprehensive external code review, the following improvements have bee
     - **Known Issue**: Current implementation creates "syllable soup" - grammatically incoherent word sequences that meet syllable counts but lack syntactic structure
 
 12a. **Grammatical Templates for Forms** 🎯 - IN PROGRESS (HIGH PRIORITY)
-    **Status:** Phase 1 COMPLETE ✅ | Phase 2 COMPLETE ✅ | Phase 3 COMPLETE ✅ | Phases 4-6 planned
+    **Status:** Phase 1 COMPLETE ✅ | Phase 2 COMPLETE ✅ | Phase 3 COMPLETE ✅ | Phase 4 PLANNED 📋 (Gemini Expansion) | Phases 5-7 planned
     **Priority:** High - Addresses critical quality issue in haiku/tanka/senryu generation
-    **Estimated Effort:** 2-3 weeks
+    **Estimated Effort:** 3-4 weeks total (Phases 1-3: 2 weeks DONE, Phase 4: 1-2 weeks, Phases 5-7: 1 week)
 
     ### Problem Statement
     The current syllable-aware forms generator (item #12) produces grammatically incoherent output like:
@@ -586,9 +586,196 @@ Based on comprehensive external code review, the following improvements have bee
         return lines, validation
     ```
 
-    #### Phase 4: CLI Integration (Week 2-3)
+    #### Phase 4: Template Expansion (GEMINI SUGGESTIONS) 📋 NEW!
+    **Status: PLANNED** | **Estimated Effort: 1-2 weeks**
+    **Source: Gemini AI code review - All suggestions validated and prioritized**
+    **Documentation: See GEMINI_TEMPLATE_SUGGESTIONS_EVALUATION.md for detailed analysis**
 
-    **4.1 Add Grammar Toggle to CLI**
+    Based on comprehensive external code review, expand template system usage across the codebase to maximize return on investment from Phases 1-3.
+
+    **4.1 Template-Based Line Seeds ⚡ HIGHEST PRIORITY**
+    **Estimated Effort: 1-2 days**
+
+    **Problem**: Current line seeds generator (`line_seeds.py`) uses pattern filling with random word selection:
+    ```python
+    # Current approach - NOT grammatical:
+    "bright tomorrow going" (random words)
+
+    # Desired - grammatical fragments:
+    "lonely commuter", "wind whispers", "ancient temple"
+    ```
+
+    **Solution**: Integrate TemplateGenerator into LineSeedGenerator
+
+    - [ ] Add `_generate_template_based_fragment()` method to `line_seeds.py`
+    - [ ] Update `generate_fragment()` to use templates by default
+    - [ ] Update `generate_image_seed()` for grammatical seed images
+    - [ ] Add `use_templates` parameter for backward compatibility
+    - [ ] Write tests comparing template-based vs pattern-based seeds
+    - [ ] Update CLI to showcase improved seed quality
+
+    ```python
+    def _generate_template_based_fragment(
+        self,
+        seed_words: List[str],
+        target_syllables: int = None
+    ) -> str:
+        """Generate grammatical fragment using POS templates.
+
+        Returns grammatically coherent 2-5 syllable fragments.
+        """
+        from .grammatical_templates import TemplateGenerator
+        from .pos_vocabulary import POSVocabulary
+
+        if target_syllables is None:
+            target_syllables = random.choice([2, 3, 4, 5])
+
+        pos_vocab = POSVocabulary()
+        template_gen = TemplateGenerator(pos_vocab)
+
+        line, template = template_gen.generate_line(target_syllables)
+        return line if line else self._fallback_fragment(seed_words)
+    ```
+
+    **Impact**:
+    - Before: "bright tomorrow going" (meaningless)
+    - After: "lonely commuter" (grammatical, evocative)
+
+    **Files Modified**: `generativepoetry/line_seeds.py`, `tests/test_line_seeds.py`
+
+    **4.2 Ship of Theseus Transformer 🚢 HIGH PRIORITY**
+    **Estimated Effort: 2-3 days**
+
+    **Problem**: Roadmap lists "Ship of Theseus Transformer" as implemented, but file doesn't exist!
+
+    **Solution**: Create POS-constrained word replacement transformer
+
+    - [ ] Create `generativepoetry/ship_of_theseus.py`
+    - [ ] Implement `ShipOfTheseusTransformer` class
+    - [ ] Add `transform_line()` with POS preservation
+    - [ ] Add `gradual_transform()` for multi-step transformation
+    - [ ] Integrate with CLI as new action
+    - [ ] Write comprehensive tests
+    - [ ] Add documentation with examples
+
+    ```python
+    class ShipOfTheseusTransformer:
+        """Transform poems while maintaining grammatical structure.
+
+        Replaces words with same POS tag to preserve syntax.
+        """
+
+        def transform_line(
+            self,
+            line: str,
+            replacement_ratio: float = 0.3,
+            preserve_pos: bool = True,
+            preserve_syllables: bool = True
+        ) -> str:
+            """Transform line with POS constraints.
+
+            Args:
+                line: Original line
+                replacement_ratio: Fraction of words to replace (0.0-1.0)
+                preserve_pos: Maintain part-of-speech when replacing
+                preserve_syllables: Keep same syllable count
+
+            Returns:
+                Transformed line maintaining grammatical structure
+            """
+            # Tag original line
+            tagged = nltk.pos_tag(line.split())
+
+            # Replace selected words with same POS/syllables
+            for word, penn_tag in tagged:
+                universal_pos = PENN_TO_UNIVERSAL.get(penn_tag)
+                syllables = count_syllables(word)
+                candidates = self.pos_vocab.get_words(universal_pos, syllables)
+                # Replace with random candidate of same POS+syllables
+
+        def gradual_transform(self, original: str, steps: int = 5) -> List[str]:
+            """Gradual transformation showing 'Ship of Theseus' concept."""
+            # Progressively increase replacement ratio
+            # Return list showing transformation progression
+    ```
+
+    **Impact**:
+    - Prevents grammatical errors: "My heart aches" → "My heart slow" ❌
+    - Maintains structure: "My heart aches" → "My soul trembles" ✅
+
+    **Use Cases**:
+    - Generate variations of successful poems
+    - Explore alternative phrasings while maintaining structure
+    - Teaching tool for understanding POS roles
+
+    **Files Created**: `generativepoetry/ship_of_theseus.py`, `tests/test_ship_of_theseus.py`
+
+    **4.3 Grammatical Concrete Poetry 🎨 MEDIUM PRIORITY**
+    **Estimated Effort: 1-2 days**
+
+    **Problem**: No concrete poetry generator exists (despite roadmap mention)
+
+    **Solution**: Create visual poetry generator using grammatical fragments
+
+    - [ ] Create `generativepoetry/grammatical_concrete.py`
+    - [ ] Implement fragment generation using templates
+    - [ ] Add spatial positioning algorithm
+    - [ ] Integrate with visual poetry CLI
+    - [ ] Write tests
+    - [ ] Add examples
+
+    ```python
+    def generate_grammatical_concrete_poem(
+        seed_words: List[str],
+        num_fragments: int = 12,
+        canvas_size: Tuple[int, int] = (80, 40)
+    ) -> str:
+        """Generate concrete poem using grammatical fragments.
+
+        Instead of random words, scatter grammatical 2-3 word phrases.
+        """
+        # Generate 2-3 syllable grammatical fragments
+        template_gen = TemplateGenerator(POSVocabulary())
+        fragments = []
+
+        for _ in range(num_fragments):
+            syllables = random.choice([2, 3])
+            line, _ = template_gen.generate_line(syllables)
+            if line:
+                fragments.append(line)
+
+        # Arrange fragments spatially (concrete poetry layout)
+        return visual_layout
+    ```
+
+    **Impact**:
+    - Before: Random words scattered: "had", "going", "tomorrow"
+    - After: Grammatical clusters: "lonely commuter", "wind whispers"
+
+    **Files Created**: `generativepoetry/grammatical_concrete.py`, `tests/test_grammatical_concrete.py`
+
+    **4.4 Metaphor Template Expansion (OPTIONAL) ⭐**
+    **Estimated Effort: 1 hour**
+
+    **Status**: Metaphor generator already has extensive templates (4 major types, ~15 variations)
+    **Priority**: LOW - Current implementation sufficient
+
+    If implementing later:
+    - [ ] Add 3-5 new metaphor pattern templates to existing lists
+    - [ ] Update tests
+    - [ ] Document new patterns
+
+    **Files Modified**: `generativepoetry/metaphor_generator.py` (minor)
+
+    **Phase 4 Summary**:
+    - **Total Effort**: 4-6 days (Items 4.1-4.3 only, skip 4.4)
+    - **Impact**: Maximizes ROI from template infrastructure by applying it across codebase
+    - **Source**: All suggestions from Gemini AI code review, validated for quality and feasibility
+    - **Documentation**: See `GEMINI_TEMPLATE_SUGGESTIONS_EVALUATION.md` for full analysis
+
+    #### Phase 5: CLI Integration (Week 3-4) [RENUMBERED FROM PHASE 4]
+
+    **5.1 Add Grammar Toggle to CLI**
     - File: `generativepoetry/cli.py` (modify)
     - Add option to enable/disable grammatical templates
 
@@ -609,7 +796,7 @@ Based on comprehensive external code review, the following improvements have bee
     )
     ```
 
-    **4.2 Add to Config**
+    **5.2 Add to Config**
     - File: `generativepoetry/config.py` (modify)
 
     ```python
@@ -627,9 +814,9 @@ Based on comprehensive external code review, the following improvements have bee
         )
     ```
 
-    #### Phase 5: Testing (Week 3)
+    #### Phase 6: Testing (Week 4) [RENUMBERED FROM PHASE 5]
 
-    **5.1 Unit Tests for POS Vocabulary**
+    **6.1 Unit Tests for POS Vocabulary**
     - File: `tests/test_pos_vocabulary.py` (new)
 
     ```python
@@ -660,7 +847,7 @@ Based on comprehensive external code review, the following improvements have bee
                 assert sum(combo) == 5
     ```
 
-    **5.2 Unit Tests for Templates**
+    **6.2 Unit Tests for Templates**
     - File: `tests/test_grammatical_templates.py` (new)
 
     ```python
@@ -692,7 +879,7 @@ Based on comprehensive external code review, the following improvements have bee
                         assert pos in valid_tags
     ```
 
-    **5.3 Integration Tests**
+    **6.3 Integration Tests**
     - File: `tests/test_forms.py` (modify existing)
 
     ```python
@@ -741,9 +928,9 @@ Based on comprehensive external code review, the following improvements have bee
             assert any(seed in all_words for seed in seed_words)
     ```
 
-    #### Phase 6: Documentation & Examples (Week 3)
+    #### Phase 7: [RENUMBERED FROM PHASE 6] Documentation & Examples (Week 3)
 
-    **6.1 Update README**
+    **7.1 Update README**
     - Document grammatical template feature
     - Show before/after examples
     - Explain POS tagging approach
