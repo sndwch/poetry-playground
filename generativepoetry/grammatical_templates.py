@@ -449,6 +449,107 @@ class TemplateGenerator:
         return lines, templates_used
 
 
+class MetaphorPatterns:
+    """Library of metaphor pattern templates.
+
+    Provides pattern templates for generating different types of metaphors
+    by combining source (tenor) and target (vehicle) words.
+    """
+
+    def __init__(self):
+        """Initialize metaphor pattern library."""
+        self._load_patterns()
+
+    def _load_patterns(self):
+        """Load all metaphor pattern templates."""
+        # Simile patterns - explicit comparisons
+        self.simile_patterns = [
+            "{source} is like {target}",
+            "{source} like {target}",
+            "{source}, like {target},",
+            "as {adjective} as {target}",
+            "{source} resembles {target}",
+        ]
+
+        # Direct metaphor patterns - X is Y
+        self.direct_patterns = [
+            "{source} is {target}",
+            "{source}: {target}",
+            "{source}, a {target}",
+            "the {target} of {source}",
+            "{source} becomes {target}",
+        ]
+
+        # Possessive patterns - ownership/relationship
+        self.possessive_patterns = [
+            "{target}'s {source}",
+            "the {source} of {target}",
+            "{target}-{source}",
+            "{source}, {target}'s child",
+        ]
+
+        # Appositive patterns - appositional metaphors
+        self.appositive_patterns = [
+            "{source}, that {target}",
+            "{source}, the {target}",
+            "{source} — {target} —",
+            "{source} (a {target})",
+            "{source}: a {target} in waiting",
+            "{source}, which is to say, {target}",
+        ]
+
+        # Compound patterns - fused/hyphenated terms (NEW in Phase 4.4)
+        self.compound_patterns = [
+            "{source}-{target}",
+            "{target}-{source}",
+            "the {source}{target}",
+            "{source} in {target}'s form",
+        ]
+
+        # Conceptual patterns - abstract domain mappings (NEW in Phase 4.4)
+        self.conceptual_patterns = [
+            "{source} maps to {target}",
+            "in the {source} of {target}",
+            "{source} as a lens for {target}",
+            "where {source} meets {target}",
+            "the {source}-{target} continuum",
+        ]
+
+    def get_patterns(self, metaphor_type: str) -> List[str]:
+        """Get patterns for a specific metaphor type.
+
+        Args:
+            metaphor_type: Type of metaphor (simile, direct, possessive, etc.)
+
+        Returns:
+            List of pattern templates for that type
+        """
+        pattern_map = {
+            "simile": self.simile_patterns,
+            "direct": self.direct_patterns,
+            "possessive": self.possessive_patterns,
+            "appositive": self.appositive_patterns,
+            "compound": self.compound_patterns,
+            "conceptual": self.conceptual_patterns,
+        }
+        return pattern_map.get(metaphor_type, [])
+
+    def get_all_patterns(self) -> Dict[str, List[str]]:
+        """Get all metaphor patterns organized by type.
+
+        Returns:
+            Dictionary mapping metaphor types to pattern lists
+        """
+        return {
+            "simile": self.simile_patterns,
+            "direct": self.direct_patterns,
+            "possessive": self.possessive_patterns,
+            "appositive": self.appositive_patterns,
+            "compound": self.compound_patterns,
+            "conceptual": self.conceptual_patterns,
+        }
+
+
 def create_template_generator(pos_vocab: POSVocabulary) -> TemplateGenerator:
     """Factory function to create a TemplateGenerator.
 

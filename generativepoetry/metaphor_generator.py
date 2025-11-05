@@ -10,6 +10,7 @@ from typing import List, Optional, Tuple
 from .config import DocumentConfig, QualityConfig
 from .decomposer import ParsedText
 from .document_library import get_diverse_gutenberg_documents
+from .grammatical_templates import MetaphorPatterns
 from .lexigen import (
     contextually_linked_words,
     frequently_following_words,
@@ -65,36 +66,16 @@ class MetaphorGenerator:
         self.domains = vocabulary.concept_domains
 
     def _init_patterns(self):
-        """Initialize metaphor pattern templates."""
-        self.simile_patterns = [
-            "{source} is like {target}",
-            "{source} like {target}",
-            "{source}, like {target},",
-            "as {adjective} as {target}",
-            "{source} resembles {target}",
-        ]
+        """Initialize metaphor pattern templates from grammatical_templates."""
+        metaphor_patterns = MetaphorPatterns()
 
-        self.direct_patterns = [
-            "{source} is {target}",
-            "{source}: {target}",
-            "{source}, a {target}",
-            "the {target} of {source}",
-            "{source} becomes {target}",
-        ]
-
-        self.possessive_patterns = [
-            "{target}'s {source}",
-            "the {source} of {target}",
-            "{target}-{source}",
-            "{source}, {target}'s child",
-        ]
-
-        self.appositive_patterns = [
-            "{source}, that {target}",
-            "{source}, the {target}",
-            "{source} — {target} —",
-            "{source} (a {target})",
-        ]
+        # Import patterns from centralized template library
+        self.simile_patterns = metaphor_patterns.simile_patterns
+        self.direct_patterns = metaphor_patterns.direct_patterns
+        self.possessive_patterns = metaphor_patterns.possessive_patterns
+        self.appositive_patterns = metaphor_patterns.appositive_patterns
+        self.compound_patterns = metaphor_patterns.compound_patterns
+        self.conceptual_patterns = metaphor_patterns.conceptual_patterns
 
     def _init_verb_associations(self):
         """Initialize verb associations using shared vocabulary."""
@@ -291,6 +272,8 @@ class MetaphorGenerator:
                         self._generate_direct_metaphor(source, target),
                         self._generate_implied_metaphor(source, target),
                         self._generate_possessive_metaphor(source, target),
+                        self._generate_compound_metaphor(source, target),
+                        self._generate_conceptual_metaphor(source, target),
                     ]
                 )
 
@@ -437,6 +420,42 @@ class MetaphorGenerator:
             target=target,
             metaphor_type=MetaphorType.POSSESSIVE,
             quality_score=quality,
+            grounds=grounds,
+        )
+
+    def _generate_compound_metaphor(self, source: str, target: str) -> Optional[Metaphor]:
+        """Generate a compound metaphor (hyphenated or fused terms)."""
+        pattern = random.choice(self.compound_patterns)
+        text = pattern.format(source=source, target=target)
+
+        grounds = self._find_connecting_attributes(source, target)
+        # Compound metaphors are terse and striking - slight quality bonus
+        quality = self._score_metaphor(source, target, grounds) * 1.05
+
+        return Metaphor(
+            text=text,
+            source=source,
+            target=target,
+            metaphor_type=MetaphorType.COMPOUND,
+            quality_score=min(1.0, quality),
+            grounds=grounds,
+        )
+
+    def _generate_conceptual_metaphor(self, source: str, target: str) -> Optional[Metaphor]:
+        """Generate a conceptual metaphor (abstract domain mapping)."""
+        pattern = random.choice(self.conceptual_patterns)
+        text = pattern.format(source=source, target=target)
+
+        grounds = self._find_connecting_attributes(source, target)
+        # Conceptual metaphors are intellectually rich
+        quality = self._score_metaphor(source, target, grounds) * 1.1
+
+        return Metaphor(
+            text=text,
+            source=source,
+            target=target,
+            metaphor_type=MetaphorType.CONCEPTUAL,
+            quality_score=min(1.0, quality),
             grounds=grounds,
         )
 
