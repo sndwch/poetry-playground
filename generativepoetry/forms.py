@@ -7,14 +7,19 @@ syllable counting with heuristic fallback for words not in the dictionary.
 
 import random
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from pathlib import Path
+from typing import TYPE_CHECKING, List, Optional, Tuple
 
 import pronouncing
 
 from .cache import cached_api_call
 from .lexigen import contextually_linked_words, frequently_following_words, similar_meaning_words
-from .logger import timed
+from .logger import logger, timed
 from .vocabulary import vocabulary
+
+# Lazy import to avoid circular dependency
+if TYPE_CHECKING:
+    pass
 
 
 # Cached syllable counting
@@ -160,9 +165,33 @@ class FormValidationResult:
 class FormGenerator:
     """Generator for syllable-constrained poetry forms."""
 
-    def __init__(self):
-        """Initialize form generator."""
-        pass
+    def __init__(self, use_templates: bool = True, cache_dir: Optional[Path] = None):
+        """Initialize form generator.
+
+        Args:
+            use_templates: If True, use grammatical templates for generation.
+                          If False, use legacy syllable-soup generation.
+            cache_dir: Directory for POS vocabulary cache (only used if use_templates=True)
+        """
+        self.use_templates = use_templates
+        self.template_generator = None
+
+        if use_templates:
+            try:
+                # Import here to avoid circular dependency
+                from .grammatical_templates import TemplateGenerator
+                from .pos_vocabulary import POSVocabulary
+
+                logger.info("Initializing template-based generation...")
+                pos_vocab = POSVocabulary(cache_dir=cache_dir)
+                self.template_generator = TemplateGenerator(pos_vocab)
+                logger.info("Template-based generation ready")
+            except Exception as e:
+                logger.warning(
+                    f"Failed to initialize template generator: {e}. Falling back to legacy generation."
+                )
+                self.use_templates = False
+                self.template_generator = None
 
     @timed("forms.validate")
     def validate_form(
@@ -334,7 +363,7 @@ class FormGenerator:
 
     @timed("forms.generate_haiku")
     def generate_haiku(
-        self, seed_words: Optional[List[str]] = None, max_attempts: int = 100, strict: bool = True
+        self, seed_words: Optional[List[str]] = None, max_attempts: int = 500, strict: bool = True
     ) -> Tuple[List[str], FormValidationResult]:
         """Generate a haiku (5-7-5 syllable pattern).
 
@@ -342,7 +371,7 @@ class FormGenerator:
         a 5-7-5 syllable pattern, traditionally focused on nature and seasons.
 
         Args:
-            seed_words: Optional words to guide generation
+            seed_words: Optional words to guide generation (only used in legacy mode)
             max_attempts: Maximum attempts before giving up
             strict: If True, requires exact syllable match. If False, allows ±1 syllable
 
@@ -350,8 +379,22 @@ class FormGenerator:
             Tuple of (lines list, validation result)
         """
         pattern = [5, 7, 5]
-        lines = []
 
+        # Use template-based generation if available
+        if self.use_templates and self.template_generator:
+            try:
+                lines, _ = self.template_generator.generate_lines(
+                    pattern, max_attempts=max_attempts
+                )
+                validation = self.validate_form(lines, pattern, "Haiku")
+                return lines, validation
+            except Exception as e:
+                logger.warning(
+                    f"Template generation failed: {e}. Falling back to legacy generation."
+                )
+
+        # Legacy syllable-soup generation
+        lines = []
         for target in pattern:
             line, actual = self.generate_constrained_line(target, seed_words, max_attempts)
             if line is None:
@@ -369,7 +412,7 @@ class FormGenerator:
 
     @timed("forms.generate_tanka")
     def generate_tanka(
-        self, seed_words: Optional[List[str]] = None, max_attempts: int = 100, strict: bool = True
+        self, seed_words: Optional[List[str]] = None, max_attempts: int = 500, strict: bool = True
     ) -> Tuple[List[str], FormValidationResult]:
         """Generate a tanka (5-7-5-7-7 syllable pattern).
 
@@ -377,7 +420,7 @@ class FormGenerator:
         a 5-7-5-7-7 syllable pattern, often expressing personal emotions.
 
         Args:
-            seed_words: Optional words to guide generation
+            seed_words: Optional words to guide generation (only used in legacy mode)
             max_attempts: Maximum attempts before giving up
             strict: If True, requires exact syllable match. If False, allows ±1 syllable
 
@@ -385,8 +428,22 @@ class FormGenerator:
             Tuple of (lines list, validation result)
         """
         pattern = [5, 7, 5, 7, 7]
-        lines = []
 
+        # Use template-based generation if available
+        if self.use_templates and self.template_generator:
+            try:
+                lines, _ = self.template_generator.generate_lines(
+                    pattern, max_attempts=max_attempts
+                )
+                validation = self.validate_form(lines, pattern, "Tanka")
+                return lines, validation
+            except Exception as e:
+                logger.warning(
+                    f"Template generation failed: {e}. Falling back to legacy generation."
+                )
+
+        # Legacy syllable-soup generation
+        lines = []
         for target in pattern:
             line, actual = self.generate_constrained_line(target, seed_words, max_attempts)
             if line is None:
@@ -404,7 +461,7 @@ class FormGenerator:
 
     @timed("forms.generate_senryu")
     def generate_senryu(
-        self, seed_words: Optional[List[str]] = None, max_attempts: int = 100, strict: bool = True
+        self, seed_words: Optional[List[str]] = None, max_attempts: int = 500, strict: bool = True
     ) -> Tuple[List[str], FormValidationResult]:
         """Generate a senryu (5-7-5 syllable pattern, focused on human nature).
 
@@ -412,7 +469,7 @@ class FormGenerator:
         relationships, and emotions rather than natural imagery.
 
         Args:
-            seed_words: Optional words to guide generation
+            seed_words: Optional words to guide generation (only used in legacy mode)
             max_attempts: Maximum attempts before giving up
             strict: If True, requires exact syllable match. If False, allows ±1 syllable
 
@@ -422,8 +479,22 @@ class FormGenerator:
         # Senryu has same structure as haiku, just different thematic focus
         # In practice, the generation is identical - the difference is semantic
         pattern = [5, 7, 5]
-        lines = []
 
+        # Use template-based generation if available
+        if self.use_templates and self.template_generator:
+            try:
+                lines, _ = self.template_generator.generate_lines(
+                    pattern, max_attempts=max_attempts
+                )
+                validation = self.validate_form(lines, pattern, "Senryu")
+                return lines, validation
+            except Exception as e:
+                logger.warning(
+                    f"Template generation failed: {e}. Falling back to legacy generation."
+                )
+
+        # Legacy syllable-soup generation
+        lines = []
         for target in pattern:
             line, actual = self.generate_constrained_line(target, seed_words, max_attempts)
             if line is None:
