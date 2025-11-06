@@ -1,0 +1,126 @@
+/* Textual CSS Styling for Generative Poetry TUI */
+
+/* Global App Styling */
+Screen {
+    background: $background;
+    align: center middle;
+}
+
+/* Header and Footer */
+Header {
+    background: $primary;
+    color: $text;
+}
+
+Footer {
+    background: $panel;
+}
+
+/* Common Container Styles */
+Container {
+    background: $surface;
+}
+
+/* List View Styling */
+ListView {
+    background: $panel;
+    border: solid $primary;
+}
+
+ListView > ListItem {
+    padding: 1 2;
+}
+
+ListView > ListItem:hover {
+    background: $primary-lighten-1;
+}
+
+ListView > ListItem.-selected {
+    background: $accent;
+    text-style: bold;
+}
+
+/* Button Styling */
+Button {
+    min-width: 16;
+    margin: 0 1;
+}
+
+Button:hover {
+    background: $accent;
+}
+
+Button:focus {
+    text-style: bold;
+}
+
+/* Input Styling */
+Input {
+    border: solid $primary;
+    background: $surface-darken-1;
+}
+
+Input:focus {
+    border: solid $accent;
+}
+
+/* TextArea Styling */
+TextArea {
+    border: solid $primary;
+    background: $surface-darken-1;
+}
+
+TextArea:focus {
+    border: solid $accent;
+}
+
+/* Static Text */
+Static {
+    color: $text;
+}
+
+/* Label */
+Label {
+    color: $text;
+}
+
+/* Specific Widget Classes */
+.list-item-label {
+    width: 1fr;
+}
+
+.category-header {
+    text-style: bold italic;
+    color: $accent;
+    background: $surface-darken-2;
+    padding: 1;
+}
+
+.input-label {
+    text-style: bold;
+    color: $text;
+}
+
+/* Dark mode specific (default) */
+App.-dark-mode {
+    background: $background;
+}
+
+App.-dark-mode Container {
+    background: $surface;
+    border: solid $primary;
+}
+
+/* Light mode specific */
+App.-light-mode {
+    background: #f5f5f5;
+}
+
+App.-light-mode Container {
+    background: #ffffff;
+    border: solid #3b82f6;
+}
+
+App.-light-mode Static {
+    color: #1f2937;
+}

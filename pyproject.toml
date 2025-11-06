@@ -46,6 +46,7 @@ dependencies = [
     "rapidfuzz>=3.0.0",
     "rich>=13.7.0",
     "spacy>=2.2.3",
+    "textual>=0.47.0",
     "reportlab>=3.5.26",
     "wordfreq>=2.2.2",
 ]
@@ -58,6 +59,7 @@ Documentation = "https://generativepoetry.readthedocs.io/"
 
 [project.scripts]
 generative-poetry-cli = "generativepoetry.cli:main"
+generative-poetry-tui = "generativepoetry.tui.app:run"
 
 [project.optional-dependencies]
 spellcheck = [
@@ -81,7 +83,7 @@ docs = [
 include = ["generativepoetry*"]
 
 [tool.setuptools.package-data]
-generativepoetry = ["data/hate_words.txt", "data/abbreviations_etc.txt"]
+generativepoetry = ["data/hate_words.txt", "data/abbreviations_etc.txt", "tui/tui.tcss"]
 
 [tool.ruff]
 line-length = 100

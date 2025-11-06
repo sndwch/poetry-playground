@@ -28,10 +28,25 @@ pip install -e .
 ### Running the Interactive CLI
 
 ```bash
+# Launch the traditional CLI menu
 generative-poetry-cli
+
+# Or use the new full-featured TUI (Terminal User Interface)
+generative-poetry-tui
 ```
 
-This launches a comprehensive interactive menu with 13 different creative tools:
+**NEW: Full-Featured TUI** 🎨
+
+We now offer a modern Terminal User Interface built with Textual, featuring:
+- Beautiful full-screen interface with keyboard navigation
+- Real-time progress indicators for long-running operations
+- Save generated poems directly from the UI
+- Dark/light mode support (press `d` to toggle)
+- Keyboard shortcuts: `q`=quit, `m`=menu, `?`=help
+
+The TUI currently supports 8 generators with more being added. For generators not yet in the TUI, a helpful message directs you to the CLI interface.
+
+Both interfaces launch a comprehensive menu with creative tools:
 
 #### 🎨 **Visual Poem Generation**
 - **Futurist Poems** - Marinetti-inspired mathematical word connections (PDF/Image)
