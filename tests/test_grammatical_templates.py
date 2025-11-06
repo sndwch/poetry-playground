@@ -35,17 +35,13 @@ class TestGrammaticalTemplate:
     def test_initialization_with_examples(self):
         """Test template initialization with examples."""
         examples = ["ancient temple", "autumn twilight"]
-        template = GrammaticalTemplate(
-            pattern=["ADJ", "NOUN"], name="test", examples=examples
-        )
+        template = GrammaticalTemplate(pattern=["ADJ", "NOUN"], name="test", examples=examples)
 
         assert template.examples == examples
 
     def test_initialization_with_weight(self):
         """Test template initialization with custom weight."""
-        template = GrammaticalTemplate(
-            pattern=["ADJ", "NOUN"], name="test", weight=2.5
-        )
+        template = GrammaticalTemplate(pattern=["ADJ", "NOUN"], name="test", weight=2.5)
 
         assert template.weight == 2.5
 
@@ -64,17 +60,13 @@ class TestGrammaticalTemplate:
 
     def test_string_representation(self):
         """Test string representation of template."""
-        template = GrammaticalTemplate(
-            pattern=["ADJ", "NOUN"], name="adjective-noun"
-        )
+        template = GrammaticalTemplate(pattern=["ADJ", "NOUN"], name="adjective-noun")
 
         assert str(template) == "adjective-noun: ADJ + NOUN"
 
     def test_string_representation_complex(self):
         """Test string representation of complex template."""
-        template = GrammaticalTemplate(
-            pattern=["DET", "ADJ", "NOUN", "VERB"], name="full-clause"
-        )
+        template = GrammaticalTemplate(pattern=["DET", "ADJ", "NOUN", "VERB"], name="full-clause")
 
         assert str(template) == "full-clause: DET + ADJ + NOUN + VERB"
 
@@ -125,9 +117,7 @@ class TestTemplateLibrary:
 
     def test_add_custom_template(self, library):
         """Test adding a custom template."""
-        custom = GrammaticalTemplate(
-            pattern=["NOUN", "NOUN"], name="compound-noun"
-        )
+        custom = GrammaticalTemplate(pattern=["NOUN", "NOUN"], name="compound-noun")
 
         original_count = len(library.get_templates(2))
         library.add_template(2, custom)
@@ -419,7 +409,9 @@ class TestIntegration:
         expected = [5, 7, 5, 7, 7]
         for i, (line, expected_count) in enumerate(zip(lines, expected)):
             actual = count_syllables(line)
-            assert actual == expected_count, f"Line {i+1} has {actual} syllables, expected {expected_count}"
+            assert actual == expected_count, (
+                f"Line {i + 1} has {actual} syllables, expected {expected_count}"
+            )
 
     @pytest.mark.skip(reason="Syllable count inconsistencies in word bank - known NLP limitation")
     def test_consistent_quality_over_multiple_generations(self, generator):
@@ -429,7 +421,9 @@ class TestIntegration:
 
             # All generations should succeed
             assert len(lines) == 3
-            assert all(count_syllables(line) == expected for line, expected in zip(lines, [5, 7, 5]))
+            assert all(
+                count_syllables(line) == expected for line, expected in zip(lines, [5, 7, 5])
+            )
 
             # All lines should be grammatically structured
             for line, template in zip(lines, templates):

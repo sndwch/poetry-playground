@@ -32,7 +32,7 @@ class TestRhymeFunctions(unittest.TestCase):
         if result:
             # Should be a non-empty string (actual rhyme pattern may vary)
             self.assertGreater(len(result), 0)
-            self.assertTrue(all(c.isalpha() or c == '-' for c in result))
+            self.assertTrue(all(c.isalpha() or c == "-" for c in result))
 
     def test_rhyme_with_nonexistent_word(self):
         """Test rhyme with word that doesn't rhyme with anything."""
@@ -69,7 +69,7 @@ class TestRhymeFunctions(unittest.TestCase):
             result = rhyme(word)
             if result:
                 # Should be alphabetic (allowing hyphens for compound words)
-                self.assertTrue(all(c.isalpha() or c == '-' for c in result))
+                self.assertTrue(all(c.isalpha() or c == "-" for c in result))
                 # Should not be empty
                 self.assertGreater(len(result), 0)
 
@@ -87,7 +87,7 @@ class TestSimilarSoundingWord(unittest.TestCase):
                 # Should be different from input
                 self.assertNotEqual(result.lower(), "cat")
                 # Should be a valid word
-                self.assertTrue(all(c.isalpha() or c == '-' for c in result))
+                self.assertTrue(all(c.isalpha() or c == "-" for c in result))
         except Exception as e:
             # Skip if network calls are disabled in tests
             if "Network calls disabled" in str(e):

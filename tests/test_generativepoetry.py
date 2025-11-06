@@ -130,7 +130,7 @@ class TestUtils(unittest.TestCase):
     def correct_a_vs_a_vs_an(self):
         needs_no_correction = [
             "an",
-            "obscure" "elephant" "and" "a" "wandering" "heliotrope",
+            "obscureelephantandawanderingheliotrope",
             "see",
             "a",
             "3",
@@ -138,7 +138,7 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(correct_a_vs_an(needs_no_correction), needs_no_correction)
         needs_correction = [
             "a",
-            "obscure" "elephant" "and" "an" "wandering" "heliotrope",
+            "obscureelephantandanwanderingheliotrope",
             "see",
             "an",
             "3",
@@ -405,7 +405,9 @@ class TestLexigen(unittest.TestCase):
                 contextually_linked_to_crepuscular + contextually_linked_to_metamorphosis
             )
             self.assertEqual(
-                sorted(contextually_linked_words(["crepuscular", "metamorphosis"], sample_size=None)),
+                sorted(
+                    contextually_linked_words(["crepuscular", "metamorphosis"], sample_size=None)
+                ),
                 contextually_linked_to_either,
             )
             results = contextually_linked_words(["crepuscular", "metamorphosis"])
@@ -569,7 +571,8 @@ class TestLexigen(unittest.TestCase):
                 ]
             )
             self.assertEqual(
-                sorted(frequently_following_words(["magic", "Dadaist"], sample_size=None)), ff_either
+                sorted(frequently_following_words(["magic", "Dadaist"], sample_size=None)),
+                ff_either,
             )
             results = frequently_following_words(["magic", "Dadaist"])
             self.assertEqual(len(results), 8)
@@ -644,7 +647,9 @@ class TestLexigen(unittest.TestCase):
                 "post",
                 "putt",
             ]
-            self.assertEqual(sorted(phonetically_related_words("poet", sample_size=None)), pr_to_poet)
+            self.assertEqual(
+                sorted(phonetically_related_words("poet", sample_size=None)), pr_to_poet
+            )
             results = phonetically_related_words("poet", sample_size=5)
             self.assertEqual(len(sorted(results)), 5)
             self.assertTrue(set(sorted(pr_to_poet)).issuperset(set(results)))
@@ -750,11 +755,11 @@ class TestLexigen(unittest.TestCase):
             ]
             self.assertIn(related_rare_word("comical"), result_possibilities)
 
-
         except Exception as e:
             if "Network calls disabled" in str(e):
                 self.skipTest("Network calls disabled in test environment")
             raise
+
 
 class TestStochasticJolasticWordGenerator(unittest.TestCase):
     def test_random_nonrhyme(self):
@@ -777,7 +782,14 @@ class TestStochasticJolasticWordGenerator(unittest.TestCase):
         try:
             with open("tests/random_nonrhyme_possible_results.txt") as f:
                 possible_randalg_results = f.read().splitlines()
-            words_for_sampling = ["fervent", "mutants", "dazzling", "flying", "saucer", "milquetoast"]
+            words_for_sampling = [
+                "fervent",
+                "mutants",
+                "dazzling",
+                "flying",
+                "saucer",
+                "milquetoast",
+            ]
             markovgen = StochasticJolasticWordGenerator()
             input_words = ["pataphysics", "Dadaist"]
             for i in range(2):
@@ -1148,7 +1160,8 @@ class TextExtractionTestCase(unittest.TestCase):
             self.assertRaises(Exception, lambda: get_internet_archive_document("http://test"))
             self.assertRaises(Exception, lambda: get_internet_archive_document("http://test.com"))
             self.assertRaises(
-                Exception, lambda: get_internet_archive_document("https://www.gutenberg.org/ebooks/11")
+                Exception,
+                lambda: get_internet_archive_document("https://www.gutenberg.org/ebooks/11"),
             )
             cosmicomics = get_internet_archive_document(
                 "https://archive.org/stream/CalvinoItaloCosmicomics/Calvino-Italo-Cosmicomics_djvu.txt"
@@ -1289,10 +1302,10 @@ class ParsedTextTestCase(unittest.TestCase):
         file.close()
         random_paragraph = doc.random_paragraph()
         # Count sentences by splitting on common sentence endings
-        num_sentences = len([s for s in re.split(r'[.!?]+', random_paragraph) if s.strip()])
+        num_sentences = len([s for s in re.split(r"[.!?]+", random_paragraph) if s.strip()])
         self.assertGreaterEqual(num_sentences, 3)
         random_paragraph = doc.random_paragraph(minimum_sentences=6)
-        num_sentences = len([s for s in re.split(r'[.!?]+', random_paragraph) if s.strip()])
+        num_sentences = len([s for s in re.split(r"[.!?]+", random_paragraph) if s.strip()])
         self.assertGreaterEqual(num_sentences, 6)
 
 

@@ -90,9 +90,7 @@ class TestShipOfTheseusTransformer:
     def test_transform_line_with_syllable_preservation(self, transformer):
         """Test transformation with syllable preservation."""
         line = "ancient temple"
-        result = transformer.transform_line(
-            line, replacement_ratio=1.0, preserve_syllables=True
-        )
+        result = transformer.transform_line(line, replacement_ratio=1.0, preserve_syllables=True)
 
         assert result.preserved_syllables is True
         # If transformation succeeded, syllable count should match
@@ -101,9 +99,7 @@ class TestShipOfTheseusTransformer:
     def test_transform_line_without_syllable_preservation(self, transformer):
         """Test transformation without syllable preservation."""
         line = "old gate"
-        result = transformer.transform_line(
-            line, replacement_ratio=1.0, preserve_syllables=False
-        )
+        result = transformer.transform_line(line, replacement_ratio=1.0, preserve_syllables=False)
 
         assert result.preserved_syllables is False
 

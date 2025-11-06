@@ -52,12 +52,12 @@ class TestMainConfig(unittest.TestCase):
         """Test that Config has cache-related settings."""
         config = Config()
         # Should have cache enabled flag
-        self.assertTrue(hasattr(config, 'enable_cache'))
+        self.assertTrue(hasattr(config, "enable_cache"))
 
     def test_config_has_spacy_model(self):
         """Test that Config has spaCy model setting."""
         config = Config()
-        self.assertTrue(hasattr(config, 'spacy_model'))
+        self.assertTrue(hasattr(config, "spacy_model"))
 
     def test_config_validation(self):
         """Test that config validates constraints."""
@@ -93,7 +93,7 @@ class TestConfigLoading(unittest.TestCase):
     def test_config_from_yaml(self):
         """Test loading config from YAML file."""
         # Create a temporary YAML config file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
             f.write("""
 cache:
   enabled: true

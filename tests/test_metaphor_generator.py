@@ -326,17 +326,11 @@ def test_new_patterns_in_batch_generation():
         generator = MetaphorGenerator()
 
         # Generate a large batch to ensure we get variety
-        metaphors = generator.generate_metaphor_batch(
-            ["heart", "storm", "memory"], count=20
-        )
+        metaphors = generator.generate_metaphor_batch(["heart", "storm", "memory"], count=20)
 
         # Check that compound metaphors appear
-        compound_found = any(
-            m.metaphor_type == MetaphorType.COMPOUND for m in metaphors
-        )
-        conceptual_found = any(
-            m.metaphor_type == MetaphorType.CONCEPTUAL for m in metaphors
-        )
+        compound_found = any(m.metaphor_type == MetaphorType.COMPOUND for m in metaphors)
+        conceptual_found = any(m.metaphor_type == MetaphorType.CONCEPTUAL for m in metaphors)
 
         assert compound_found, "Compound metaphors should be generated in batch"
         assert conceptual_found, "Conceptual metaphors should be generated in batch"

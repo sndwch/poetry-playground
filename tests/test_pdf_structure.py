@@ -41,16 +41,22 @@ class TestPDFGeneratorStructure(unittest.TestCase):
         gen = PDFGenerator()
         # Standard PDF fonts don't require TTF files
         standard_fonts = [
-            "Courier", "Courier-Bold", "Courier-Oblique",
-            "Helvetica", "Helvetica-Bold", "Helvetica-Oblique",
-            "Times-Roman", "Times-Bold", "Times-Italic"
+            "Courier",
+            "Courier-Bold",
+            "Courier-Oblique",
+            "Helvetica",
+            "Helvetica-Bold",
+            "Helvetica-Oblique",
+            "Times-Roman",
+            "Times-Bold",
+            "Times-Italic",
         ]
         # All font choices should be standard fonts
         for font in gen.font_choices:
             self.assertIn(
                 any(standard in font for standard in standard_fonts),
                 [True],
-                f"{font} should be a standard PDF font"
+                f"{font} should be a standard PDF font",
             )
 
     def test_font_sizes_are_reasonable(self):
@@ -159,13 +165,13 @@ class TestPDFMetadata(unittest.TestCase):
     def test_pdf_generator_has_orientation(self):
         """Test that PDF generator has orientation setting."""
         gen = PDFGenerator()
-        self.assertTrue(hasattr(gen, 'orientation'))
-        self.assertIn(gen.orientation, ['portrait', 'landscape'])
+        self.assertTrue(hasattr(gen, "orientation"))
+        self.assertIn(gen.orientation, ["portrait", "landscape"])
 
     def test_pdf_generator_tracks_drawn_strings(self):
         """Test that PDF generator tracks drawn strings."""
         gen = PDFGenerator()
-        self.assertTrue(hasattr(gen, 'drawn_strings'))
+        self.assertTrue(hasattr(gen, "drawn_strings"))
         self.assertIsInstance(gen.drawn_strings, list)
 
 
@@ -255,10 +261,10 @@ class TestPDFGeneratorInheritance(unittest.TestCase):
         ]
 
         for gen in generators:
-            self.assertTrue(hasattr(gen, 'font_choices'))
-            self.assertTrue(hasattr(gen, 'default_font_sizes'))
-            self.assertTrue(hasattr(gen, 'orientation'))
-            self.assertTrue(hasattr(gen, 'drawn_strings'))
+            self.assertTrue(hasattr(gen, "font_choices"))
+            self.assertTrue(hasattr(gen, "default_font_sizes"))
+            self.assertTrue(hasattr(gen, "orientation"))
+            self.assertTrue(hasattr(gen, "drawn_strings"))
 
 
 class TestPDFConfigurationOptions(unittest.TestCase):
@@ -268,7 +274,7 @@ class TestPDFConfigurationOptions(unittest.TestCase):
         """Test PDF orientation configuration."""
         gen = PDFGenerator()
         # Should default to landscape for visual poetry
-        self.assertEqual(gen.orientation, 'landscape')
+        self.assertEqual(gen.orientation, "landscape")
 
     def test_font_family_variety(self):
         """Test that multiple font families are available."""
@@ -276,9 +282,9 @@ class TestPDFConfigurationOptions(unittest.TestCase):
         fonts = gen.font_choices
 
         # Should have variety: Courier, Helvetica, Times
-        has_courier = any('Courier' in f for f in fonts)
-        has_helvetica = any('Helvetica' in f for f in fonts)
-        has_times = any('Times' in f for f in fonts)
+        has_courier = any("Courier" in f for f in fonts)
+        has_helvetica = any("Helvetica" in f for f in fonts)
+        has_times = any("Times" in f for f in fonts)
 
         # Should have at least 2 of 3 major families
         self.assertGreaterEqual(sum([has_courier, has_helvetica, has_times]), 2)
@@ -323,7 +329,7 @@ class TestPDFStructureConsistency(unittest.TestCase):
 
         for gen in generators:
             # All should have font_choices
-            self.assertTrue(hasattr(gen, 'font_choices'))
+            self.assertTrue(hasattr(gen, "font_choices"))
             # Font choices should be non-empty
             self.assertGreater(len(gen.font_choices), 0)
 

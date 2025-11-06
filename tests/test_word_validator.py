@@ -23,10 +23,7 @@ class TestWordValidator(unittest.TestCase):
         """Test validation of common English words."""
         common_words = ["cat", "dog", "house", "tree", "water"]
         for word in common_words:
-            self.assertTrue(
-                self.validator.is_valid_english_word(word),
-                f"'{word}' should be valid"
-            )
+            self.assertTrue(self.validator.is_valid_english_word(word), f"'{word}' should be valid")
 
     def test_reject_invalid_words(self):
         """Test rejection of invalid words."""
@@ -43,7 +40,7 @@ class TestWordValidator(unittest.TestCase):
         for word in words_with_numbers:
             self.assertFalse(
                 self.validator.is_valid_english_word(word),
-                f"'{word}' should be invalid (contains numbers)"
+                f"'{word}' should be invalid (contains numbers)",
             )
 
     def test_validate_case_insensitivity(self):

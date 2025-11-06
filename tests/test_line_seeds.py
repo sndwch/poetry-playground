@@ -71,12 +71,12 @@ def test_line_seed_generator():
         if ending.notes:
             print(f"  Notes: {ending.notes}")
 
-
     except Exception as e:
         # Skip if network calls are disabled in tests
         if "Network calls disabled" in str(e):
             pytest.skip("Network calls disabled in test environment")
         raise
+
 
 def test_seed_collection():
     """Test generating a collection of seeds."""
@@ -105,12 +105,12 @@ def test_seed_collection():
             print(f"[{seed.seed_type.value}] {seed.text}")
             print(f"  Quality: {seed.quality_score:.2f}, Momentum: {seed.momentum:.2f}")
 
-
     except Exception as e:
         # Skip if network calls are disabled in tests
         if "Network calls disabled" in str(e):
             pytest.skip("Network calls disabled in test environment")
         raise
+
 
 def test_different_moods():
     """Test generation with different seed words suggesting different moods."""
@@ -122,7 +122,6 @@ def test_different_moods():
             if "Network calls disabled" in str(e):
                 pytest.skip("Network calls disabled in test environment")
             raise
-
 
         # Test with dark/melancholic words
         dark_words = ["shadow", "grief", "hollow"]
@@ -139,12 +138,12 @@ def test_different_moods():
         abstract_opening = generator.generate_opening_line(abstract_words)
         print(f"Abstract opening: {abstract_opening.text}")
 
-
     except Exception as e:
         # Skip if network calls are disabled in tests
         if "Network calls disabled" in str(e):
             pytest.skip("Network calls disabled in test environment")
         raise
+
 
 def test_quality_evaluation():
     """Test that quality evaluation produces reasonable scores."""
@@ -156,7 +155,6 @@ def test_quality_evaluation():
             if "Network calls disabled" in str(e):
                 pytest.skip("Network calls disabled in test environment")
             raise
-
 
         # Generate multiple seeds and check quality distribution
         seed_words = ["rain", "window", "waiting"]
@@ -175,12 +173,12 @@ def test_quality_evaluation():
         # Average should be reasonable
         assert 0.3 < avg_quality < 0.8
 
-
     except Exception as e:
         # Skip if network calls are disabled in tests
         if "Network calls disabled" in str(e):
             pytest.skip("Network calls disabled in test environment")
         raise
+
 
 def demonstrate_interactive_session():
     """Demonstrate how a poet might use this interactively."""
@@ -350,8 +348,10 @@ def test_template_fragment_quality():
         qualities = [f.quality_score for f in fragments]
         avg_quality = sum(qualities) / len(qualities)
 
-        print(f"\nTemplate fragment quality - Min: {min(qualities):.2f}, "
-              f"Max: {max(qualities):.2f}, Avg: {avg_quality:.2f}")
+        print(
+            f"\nTemplate fragment quality - Min: {min(qualities):.2f}, "
+            f"Max: {max(qualities):.2f}, Avg: {avg_quality:.2f}"
+        )
 
         # Check that fragments are well-formed
         for fragment in fragments[:5]:
@@ -384,13 +384,13 @@ def test_template_vs_pattern_comparison():
         print("\nTemplate-based fragments:")
         for i in range(3):
             fragment = template_gen.generate_fragment(seed_words)
-            print(f"  {i+1}. {fragment.text}")
+            print(f"  {i + 1}. {fragment.text}")
 
         # Generate with patterns
         print("\nPattern-based fragments:")
         for i in range(3):
             fragment = pattern_gen.generate_fragment(seed_words)
-            print(f"  {i+1}. {fragment.text}")
+            print(f"  {i + 1}. {fragment.text}")
 
         print("\nBoth modes produce valid output ✓")
 

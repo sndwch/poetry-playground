@@ -20,10 +20,10 @@ class TestPoetryMetrics(unittest.TestCase):
         metrics = PoetryMetrics()
 
         # Should have basic attributes
-        self.assertTrue(hasattr(metrics, 'total_lines'))
-        self.assertTrue(hasattr(metrics, 'total_words'))
-        self.assertTrue(hasattr(metrics, 'vocabulary_size'))
-        self.assertTrue(hasattr(metrics, 'avg_words_per_line'))
+        self.assertTrue(hasattr(metrics, "total_lines"))
+        self.assertTrue(hasattr(metrics, "total_words"))
+        self.assertTrue(hasattr(metrics, "vocabulary_size"))
+        self.assertTrue(hasattr(metrics, "avg_words_per_line"))
 
     def test_metrics_default_values(self):
         """Test default metric values."""
@@ -69,7 +69,9 @@ Birds fly through the sky.
 
     def test_analyze_multiple_lines(self):
         """Test analyzing multiple lines."""
-        fingerprint = self.analyzer.analyze_poems([{"content": self.sample_text, "title": "Sample"}])
+        fingerprint = self.analyzer.analyze_poems(
+            [{"content": self.sample_text, "title": "Sample"}]
+        )
 
         self.assertIsNotNone(fingerprint)
         self.assertIsNotNone(fingerprint.metrics)
@@ -185,15 +187,21 @@ class TestCorpusAnalyzerVocabulary(unittest.TestCase):
         """Test calculating vocabulary richness."""
         # Text with low vocabulary richness
         simple_text = "the the the cat cat dog"
-        simple_fingerprint = self.analyzer.analyze_poems([{"content": simple_text, "title": "Simple"}])
+        simple_fingerprint = self.analyzer.analyze_poems(
+            [{"content": simple_text, "title": "Simple"}]
+        )
 
         # Text with high vocabulary richness
         rich_text = "ocean sky mountain river forest"
         rich_fingerprint = self.analyzer.analyze_poems([{"content": rich_text, "title": "Rich"}])
 
         # Rich text should have more unique words relative to total
-        simple_ratio = simple_fingerprint.metrics.vocabulary_size / max(simple_fingerprint.metrics.total_words, 1)
-        rich_ratio = rich_fingerprint.metrics.vocabulary_size / max(rich_fingerprint.metrics.total_words, 1)
+        simple_ratio = simple_fingerprint.metrics.vocabulary_size / max(
+            simple_fingerprint.metrics.total_words, 1
+        )
+        rich_ratio = rich_fingerprint.metrics.vocabulary_size / max(
+            rich_fingerprint.metrics.total_words, 1
+        )
 
         self.assertLess(simple_ratio, rich_ratio)
 

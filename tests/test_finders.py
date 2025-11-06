@@ -114,9 +114,7 @@ class TestEquidistantPhonetic:
     def test_orthographic_vs_phonetic_different(self, test_lexicon):
         """Orthographic and phonetic modes should give different results."""
         orth_hits = find_equidistant("light", "night", mode="orth", lexicon_data=test_lexicon)
-        phono_hits = find_equidistant(
-            "light", "night", mode="phono", lexicon_data=test_lexicon
-        )
+        phono_hits = find_equidistant("light", "night", mode="phono", lexicon_data=test_lexicon)
 
         orth_words = {h.word for h in orth_hits}
         phono_words = {h.word for h in phono_hits}
@@ -168,9 +166,9 @@ class TestFilters:
 
         # All results should have 2-3 syllables
         for hit in hits:
-            assert (
-                2 <= hit.syllables <= 3
-            ), f"{hit.word} should have 2-3 syllables, got {hit.syllables}"
+            assert 2 <= hit.syllables <= 3, (
+                f"{hit.word} should have 2-3 syllables, got {hit.syllables}"
+            )
 
     def test_combined_filters(self, test_lexicon):
         """Multiple filters should all be applied."""
@@ -202,9 +200,9 @@ class TestScoring:
 
         # Verify descending score order
         for i in range(len(hits) - 1):
-            assert (
-                hits[i].score >= hits[i + 1].score
-            ), f"Results should be sorted by score: {hits[i].score} >= {hits[i+1].score}"
+            assert hits[i].score >= hits[i + 1].score, (
+                f"Results should be sorted by score: {hits[i].score} >= {hits[i + 1].score}"
+            )
 
     def test_exact_distance_scores_higher(self, test_lexicon):
         """Words at exact target distance should score higher than those in window."""
@@ -217,9 +215,7 @@ class TestScoring:
 
         # Get scores for exact matches vs window matches
         exact_scores = [h.score for h in hits if h.dist_a == target_d and h.dist_b == target_d]
-        window_scores = [
-            h.score for h in hits if h.dist_a != target_d or h.dist_b != target_d
-        ]
+        window_scores = [h.score for h in hits if h.dist_a != target_d or h.dist_b != target_d]
 
         if exact_scores and window_scores:
             # On average, exact matches should score higher
@@ -240,9 +236,7 @@ class TestEdgeCases:
     def test_very_long_words(self, test_lexicon):
         """Long words should work (if they exist in lexicon)."""
         # Test with reasonably long common words
-        hits = find_equidistant(
-            "understanding", "comprehensive", lexicon_data=test_lexicon
-        )
+        hits = find_equidistant("understanding", "comprehensive", lexicon_data=test_lexicon)
         assert isinstance(hits, list)
 
     def test_case_insensitive(self, test_lexicon):

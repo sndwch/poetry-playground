@@ -259,7 +259,7 @@ class ConfigFormScreen(Screen):
             generator = MetaphorGenerator()
             metaphors = generator.generate_metaphors(target_count=count, num_texts=5)
 
-            return "\n\n".join(f"{i+1}. {m}" for i, m in enumerate(metaphors[:count]))
+            return "\n\n".join(f"{i + 1}. {m}" for i, m in enumerate(metaphors[:count]))
 
         elif procedure_id == "lineseeds":
             from generativepoetry.line_seeds import LineSeedGenerator
@@ -275,7 +275,7 @@ class ConfigFormScreen(Screen):
             generator = LineSeedGenerator()
             seeds = generator.generate_line_seeds(seed_words=seed_words, count=count)
 
-            return "\n\n".join(f"{i+1}. {seed}" for i, seed in enumerate(seeds))
+            return "\n\n".join(f"{i + 1}. {seed}" for i, seed in enumerate(seeds))
 
         elif procedure_id == "ideas":
             from generativepoetry.idea_generator import IdeaGenerator
