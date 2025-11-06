@@ -77,12 +77,14 @@ def capture_rich_output(rich_console, monkeypatch):
 
     Returns the captured Console instance.
     """
-    # Temporarily replace the global console in all modules that import it
+    # Import modules first so they're loaded
     import generativepoetry.rich_console
     import generativepoetry.rich_output
     import generativepoetry.cli
 
+    # Temporarily replace the global console in all modules that import it
     monkeypatch.setattr(generativepoetry.rich_console, "console", rich_console)
     monkeypatch.setattr(generativepoetry.rich_output, "console", rich_console)
     monkeypatch.setattr(generativepoetry.cli, "console", rich_console)
+
     return rich_console
