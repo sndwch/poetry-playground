@@ -46,6 +46,7 @@ texts/*.txt.gz
 # Development plans and notes
 development_notes/
 *.plan.md
+TUI_MODERNIZATION_PLAN.md
 
 # Claude Code configuration
 .claude/
