@@ -27,6 +27,10 @@ ListView {
     border: solid $primary;
 }
 
+ListView:focus {
+    border: thick $accent;
+}
+
 ListView > ListItem {
     padding: 1 2;
 }
@@ -38,6 +42,7 @@ ListView > ListItem:hover {
 ListView > ListItem.-selected {
     background: $accent;
     text-style: bold;
+    border-left: thick $accent-lighten-2;
 }
 
 /* Button Styling */
@@ -52,6 +57,8 @@ Button:hover {
 
 Button:focus {
     text-style: bold;
+    border: thick $accent;
+    background: $accent-darken-1;
 }
 
 /* Input Styling */

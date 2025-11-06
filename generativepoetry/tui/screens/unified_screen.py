@@ -26,6 +26,11 @@ class UnifiedTUIScreen(Screen):
         padding: 0 1;
     }
 
+    #procedure-column:focus-within {
+        border-right: thick $accent;
+        background: $surface-darken-1;
+    }
+
     #config-column {
         width: 100%;
         height: 100%;
@@ -33,10 +38,19 @@ class UnifiedTUIScreen(Screen):
         padding: 0 1;
     }
 
+    #config-column:focus-within {
+        border-right: thick $accent;
+        background: $surface-darken-1;
+    }
+
     #output-column {
         width: 100%;
         height: 100%;
         padding: 0 1;
+    }
+
+    #output-column:focus-within {
+        background: $surface-darken-1;
     }
 
     #procedure-title {
@@ -95,6 +109,12 @@ class UnifiedTUIScreen(Screen):
         width: 100%;
     }
 
+    #generate-btn:focus {
+        border: thick $accent;
+        text-style: bold;
+        background: $accent;
+    }
+
     #status {
         text-align: center;
         color: $accent;
@@ -107,9 +127,19 @@ class UnifiedTUIScreen(Screen):
         border: solid $primary;
     }
 
+    #output-display:focus {
+        border: thick $accent;
+    }
+
     #save-btn {
         margin: 1 0;
         width: 100%;
+    }
+
+    #save-btn:focus {
+        border: thick $accent;
+        text-style: bold;
+        background: $accent;
     }
     """
 
