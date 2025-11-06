@@ -1132,6 +1132,86 @@ def causal_poetry_action():
             print("Invalid choice. Please enter 1-4.")
 
 
+def equidistant_action():
+    """Find words equidistant from two anchor words"""
+    print("\n" + "=" * 60)
+    print("EQUIDISTANT WORD FINDER")
+    print("=" * 60)
+    print("\nDiscovery words that are equally distant from two anchor words,")
+    print("measured by Levenshtein edit distance. Useful for finding bridges,")
+    print("phonetic echoes, and unexpected connections between concepts.")
+
+    while True:
+        print("\n" + "-" * 40)
+        word_a = input("Enter first anchor word (or 'exit' to return): ").strip()
+        if word_a.lower() == "exit":
+            break
+
+        word_b = input("Enter second anchor word: ").strip()
+        if not word_a or not word_b:
+            print("Please enter both words.")
+            continue
+
+        # Ask for mode
+        print("\nDistance mode:")
+        print("1. Orthographic (spelling-based)")
+        print("2. Phonetic (sound-based)")
+        mode_choice = input("Choice (1-2, default 1): ").strip()
+        mode = "phono" if mode_choice == "2" else "orth"
+
+        # Ask for filters
+        print("\nOptional filters (press Enter to skip):")
+        window_input = input("Window (±distance tolerance, default 0): ").strip()
+        window = int(window_input) if window_input else 0
+
+        min_zipf_input = input("Min frequency (1-10, default 3.0): ").strip()
+        min_zipf = float(min_zipf_input) if min_zipf_input else 3.0
+
+        pos_input = input("Part of speech (NOUN/VERB/ADJ/ADV, default any): ").strip().upper()
+        pos_filter = pos_input if pos_input in ["NOUN", "VERB", "ADJ", "ADV"] else None
+
+        syl_input = input("Syllables (e.g., '2', '1..3', '2..', default any): ").strip()
+        syllable_filter = parse_syllable_range(syl_input) if syl_input else None
+
+        # Perform search
+        try:
+            print("\n🔍 Searching for equidistant words...")
+            hits = find_equidistant(
+                a=word_a,
+                b=word_b,
+                mode=mode,
+                window=window,
+                min_zipf=min_zipf,
+                pos_filter=pos_filter,
+                syllable_filter=syllable_filter,
+            )
+
+            if hits:
+                print(f"\n✓ Found {len(hits)} equidistant words:\n")
+                # Show top 20 results in simple table format
+                for i, hit in enumerate(hits[:20], 1):
+                    syl_str = f"{hit.syllables}s" if hit.syllables else "?"
+                    pos_str = hit.pos if hit.pos else "?"
+                    print(
+                        f"  {i:2d}. {hit.word:15s} "
+                        f"(d={hit.dist_a}/{hit.dist_b}, {syl_str}, {pos_str}, "
+                        f"score={hit.score:.2f})"
+                    )
+
+                if len(hits) > 20:
+                    print(f"\n  ... and {len(hits) - 20} more results")
+            else:
+                print(f"\n❌ No equidistant words found for '{word_a}' and '{word_b}'")
+                print("Try increasing the window or adjusting filters.")
+
+        except ValueError as e:
+            print(f"\nError: {e}")
+
+        print("\nTry another pair? (Enter to continue, 'exit' to return)")
+        if input().lower() == "exit":
+            break
+
+
 def main():
     """Main entry point for the generative poetry CLI.
 
@@ -1447,6 +1527,9 @@ def main():
     causal_poetry_item = FunctionItem(
         "🔍 Resonant Fragment Miner (Literary Discovery)", causal_poetry_action
     )
+    equidistant_item = FunctionItem(
+        "🎯 Equidistant Word Finder (Bridge Discovery)", equidistant_action
+    )
 
     # Syllable-constrained form generators
     haiku_item = FunctionItem("🌸 Generate Haiku (5-7-5 syllables)", haiku_action)
@@ -1469,6 +1552,7 @@ def main():
     menu.append_item(idea_item)
     menu.append_item(six_degrees_item)
     menu.append_item(causal_poetry_item)
+    menu.append_item(equidistant_item)
     menu.append_item(haiku_item)
     menu.append_item(tanka_item)
     menu.append_item(senryu_item)
