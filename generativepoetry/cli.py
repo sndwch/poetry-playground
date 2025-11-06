@@ -5,6 +5,9 @@ import re
 
 from consolemenu import ConsoleMenu
 from consolemenu.items import FunctionItem
+from rich.columns import Columns
+from rich.panel import Panel
+from rich.table import Table
 
 # Import the pronouncing patch first to suppress pkg_resources warning
 import generativepoetry.pronouncing_patch  # noqa: F401
@@ -25,6 +28,8 @@ from generativepoetry.pdf import (
 )
 from generativepoetry.poem_transformer import PoemTransformer
 from generativepoetry.poemgen import PoemGenerator, print_poem
+from generativepoetry.rich_console import console
+from generativepoetry.rich_output import display_poem_output
 from generativepoetry.seed_manager import format_seed_message, set_global_seed
 from generativepoetry.setup_models import setup as setup_models
 from generativepoetry.six_degrees import SixDegrees
@@ -32,6 +37,123 @@ from generativepoetry.system_utils import check_system_dependencies
 from generativepoetry.utils import get_input_words
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
+
+
+def _list_procedures():
+    """Display available generation procedures in a Rich table."""
+    table = Table(
+        title="✨ Available Generation Procedures ✨",
+        header_style="bold magenta",
+        show_header=True,
+        border_style="blue",
+    )
+
+    table.add_column("#", style="dim", width=3)
+    table.add_column("Procedure", style="bold cyan", width=30)
+    table.add_column("Description", style="white", no_wrap=False)
+    table.add_column("Category", style="yellow", width=15)
+
+    # Define procedures with their categories
+    procedures = [
+        # Visual/Concrete Poetry
+        ("1", "Futurist Poem", "Marinetti-inspired mathematical word connections", "Visual Poetry"),
+        ("2", "Stochastic Jolastic", "Joyce-like wordplay with rhyme schemes", "Visual Poetry"),
+        ("3", "Chaotic Concrete", "Abstract spatial arrangements", "Visual Poetry"),
+        ("4", "Character Soup", "Pure visual typographic experiments", "Visual Poetry"),
+        ("5", "Stop Word Soup", "Minimalist word placement", "Visual Poetry"),
+        ("6", "Visual Puzzle", "Interactive terminal-based concrete poetry", "Visual Poetry"),
+        # Poetry Ideation Tools
+        ("7", "Line Seeds", "Opening lines and pivotal fragments", "Ideation"),
+        ("8", "Metaphor Generator", "AI-assisted metaphor creation", "Ideation"),
+        ("9", "Corpus Analyzer", "Analyze personal poetry collection", "Ideation"),
+        ("10", "Ship of Theseus", "Transform existing poems", "Ideation"),
+        ("11", "Poetry Ideas", "Mine classic literature for creative seeds", "Ideation"),
+        ("12", "Six Degrees", "Explore connections between concepts", "Ideation"),
+        ("13", "Fragment Miner", "Extract poetic fragments from Gutenberg", "Ideation"),
+        # Syllable-Constrained Forms
+        ("14", "Haiku Generator", "Traditional 5-7-5 syllable form", "Forms"),
+        ("15", "Tanka Generator", "Extended 5-7-5-7-7 syllable form", "Forms"),
+        ("16", "Senryu Generator", "Human-focused 5-7-5 form", "Forms"),
+    ]
+
+    # Add rows with section separators between categories
+    current_category = None
+    for num, name, desc, category in procedures:
+        if category != current_category:
+            if current_category is not None:
+                table.add_section()  # Visual separator
+            current_category = category
+        table.add_row(num, name, desc, category)
+
+    console.print(table)
+    console.print("\n[dim]Use generative-poetry-cli to access all procedures interactively.[/dim]")
+
+
+def _list_fonts():
+    """Display available fonts in a responsive column layout."""
+    # Standard PostScript fonts (always available with reportlab)
+    standard_fonts = [
+        "Courier",
+        "Courier-Bold",
+        "Courier-BoldOblique",
+        "Courier-Oblique",
+        "Helvetica",
+        "Helvetica-Bold",
+        "Helvetica-BoldOblique",
+        "Helvetica-Oblique",
+        "Times-Roman",
+        "Times-Bold",
+        "Times-Italic",
+        "Times-BoldItalic",
+        "Symbol",
+        "ZapfDingbats",
+    ]
+
+    # Try to get additionally registered fonts
+    custom_fonts = []
+    try:
+        from reportlab.pdfbase import pdfmetrics
+
+        registered = pdfmetrics.getRegisteredFontNames()
+        if registered and len(registered) > len(standard_fonts):
+            custom_fonts = sorted([f for f in registered if f not in standard_fonts])
+    except Exception:
+        # Silently continue if font registry is unavailable
+        pass
+
+    # Create styled renderables for standard fonts
+    font_renderables = [f"[cyan]•[/] [yellow]{font}[/]" for font in standard_fonts]
+
+    # Create Columns (auto-arranges based on terminal width)
+    font_columns = Columns(font_renderables, equal=False, expand=False)
+
+    # Wrap in Panel
+    panel = Panel(
+        font_columns,
+        title="🎨 Standard PostScript Fonts",
+        subtitle="[dim]Always available[/dim]",
+        border_style="blue",
+        padding=(1, 2),
+    )
+
+    console.print(panel)
+
+    # Show custom fonts if any
+    if custom_fonts:
+        console.print()  # Add spacing
+        custom_renderables = [f"[cyan]•[/] [yellow]{font}[/]" for font in custom_fonts]
+        custom_columns = Columns(custom_renderables, equal=False, expand=False)
+        custom_panel = Panel(
+            custom_columns,
+            title="📦 Additionally Registered Fonts",
+            border_style="green",
+            padding=(1, 2),
+        )
+        console.print(custom_panel)
+
+    console.print(
+        "\n[dim]Note: Custom fonts can be registered using reportlab.pdfbase.pdfmetrics[/dim]"
+    )
 
 
 def interactive_loop(poetry_generator):
@@ -98,17 +220,19 @@ def metaphor_generator_action():
     input_words = get_input_words()
 
     while not exit_loop:
-        print("\n" + "=" * 60)
-        print(f"Metaphor Generation for: {', '.join(input_words)}")
-        print("=" * 60 + "\n")
+        console.print("\n" + "=" * 60)
+        console.print(f"Metaphor Generation for: {', '.join(input_words)}")
+        console.print("=" * 60 + "\n")
 
-        # Generate metaphors
-        print("Generating metaphors...")
-        metaphors = generator.generate_metaphor_batch(input_words, count=15)
+        # Generate metaphors with status spinner
+        with console.status("[bold green]Generating metaphors...", spinner="dots12"):
+            console.log("Generating metaphor batch...")
+            metaphors = generator.generate_metaphor_batch(input_words, count=15)
 
-        # Try to extract some patterns from multiple Gutenberg texts
-        print("Mining literary patterns from diverse sources...")
-        gutenberg_patterns = generator.extract_metaphor_patterns(num_texts=5)
+            console.log("Mining literary patterns from diverse sources...")
+            gutenberg_patterns = generator.extract_metaphor_patterns(num_texts=5)
+
+        console.log("✓ Generation complete!")
 
         # Group by type
         by_type = {}
@@ -328,22 +452,32 @@ def haiku_action():
     seed_words = [w for w in re.split(r"[\s,]", seed_input) if w] if seed_input else None
 
     while not exit_loop:
-        print("\n" + "=" * 50)
-        print("Generating Haiku...")
-        print("=" * 50 + "\n")
+        console.print("\n" + "=" * 50)
+        console.print("Generating Haiku...")
+        console.print("=" * 50 + "\n")
 
         try:
-            lines, validation = generator.generate_haiku(seed_words=seed_words, strict=True)
+            with console.status("[bold green]Generating haiku...", spinner="dots"):
+                console.log("Loading POS vocabulary...")
+                console.log("Selecting grammatical templates...")
+                lines, validation = generator.generate_haiku(seed_words=seed_words, strict=True)
 
-            # Display the haiku
-            for line in lines:
-                print(f"  {line}")
+            # Get seed for metadata
+            from generativepoetry.seed_manager import get_global_seed
+
+            # Display the haiku using Rich Panel
+            metadata = {"form": "haiku", "syllables": "5-7-5"}
+            seed = get_global_seed()
+            if seed is not None:
+                metadata["seed"] = str(seed)
+
+            display_poem_output(lines, title="Haiku", metadata=metadata)
 
             # Show validation if verbose
             if validation.valid:
-                print("\n✓ Valid haiku (5-7-5 syllables)")
+                console.print("\n[green]✓ Valid haiku (5-7-5 syllables)[/green]")
             else:
-                print("\n" + validation.get_report())
+                console.print("\n" + validation.get_report())
 
         except ValueError as e:
             print(f"\nError generating haiku: {e}")
@@ -999,68 +1133,12 @@ def main():
 
     # Handle --list-fonts command
     if args.list_fonts:
-        print("Available fonts for PDF generation:\n")
-        # List standard PDF fonts (always available with reportlab)
-        standard_fonts = [
-            "Courier",
-            "Courier-Bold",
-            "Courier-BoldOblique",
-            "Courier-Oblique",
-            "Helvetica",
-            "Helvetica-Bold",
-            "Helvetica-BoldOblique",
-            "Helvetica-Oblique",
-            "Times-Roman",
-            "Times-Bold",
-            "Times-Italic",
-            "Times-BoldItalic",
-            "Symbol",
-            "ZapfDingbats",
-        ]
-
-        print("Standard PostScript Fonts (always available):")
-        for i, font in enumerate(standard_fonts, 1):
-            print(f"  {i:2}. {font}")
-
-        # Try to list registered fonts from pdfmetrics
-        try:
-            from reportlab.pdfbase import pdfmetrics
-
-            registered = pdfmetrics.getRegisteredFontNames()
-            if registered and len(registered) > len(standard_fonts):
-                print("\nAdditionally Registered Fonts:")
-                custom = [f for f in registered if f not in standard_fonts]
-                for i, font in enumerate(sorted(custom), 1):
-                    print(f"  {i:2}. {font}")
-        except Exception:
-            pass
-
-        print("\nNote: Custom fonts can be registered using reportlab.pdfbase.pdfmetrics")
+        _list_fonts()
         return
 
     # Handle --list-procedures command
     if args.list_procedures:
-        print("Available poem generation procedures:\n")
-        print("Visual/Concrete Poetry:")
-        print("  1. Futurist Poem - Marinetti-inspired mathematical word connections")
-        print("  2. Stochastic Jolastic (Markov) - Joyce-like wordplay with rhyme schemes")
-        print("  3. Chaotic Concrete - Abstract spatial arrangements")
-        print("  4. Character Soup - Pure visual typographic experiments")
-        print("  5. Stop Word Soup - Minimalist word placement")
-        print("  6. Visual Puzzle - Interactive terminal-based concrete poetry")
-        print("\nPoetry Ideation Tools:")
-        print("  7. Line Seeds Generator - Opening lines and pivotal fragments")
-        print("  8. Metaphor Generator - AI-assisted metaphor creation")
-        print("  9. Corpus Analyzer - Analyze personal poetry collection")
-        print("  10. Ship of Theseus - Transform existing poems")
-        print("  11. Poetry Idea Generator - Mine classic literature for creative seeds")
-        print("  12. Six Degrees - Explore connections between concepts")
-        print("  13. Resonant Fragment Miner - Extract poetic fragments from Gutenberg")
-        print("\nSyllable-Constrained Forms:")
-        print("  14. Haiku Generator - Traditional 5-7-5 syllable form")
-        print("  15. Tanka Generator - Extended 5-7-5-7-7 syllable form")
-        print("  16. Senryu Generator - Human-focused 5-7-5 form")
-        print("\nUse generative-poetry-cli to access all procedures interactively.")
+        _list_procedures()
         return
 
     # Handle --setup command

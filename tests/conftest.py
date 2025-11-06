@@ -1,10 +1,12 @@
 """Pytest configuration and fixtures."""
 
 import tempfile
+from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from rich.console import Console
 
 
 @pytest.fixture
@@ -44,3 +46,43 @@ def sample_text():
     This is the second paragraph.
     It also has multiple sentences.
     """
+
+
+@pytest.fixture
+def rich_console():
+    """Console that captures output for testing.
+
+    This console:
+    - Writes to a StringIO buffer (can be read back)
+    - Disables ANSI codes for easier testing
+    - Sets fixed width for consistent output
+    - Records output for export_text()
+    """
+    string_io = StringIO()
+    return Console(
+        file=string_io,
+        force_terminal=False,  # Disable ANSI codes
+        width=80,  # Fixed width for consistent output
+        legacy_windows=False,
+        record=True,  # Enable recording for export
+    )
+
+
+@pytest.fixture
+def capture_rich_output(rich_console, monkeypatch):
+    """Capture Rich output by temporarily replacing the global console.
+
+    This fixture allows testing functions that use the global console
+    from generativepoetry.rich_console.
+
+    Returns the captured Console instance.
+    """
+    # Temporarily replace the global console in all modules that import it
+    import generativepoetry.rich_console
+    import generativepoetry.rich_output
+    import generativepoetry.cli
+
+    monkeypatch.setattr(generativepoetry.rich_console, "console", rich_console)
+    monkeypatch.setattr(generativepoetry.rich_output, "console", rich_console)
+    monkeypatch.setattr(generativepoetry.cli, "console", rich_console)
+    return rich_console
