@@ -3,7 +3,7 @@
 ## Overview
 Transform the generative poetry library from a generator of complete experimental poems into a comprehensive poetry ideation assistant that helps poets explore themes, discover unexpected connections, and break creative blocks.
 
-## 📊 Implementation Status (Last Updated: 2025-11-04)
+## 📊 Implementation Status (Last Updated: 2025-11-05)
 
 ### ✅ Completed Features (5)
 1. **Line and Phrase Seed Generator** - Generates evocative incomplete phrases and line beginnings
@@ -20,11 +20,12 @@ None currently
 2. **Prompt and Constraint Generator** - Oulipian writing constraints and creative prompts
 3. **Mood and Register Mapping** - Emotional intelligence for word selection
 
-### 💡 Additional Features Implemented (4)
+### 💡 Additional Features Implemented (5)
 1. **Six Degrees Word Convergence** - Explores unexpected connections between concepts
 2. **Ship of Theseus Transformer** - Gradually transforms existing poems
 3. **Visual Poetry Generators** - Multiple concrete/visual poetry generation tools
 4. **Document Library System** - Centralized Gutenberg text retrieval with anti-repetition
+5. **Equidistant Word Finder** - Discovers words equidistant (by Levenshtein distance) from two anchor words, supporting both orthographic and phonetic modes with craft-aware scoring
 
 ---
 

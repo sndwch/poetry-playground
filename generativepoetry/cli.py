@@ -14,6 +14,7 @@ import generativepoetry.pronouncing_patch  # noqa: F401
 from generativepoetry.causal_poetry import ResonantFragmentMiner
 from generativepoetry.config import init_config
 from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
+from generativepoetry.finders import find_equidistant
 from generativepoetry.forms import FormGenerator
 from generativepoetry.idea_generator import IdeaType, PoetryIdeaGenerator
 from generativepoetry.line_seeds import LineSeedGenerator, SeedType
@@ -37,6 +38,36 @@ from generativepoetry.system_utils import check_system_dependencies
 from generativepoetry.utils import get_input_words
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
+
+
+def parse_syllable_range(value: str) -> tuple:
+    """Parse a syllable range string like '1..3', '2', '2..', or '..5'.
+
+    Args:
+        value: Range string to parse
+
+    Returns:
+        Tuple of (min_syllables, max_syllables)
+
+    Raises:
+        argparse.ArgumentTypeError: If the format is invalid
+    """
+    if ".." in value:
+        parts = value.split("..")
+        if len(parts) != 2:
+            raise argparse.ArgumentTypeError(f"Invalid range format: {value}")
+        try:
+            min_s = int(parts[0]) if parts[0] else 0
+            max_s = int(parts[1]) if parts[1] else 999  # Effectively unlimited
+            return (min_s, max_s)
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"Invalid range format: {value}") from None
+    else:
+        try:
+            count = int(value)
+            return (count, count)  # Exact syllable count
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"Invalid syllable count: {value}") from None
 
 
 def _list_procedures():
@@ -154,6 +185,87 @@ def _list_fonts():
     console.print(
         "\n[dim]Note: Custom fonts can be registered using reportlab.pdfbase.pdfmetrics[/dim]"
     )
+
+
+def _handle_equidistant(args):
+    """Handle the --equidistant command to find words equidistant from two anchors.
+
+    Args:
+        args: Parsed command-line arguments containing equidistant and filter options
+    """
+    a, b = args.equidistant  # Two anchor words
+
+    with console.status(f"[green]Searching {args.mode} echoes for '{a}' and '{b}'..."):
+        try:
+            hits = find_equidistant(
+                a=a,
+                b=b,
+                mode=args.mode,
+                window=args.window,
+                min_zipf=args.min_zipf,
+                pos_filter=args.pos,
+                syllable_filter=args.syllables,
+            )
+        except ValueError as e:
+            console.print(f"[bold red]Error:[/bold red] {e}")
+            return
+
+    if not hits:
+        console.print("[yellow]No results found with current parameters.[/yellow]")
+        console.print("\n[dim]Try:")
+        console.print("  • Increasing --window (e.g., --window 1)")
+        console.print("  • Lowering --min-zipf (e.g., --min-zipf 2.0)")
+        console.print("  • Removing filters (--pos, --syllables)[/dim]")
+        return
+
+    target_d = hits[0].target_distance
+    window_str = f"±{args.window}" if args.window > 0 else "exact"
+    title = f"✨ Equidistant Echoes: '{a}' ⟷ '{b}' ✨"
+    subtitle = f"[dim]Target distance: {target_d} ({window_str}) | Mode: {args.mode}[/dim]"
+
+    table = Table(title=title, subtitle=subtitle, show_lines=True, border_style="blue")
+    table.add_column("Word", style="bold cyan", no_wrap=True)
+    table.add_column("d(A,X)", style="magenta", justify="center", width=6)
+    table.add_column("d(B,X)", style="magenta", justify="center", width=6)
+    table.add_column("Syl", style="green", justify="center", width=4)
+    table.add_column("POS", style="yellow", width=8)
+    table.add_column("Zipf", style="blue", justify="right", width=6)
+    table.add_column("Score", style="bold white", justify="right", width=7)
+
+    # Show top 50 results
+    for hit in hits[:50]:
+        table.add_row(
+            hit.word,
+            str(hit.dist_a),
+            str(hit.dist_b),
+            str(hit.syllables) if hit.syllables else "—",
+            hit.pos if hit.pos != "UNKNOWN" else "—",
+            f"{hit.zipf_frequency:.2f}",
+            f"{hit.score:.2f}",
+        )
+
+    console.print(table)
+
+    # Show summary
+    total_hits = len(hits)
+    shown = min(50, total_hits)
+    console.print(f"\n[dim]Showing top {shown} of {total_hits} results[/dim]")
+
+    # Show filters if any were applied
+    filters = []
+    if args.pos:
+        filters.append(f"POS={args.pos}")
+    if args.syllables:
+        min_s, max_s = args.syllables
+        if min_s == max_s:
+            filters.append(f"syllables={min_s}")
+        else:
+            filters.append(f"syllables={min_s}..{max_s}")
+    if args.min_zipf != 3.0:
+        filters.append(f"min_zipf={args.min_zipf}")
+
+    if filters:
+        console.print(f"[dim]Filters: {', '.join(filters)}[/dim]")
 
 
 def interactive_loop(poetry_generator):
@@ -1127,6 +1239,49 @@ def main():
         help="Download and install all required NLTK data and spaCy models, then exit",
     )
 
+    # Equidistant word finder arguments
+    parser.add_argument(
+        "--equidistant",
+        nargs=2,
+        metavar=("WORD_A", "WORD_B"),
+        help="Find words equidistant from two anchor words (e.g., --equidistant stone storm)",
+    )
+
+    parser.add_argument(
+        "--mode",
+        choices=["orth", "phono"],
+        default="orth",
+        help="Distance mode for --equidistant: 'orth' (orthographic/spelling) or 'phono' (phonetic/sound)",
+    )
+
+    parser.add_argument(
+        "--window",
+        type=int,
+        default=0,
+        help="Allow distance to be d±WINDOW for --equidistant (0=exact, 1=d±1, etc.)",
+    )
+
+    parser.add_argument(
+        "--min-zipf",
+        type=float,
+        default=3.0,
+        help="Minimum word frequency on Zipf scale (1-10) for --equidistant (default: 3.0)",
+    )
+
+    parser.add_argument(
+        "--pos",
+        choices=["NOUN", "VERB", "ADJ", "ADV"],
+        default=None,
+        help="Filter --equidistant results by part of speech (uses spaCy tags)",
+    )
+
+    parser.add_argument(
+        "--syllables",
+        type=parse_syllable_range,
+        default=None,
+        help="Filter --equidistant by syllable count (e.g., '2' or '1..3' or '2..' or '..5')",
+    )
+
     parser.add_argument("--version", action="version", version="generativepoetry 0.3.4")
 
     args = parser.parse_args()
@@ -1139,6 +1294,11 @@ def main():
     # Handle --list-procedures command
     if args.list_procedures:
         _list_procedures()
+        return
+
+    # Handle --equidistant command
+    if args.equidistant:
+        _handle_equidistant(args)
         return
 
     # Handle --setup command

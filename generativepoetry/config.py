@@ -56,6 +56,35 @@ class PoemForm(str, Enum):
     FREE = "free"  # No syllable constraints (default)
 
 
+class EquidistantHit(BaseModel):
+    """A word equidistant (or near-equidistant) from two anchor words.
+
+    This model represents a single result from the equidistant word finder,
+    containing the word itself along with complete provenance and scoring data.
+
+    Attributes:
+        word: The found word
+        target_distance: The target Levenshtein distance between anchor words
+        dist_a: Actual Levenshtein distance from first anchor to this word
+        dist_b: Actual Levenshtein distance from second anchor to this word
+        mode: Search mode used ('orth' for orthographic, 'phono' for phonetic)
+        zipf_frequency: Word frequency on Zipf scale (1-10, higher = more common)
+        syllables: Number of syllables (None if unavailable)
+        pos: Part of speech tag from spaCy (e.g., 'NOUN', 'VERB')
+        score: Craft-aware ranking score (higher = more poetically useful)
+    """
+
+    word: str
+    target_distance: int
+    dist_a: int
+    dist_b: int
+    mode: str  # Literal["orth", "phono"] but using str for Pydantic 2.x compatibility
+    zipf_frequency: float
+    syllables: Optional[int] = None
+    pos: Optional[str] = None
+    score: float
+
+
 class Config(BaseModel):
     """Main configuration model with validation."""
 
