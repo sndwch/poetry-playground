@@ -208,11 +208,11 @@ class ConfigFormScreen(Screen):
             result = self._execute_generator(procedure_id, config_values)
 
             # Post result back to main thread
-            self.call_from_thread(self._on_generation_complete, result)
+            self.app.call_from_thread(self._on_generation_complete, result)
 
         except Exception as e:
             # Post error back to main thread
-            self.call_from_thread(self._on_generation_error, str(e))
+            self.app.call_from_thread(self._on_generation_error, str(e))
 
     def _execute_generator(self, procedure_id: str, config: dict) -> str:
         """Execute the appropriate generator based on procedure ID.
@@ -301,9 +301,11 @@ class ConfigFormScreen(Screen):
             collection = miner.mine_fragments(target_count=count, num_texts=5)
 
             result_lines = []
-            for i, frag in enumerate(collection.fragments[:count], 1):
+            for i, frag in enumerate(collection.get_all_fragments()[:count], 1):
                 result_lines.append(f"{i}. {frag.text}")
-                result_lines.append(f"   Pattern: {frag.pattern_type} | Score: {frag.score:.2f}")
+                result_lines.append(
+                    f"   Pattern: {frag.pattern_type} | Score: {frag.poetic_score:.2f}"
+                )
                 result_lines.append("")
 
             return "\n".join(result_lines)
