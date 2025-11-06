@@ -36,13 +36,14 @@ docs/build/
 *.pdf
 *.png
 *.pyc
+.DS_Store
 
 generative-poetry-cli.py
 files.txt
 data/*.txt
+texts/*.txt.gz
 
 # Development plans and notes
-POETRY_IDEATION_ROADMAP.md
 development_notes/
 *.plan.md
 

@@ -59,20 +59,20 @@ This library provides constraint-based procedures for stochastically generating 
 ## Core Features & Use Cases
 
 ### 🎨 Visual Poetry Generation
-Perfect for creating concrete/visual poems and experimental typography:
+Create concrete/visual poems and experimental typography:
 
-**Futurist Poems** - Generate Marinetti-style manifestos connecting words through mathematical operators and phonetic relationships. Great for creating bold, energetic visual statements.
+**Futurist Poems** - Generate Marinetti-style manifestos connecting words through mathematical operators and phonetic relationships.
 
 **Stochastic Jolastic (Markov)** - Complex generation using phonetic relations, meaning transformations, and forced rhyme schemes. Creates Joyce-like wordplay and linguistic experiments.
 
-**Chaotic Concrete** - Abstract spatial arrangements focusing on visual rather than semantic relationships. Perfect for pure typographic art.
+**Chaotic Concrete** - Abstract spatial arrangements focusing on visual rather than semantic relationships.
 
 **Character/Stop Word Soup** - Minimalist visual experiments with strategic placement of characters or common words.
 
 ### 💡 Creative Writing & Ideation
-Breakthrough writer's block and discover new directions:
+Tools for exploring themes and starting new poems:
 
-**🌱 Line Seeds Generator** - Get opening lines, pivotal fragments, and closing thoughts tailored to your input words. Perfect for starting new poems or finding fresh angles.
+**🌱 Line Seeds Generator** - Get opening lines, pivotal fragments, and closing thoughts tailored to your input words.
 
 **🔮 Metaphor Generator** - AI-powered metaphor creation that mines classic literature for unexpected comparisons. Uses adaptive scaling to ensure high-quality results.
 
@@ -90,9 +90,9 @@ Breakthrough writer's block and discover new directions:
 ### 📊 Analysis & Transformation
 Work with existing poetry and understand patterns:
 
-**📊 Poetry Corpus Analyzer** - Upload your personal poetry collection to analyze themes, word frequency, emotional patterns, and stylistic trends. Gain insights into your creative evolution.
+**📊 Poetry Corpus Analyzer** - Upload your personal poetry collection to analyze themes, word frequency, emotional patterns, and stylistic trends.
 
-**🚢 Ship of Theseus Transformer** - Gradually transform existing poems by systematically replacing words while maintaining structure. Perfect for creating variations or exploring how meaning shifts with word choice.
+**🚢 Ship of Theseus Transformer** - Gradually transform existing poems by systematically replacing words while maintaining structure.
 
 ### 🔧 Technical Foundation
 When you provide input words, the algorithms find related words through:
