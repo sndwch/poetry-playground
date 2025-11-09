@@ -5,14 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from generativepoetry.forms import count_syllables
-from generativepoetry.grammatical_templates import (
+from poetryplayground.forms import count_syllables
+from poetryplayground.grammatical_templates import (
     GrammaticalTemplate,
     TemplateGenerator,
     TemplateLibrary,
     create_template_generator,
 )
-from generativepoetry.pos_vocabulary import POSVocabulary
+from poetryplayground.pos_vocabulary import POSVocabulary
 
 
 class TestGrammaticalTemplate:

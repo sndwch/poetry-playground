@@ -9,7 +9,7 @@ from typing import Dict, List, Optional
 
 from rich.panel import Panel
 
-from generativepoetry.rich_console import console
+from poetryplayground.rich_console import console
 
 
 def display_poem_output(

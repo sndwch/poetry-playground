@@ -2,8 +2,8 @@
 from consolemenu import ConsoleMenu
 from consolemenu.items import FunctionItem
 
-from generativepoetry.pdf import *
-from generativepoetry.poemgen import *
+from poetryplayground.pdf import *
+from poetryplayground.poemgen import *
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 

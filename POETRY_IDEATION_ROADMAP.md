@@ -143,7 +143,7 @@ class ThemeExplorer:
 - 50+ metaphor templates with nature/imagery focus
 - Curated vocabulary: 600+ evocative verbs, 400+ atmospheric nouns
 - Quality scoring with spaCy similarity
-- File: `generativepoetry/metaphor_generator.py`
+- File: `poetryplayground/metaphor_generator.py`
 
 ---
 
@@ -156,7 +156,7 @@ class ThemeExplorer:
 - 10 categories: emotional moments, character situations, vivid imagery, setting descriptions, philosophical fragments, dialogue sparks, sensory details, conflict scenarios, opening lines, metaphysical concepts
 - Anti-repetition document tracking
 - Adaptive scaling for quality maintenance
-- File: `generativepoetry/idea_generator.py`
+- File: `poetryplayground/idea_generator.py`
 
 ---
 
@@ -168,7 +168,7 @@ class ThemeExplorer:
 - Upload personal poetry collections
 - Analysis: themes, word frequency, emotional patterns, stylistic trends
 - Interactive CLI integration
-- File: `generativepoetry/corpus_analyzer.py`
+- File: `poetryplayground/corpus_analyzer.py`
 
 ---
 
@@ -182,7 +182,7 @@ class ThemeExplorer:
 - Quality scoring (threshold: 0.65+)
 - Adaptive document retrieval
 - Request 10-200 fragments
-- File: `generativepoetry/causal_poetry.py`
+- File: `poetryplayground/causal_poetry.py`
 
 ---
 
@@ -194,7 +194,7 @@ class ThemeExplorer:
 - Generates opening lines, pivotal fragments, closing thoughts
 - Tailored to input words using phonetic and semantic relationships
 - Interactive CLI integration
-- File: `generativepoetry/line_seeds.py`
+- File: `poetryplayground/line_seeds.py`
 
 ---
 
@@ -206,7 +206,7 @@ class ThemeExplorer:
 - Explores unexpected pathways between any two concepts
 - Semantic relationship traversal
 - Discovers surprising connections for poetic inspiration
-- File: `generativepoetry/six_degrees.py`
+- File: `poetryplayground/six_degrees.py`
 
 ---
 
@@ -218,7 +218,7 @@ class ThemeExplorer:
 - Gradually transforms existing poems
 - Systematic word replacement while maintaining structure
 - Explores meaning shifts with word choice variations
-- File: `generativepoetry/ship_of_theseus.py`
+- File: `poetryplayground/ship_of_theseus.py`
 
 ---
 
@@ -239,12 +239,12 @@ All text processing modules follow the principle: retrieve additional diverse do
 - Anti-repetition tracking ensures document diversity
 - Quality thresholds: 0.65+ for fragments, strict validation for ideas
 - Intelligent batch sizing based on remaining needs
-- Centralized document library: `generativepoetry/document_library.py`
+- Centralized document library: `poetryplayground/document_library.py`
 
 ### Word Quality Filtering
 Enhanced validation filters out proper nouns, non-English words, very rare/archaic words (<1 in 1M frequency), abbreviations, acronyms, technical jargon.
 
-Customize in: `generativepoetry/word_validator.py`, `generativepoetry/vocabulary.py`
+Customize in: `poetryplayground/word_validator.py`, `poetryplayground/vocabulary.py`
 
 ### Configuration System
 Multi-source priority: CLI flags > YAML config > pyproject.toml > environment variables > defaults

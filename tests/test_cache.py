@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from generativepoetry.cache import (
+from poetryplayground.cache import (
     PersistentAPICache,
     cached_api_call,
     get_cache_stats,

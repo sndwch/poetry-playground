@@ -2,8 +2,8 @@ Generative Poetry
 =================
 A library primarily for procedurally generating visual poems
 
-.. image:: https://badge.fury.io/py/generativepoetry.svg
-   :target: https://badge.fury.io/py/generativepoetry
+.. image:: https://badge.fury.io/py/poetryplayground.svg
+   :target: https://badge.fury.io/py/poetryplayground
 
 Acknowledgements
 ^^^^^^^^^^^^^^^^
@@ -25,7 +25,7 @@ Note: this will only work on desktop and tablet effectively because of screen-si
 On Your Computer
 """"""""""""""""
 
-Alternatively, if you install this on your own machine (see below), you can initalize the interactive menu by running the following command from a terminal/shell: generative-poetry-cli
+Alternatively, if you install this on your own machine (see below), you can initalize the interactive menu by running the following command from a terminal/shell: poetry-playground
 
 What is this?
 ^^^^^^^^^^^^^
@@ -37,7 +37,7 @@ This project was heavily inspired by Oulipo, the literary movement founded in 19
 
 By way of example, here are five concrete poems from the same recipe I digitally collaged together using the same *procedure*: the words *paranoid*, *marinate*, *hysteria*, *radio*, *waves*, and *reverie*.
 
-.. image:: https://raw.githubusercontent.com/coreybobco/generativepoetry-py/master/example_images/collage.png
+.. image:: https://raw.githubusercontent.com/coreybobco/poetryplayground-py/master/example_images/collage.png
 
 How do these procedures find related words, utilize random sampling, and filter out stuff like acronyms?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -57,7 +57,7 @@ Marinetti took himself far too seriously, however. This project is more in the s
 
 Below is an example "Futurist poem" concerning pataphysics and surrealism. The following words were given as input: *logic*, *dialectic*, *critical*, *surreal*, and *pataphysics*.
 
-.. image:: https://raw.githubusercontent.com/coreybobco/generativepoetry-py/master/example_images/futurist_pdf.png
+.. image:: https://raw.githubusercontent.com/coreybobco/poetryplayground-py/master/example_images/futurist_pdf.png
 
 Stochastic Jolastic: Markov Generation by Way of (Per)Mutation
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -68,26 +68,26 @@ The resultant stochastic emergence of puns and plays on words and cycle between 
 
 This example poem was produced from the following input words: *anxious*, *spectacular*, *life*, *death*, *ascent*, *peace*, *tragedy*, and *love*.
 
-.. image:: https://raw.githubusercontent.com/coreybobco/generativepoetry-py/master/example_images/markov_pdf.png
+.. image:: https://raw.githubusercontent.com/coreybobco/poetryplayground-py/master/example_images/markov_pdf.png
 
 Chaotic Concrete Poem
 """""""""""""""""""""
 
 This one's more abstract  but also more concrete, and by that I mean concrete poetry, which deals more with spatial arrangement and usually lacked syntax. The following words were given as input: *chaos*, *dissolve*, *fire*, *morph*, *devolve*, *shapeshifter*, *transient*, and *cluster*.
 
-.. image:: https://raw.githubusercontent.com/coreybobco/generativepoetry-py/master/example_images/chaotic_concrete_pdf.png
+.. image:: https://raw.githubusercontent.com/coreybobco/poetryplayground-py/master/example_images/chaotic_concrete_pdf.png
 
 Character Soup
 """"""""""""""
 But not as chaotic as this method of making "character soup". (This method of generation does not take input words.)
 
-.. image:: https://raw.githubusercontent.com/coreybobco/generativepoetry-py/master/example_images/character_soup_pdf.png
+.. image:: https://raw.githubusercontent.com/coreybobco/poetryplayground-py/master/example_images/character_soup_pdf.png
 
 Stop Word Soup
 """"""""""""""
 And this last one does the same thing but using stop words from NLTK along with "verbal stop words" like "um" and "ahem." (This method of generation does not take input words.)
 
-.. image:: https://raw.githubusercontent.com/coreybobco/generativepoetry-py/master/example_images/stopword_soup_pdf.png
+.. image:: https://raw.githubusercontent.com/coreybobco/poetryplayground-py/master/example_images/stopword_soup_pdf.png
 
 Useful Submodule #1: lexigen.py
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -101,7 +101,7 @@ Import the relevant submodule first.
 
 .. code-block::
 
-   from generativepoetry.lexigen import *
+   from poetryplayground.lexigen import *
 
 Rhymes
 """"""
@@ -303,7 +303,7 @@ Because this library currently relies on the Python package hunspell, which does
 
 .. code-block::
 
-   docker run -t -d python python3 -m pip install generativepoetry && python3
+   docker run -t -d python python3 -m pip install poetryplayground && python3
 
 OSX
 """
@@ -318,7 +318,7 @@ Then download the en_US dictionary from http://wordlist.aspell.net/dicts/ and un
 
 .. code-block::
 
-   python3 -m pip install generativepoetry
+   python3 -m pip install poetryplayground
 
 You will also need Microsoft's core font TTF files in /Library/Fonts/.
 
@@ -330,10 +330,10 @@ Ubuntu/Debian users should install hunspell-en-us and libhunspell-dev beforehand
 .. code-block::
 
    sudo apt-get install hunspell-en-us libhunspell-dev
-   python3 -m pip install generativepoetry
+   python3 -m pip install poetryplayground
 
 
 More Documentation
 ^^^^^^^^^^^^^^^^^^
 
-Read documentation of library's classes & functions `here <https://generativepoetry.readthedocs.io>`_ .
+Read documentation of library's classes & functions `here <https://poetryplayground.readthedocs.io>`_ .

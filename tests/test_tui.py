@@ -9,10 +9,10 @@ import pytest
 
 # Try importing TUI components
 try:
-    from generativepoetry.tui.app import GenerativePoetryTUI, run
-    from generativepoetry.tui.screens.config_form import ConfigFormScreen
-    from generativepoetry.tui.screens.main_menu import MainMenuScreen
-    from generativepoetry.tui.screens.output_view import OutputViewScreen
+    from poetryplayground.tui.app import GenerativePoetryTUI, run
+    from poetryplayground.tui.screens.config_form import ConfigFormScreen
+    from poetryplayground.tui.screens.main_menu import MainMenuScreen
+    from poetryplayground.tui.screens.output_view import OutputViewScreen
 
     TUI_AVAILABLE = True
 except ImportError:

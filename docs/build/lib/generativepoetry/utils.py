@@ -124,10 +124,10 @@ def filter_word(string, spellcheck=True, exclude_words=[], word_frequency_thresh
     # of these words that might be considered edge cases (e.g. Hottentot), a stochastic text generator does not have
     # a historical sense to do that, so I have decided to exclude these.
     unfitting_words = (
-        pkgutil.get_data("generativepoetry", "data/hate_words.txt").decode("utf-8").splitlines()
+        pkgutil.get_data("poetryplayground", "data/hate_words.txt").decode("utf-8").splitlines()
     )
     unfitting_words.extend(
-        pkgutil.get_data("generativepoetry", "data/abbreviations_etc.txt")
+        pkgutil.get_data("poetryplayground", "data/abbreviations_etc.txt")
         .decode("utf-8")
         .splitlines()
     )

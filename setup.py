@@ -26,20 +26,20 @@ requirements = [
 ]
 
 setup(
-    name="generativepoetry",
+    name="poetryplayground",
     version="0.3.4",
     description="A library primarily for procedurally generating visual poems",
     long_description=readme,
     author="Corey Bobco",
     author_email="corey.bobco@gmail.com",
-    url="https://github.com/coreybobco/generativepoetry-py",
+    url="https://github.com/coreybobco/poetryplayground-py",
     packages=[
-        "generativepoetry",
+        "poetryplayground",
     ],
-    package_dir={"generativepoetry": "generativepoetry"},
-    package_data={"generativepoetry": ["data/hate_words.txt", "data/abbreviations_etc.txt"]},
+    package_dir={"poetryplayground": "poetryplayground"},
+    package_data={"poetryplayground": ["data/hate_words.txt", "data/abbreviations_etc.txt"]},
     install_requires=requirements,
-    scripts=["bin/generative-poetry-cli"],
+    scripts=["bin/poetry-playground"],
     license="MIT",
     zip_safe=True,
     keywords="poetry",

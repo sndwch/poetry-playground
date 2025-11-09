@@ -1,4 +1,4 @@
-"""Logging, profiling, and observability for generativepoetry.
+"""Logging, profiling, and observability for poetryplayground.
 
 This module provides:
 - Structured logging with contextual information
@@ -20,7 +20,7 @@ from typing import Any, Callable, Dict, List, Optional
 _profiler: Optional["Profiler"] = None
 
 
-def setup_logger(name="generativepoetry", level=logging.INFO):
+def setup_logger(name="poetryplayground", level=logging.INFO):
     """Set up a logger with console output."""
     logger = logging.getLogger(name)
 

@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from generativepoetry.logger import (
+from poetryplayground.logger import (
     Profiler,
     disable_profiling,
     enable_profiling,

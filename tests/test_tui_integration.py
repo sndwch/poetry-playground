@@ -4,9 +4,9 @@ import pytest
 
 # Try importing TUI components
 try:
-    from generativepoetry.tui.app import GenerativePoetryTUI
-    from generativepoetry.tui.screens.config_form import ConfigFormScreen
-    from generativepoetry.tui.screens.unified_screen import UnifiedTUIScreen
+    from poetryplayground.tui.app import GenerativePoetryTUI
+    from poetryplayground.tui.screens.config_form import ConfigFormScreen
+    from poetryplayground.tui.screens.unified_screen import UnifiedTUIScreen
 
     TUI_AVAILABLE = True
 except ImportError:
@@ -19,7 +19,7 @@ class TestFragmentCollectionBugFix:
 
     def test_fragment_generator_uses_get_all_fragments(self):
         """Test that fragment generator correctly uses get_all_fragments()."""
-        from generativepoetry.causal_poetry import FragmentCollection, ResonantFragment
+        from poetryplayground.causal_poetry import FragmentCollection, ResonantFragment
 
         # Create a mock collection
         collection = FragmentCollection(

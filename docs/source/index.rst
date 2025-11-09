@@ -20,12 +20,12 @@ Colab (recommended for most)
 """"""""""""""""""""""""""""
 You can install this software and launch the interactive menu for creating visual poems from the following `link <https://colab.research.google.com/drive/1eNTBSLMPpemYQq4n3keKCjVpw_JqY6w->`_ to a Jupyter notebook hosted on Google Colab.
 
-Note: this will only work on desktop and tablet effectively because of screen-size issues. Keep the `Github notes on usage <https://github.com/coreybobco/generativepoetry-py/>`_ open to consult for reference.
+Note: this will only work on desktop and tablet effectively because of screen-size issues. Keep the `Github notes on usage <https://github.com/coreybobco/poetryplayground-py/>`_ open to consult for reference.
 
 Installing On Your Computer
 """""""""""""""""""""""""""
 
-Alternatively, if you install this on your own machine (see below), you can initalize the interactive menu by running the following command from a terminal/shell: generative-poetry-cli
+Alternatively, if you install this on your own machine (see below), you can initalize the interactive menu by running the following command from a terminal/shell: poetry-playground
 
 Windows
 """""""
@@ -34,7 +34,7 @@ Because this library currently relies on the Python package hunspell, which does
 
 .. code-block::
 
-   docker run -t -d python python3 -m pip install generativepoetry && python3
+   docker run -t -d python python3 -m pip install poetryplayground && python3
 
 OSX
 """
@@ -49,7 +49,7 @@ Then download the en_US dictionary from http://wordlist.aspell.net/dicts/ and un
 
 .. code-block::
 
-   python3 -m pip install generativepoetry
+   python3 -m pip install poetryplayground
 
 You will also need Microsoft's core font TTF files in /Library/Fonts/.
 
@@ -61,4 +61,4 @@ Ubuntu/Debian users should install hunspell-en-us, libhunspell-dev, and libdb++-
 .. code-block::
 
    sudo apt-get install hunspell-en-us libhunspell-dev libdb++-dev
-   python3 -m pip install generativepoetry
+   python3 -m pip install poetryplayground

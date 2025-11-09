@@ -6,11 +6,11 @@ import inflect
 import pytest
 import spacy
 
-from generativepoetry.decomposer import *
-from generativepoetry.lexigen import *
-from generativepoetry.pdf import *
-from generativepoetry.poemgen import *
-from generativepoetry.utils import *
+from poetryplayground.decomposer import *
+from poetryplayground.lexigen import *
+from poetryplayground.pdf import *
+from poetryplayground.poemgen import *
+from poetryplayground.utils import *
 
 spacy_nlp = spacy.load("en_core_web_sm", disable=["ner"])
 spacy_nlp.remove_pipe("parser")

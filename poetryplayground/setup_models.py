@@ -186,7 +186,7 @@ def setup(quiet: bool = False, force: bool = False) -> bool:
         True if all models are available (either already installed or newly downloaded)
 
     Example:
-        >>> from generativepoetry.setup_models import setup
+        >>> from poetryplayground.setup_models import setup
         >>> setup()  # Downloads all required models
         True
     """

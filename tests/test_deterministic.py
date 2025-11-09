@@ -4,9 +4,9 @@
 import random
 import unittest
 
-from generativepoetry.pdf import FuturistPoemPDFGenerator, MarkovPoemPDFGenerator
-from generativepoetry.poemgen import PoemGenerator
-from generativepoetry.seed_manager import get_current_seed, set_global_seed
+from poetryplayground.pdf import FuturistPoemPDFGenerator, MarkovPoemPDFGenerator
+from poetryplayground.poemgen import PoemGenerator
+from poetryplayground.seed_manager import get_current_seed, set_global_seed
 
 
 class TestSeedManager(unittest.TestCase):

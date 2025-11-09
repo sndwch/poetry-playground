@@ -10,32 +10,32 @@ from rich.panel import Panel
 from rich.table import Table
 
 # Import the pronouncing patch first to suppress pkg_resources warning
-import generativepoetry.pronouncing_patch  # noqa: F401
-from generativepoetry.causal_poetry import ResonantFragmentMiner
-from generativepoetry.config import init_config
-from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer
-from generativepoetry.finders import find_equidistant
-from generativepoetry.forms import FormGenerator
-from generativepoetry.idea_generator import IdeaType, PoetryIdeaGenerator
-from generativepoetry.line_seeds import LineSeedGenerator, SeedType
-from generativepoetry.logger import enable_profiling, set_log_level
-from generativepoetry.metaphor_generator import MetaphorGenerator, MetaphorType
-from generativepoetry.pdf import (
+import poetryplayground.pronouncing_patch  # noqa: F401
+from poetryplayground.causal_poetry import ResonantFragmentMiner
+from poetryplayground.config import init_config
+from poetryplayground.corpus_analyzer import PersonalCorpusAnalyzer
+from poetryplayground.finders import find_equidistant
+from poetryplayground.forms import FormGenerator
+from poetryplayground.idea_generator import IdeaType, PoetryIdeaGenerator
+from poetryplayground.line_seeds import LineSeedGenerator, SeedType
+from poetryplayground.logger import enable_profiling, set_log_level
+from poetryplayground.metaphor_generator import MetaphorGenerator, MetaphorType
+from poetryplayground.pdf import (
     ChaoticConcretePoemPDFGenerator,
     CharacterSoupPoemPDFGenerator,
     FuturistPoemPDFGenerator,
     MarkovPoemPDFGenerator,
     StopwordSoupPoemPDFGenerator,
 )
-from generativepoetry.poem_transformer import PoemTransformer
-from generativepoetry.poemgen import PoemGenerator, print_poem
-from generativepoetry.rich_console import console
-from generativepoetry.rich_output import display_poem_output
-from generativepoetry.seed_manager import format_seed_message, set_global_seed
-from generativepoetry.setup_models import setup as setup_models
-from generativepoetry.six_degrees import SixDegrees
-from generativepoetry.system_utils import check_system_dependencies
-from generativepoetry.utils import get_input_words
+from poetryplayground.poem_transformer import PoemTransformer
+from poetryplayground.poemgen import PoemGenerator, print_poem
+from poetryplayground.rich_console import console
+from poetryplayground.rich_output import display_poem_output
+from poetryplayground.seed_manager import format_seed_message, set_global_seed
+from poetryplayground.setup_models import setup as setup_models
+from poetryplayground.six_degrees import SixDegrees
+from poetryplayground.system_utils import check_system_dependencies
+from poetryplayground.utils import get_input_words
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
 
@@ -117,7 +117,7 @@ def _list_procedures():
         table.add_row(num, name, desc, category)
 
     console.print(table)
-    console.print("\n[dim]Use generative-poetry-cli to access all procedures interactively.[/dim]")
+    console.print("\n[dim]Use poetry-playground to access all procedures interactively.[/dim]")
 
 
 def _list_fonts():
@@ -575,7 +575,7 @@ def haiku_action():
                 lines, validation = generator.generate_haiku(seed_words=seed_words, strict=True)
 
             # Get seed for metadata
-            from generativepoetry.seed_manager import get_global_seed
+            from poetryplayground.seed_manager import get_global_seed
 
             # Display the haiku using Rich Panel
             metadata = {"form": "haiku", "syllables": "5-7-5"}
@@ -1220,7 +1220,7 @@ def main():
     # Parse command-line arguments
     parser = argparse.ArgumentParser(
         description="Generative Poetry - Procedural poetry generation and ideation tools",
-        epilog="For more information, visit: https://github.com/sndwch/generativepoetry-py",
+        epilog="For more information, visit: https://github.com/sndwch/poetryplayground-py",
     )
 
     # Configuration
@@ -1362,7 +1362,7 @@ def main():
         help="Filter --equidistant by syllable count (e.g., '2' or '1..3' or '2..' or '..5')",
     )
 
-    parser.add_argument("--version", action="version", version="generativepoetry 0.3.4")
+    parser.add_argument("--version", action="version", version="poetryplayground 0.3.4")
 
     args = parser.parse_args()
 
@@ -1397,7 +1397,7 @@ def main():
             print("\n" + "=" * 70)
             print("✓ Setup complete! All models are installed and ready.")
             print("=" * 70)
-            print("\nYou can now run generative-poetry-cli to start creating poetry.")
+            print("\nYou can now run poetry-playground to start creating poetry.")
             return 0
         else:
             print("\n" + "=" * 70)

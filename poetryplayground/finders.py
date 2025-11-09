@@ -10,8 +10,8 @@ from typing import List, Literal, Optional, Tuple
 
 from rapidfuzz.distance import Levenshtein
 
-from generativepoetry.config import EquidistantHit
-from generativepoetry.lexicon import LexiconData, get_lexicon_data
+from poetryplayground.config import EquidistantHit
+from poetryplayground.lexicon import LexiconData, get_lexicon_data
 
 
 @functools.lru_cache(maxsize=10000)

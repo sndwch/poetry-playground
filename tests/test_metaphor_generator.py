@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 
-from generativepoetry.metaphor_generator import (
+from poetryplayground.metaphor_generator import (
     Metaphor,
     MetaphorGenerator,
     MetaphorType,

@@ -1,7 +1,7 @@
 """Main Textual TUI application for generative poetry.
 
 This module provides a full-featured terminal user interface for all poetry
-generation procedures in the generativepoetry library.
+generation procedures in the poetryplayground library.
 """
 
 from typing import ClassVar
@@ -10,7 +10,7 @@ from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.widgets import Footer, Header
 
-from generativepoetry.tui.screens.unified_screen import UnifiedTUIScreen
+from poetryplayground.tui.screens.unified_screen import UnifiedTUIScreen
 
 
 class GenerativePoetryTUI(App):

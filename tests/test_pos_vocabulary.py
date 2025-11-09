@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from generativepoetry.forms import count_syllables
-from generativepoetry.pos_vocabulary import (
+from poetryplayground.forms import count_syllables
+from poetryplayground.pos_vocabulary import (
     CORE_POS_TAGS,
     PENN_TO_UNIVERSAL,
     POSVocabulary,

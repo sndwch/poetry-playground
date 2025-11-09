@@ -15,7 +15,7 @@ from wordfreq import top_n_list, zipf_frequency
 
 # Import the existing spaCy instance from the project
 try:
-    from generativepoetry.pos_vocabulary import nlp
+    from poetryplayground.pos_vocabulary import nlp
 except ImportError:
     # Graceful fallback if spaCy isn't available
     nlp = None

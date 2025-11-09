@@ -11,7 +11,7 @@ from reportlab.pdfbase.pdfmetrics import registerFont
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
-from generativepoetry.poemgen import *
+from poetryplayground.poemgen import *
 
 from .utils import filter_word_list
 

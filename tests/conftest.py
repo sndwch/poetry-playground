@@ -73,18 +73,18 @@ def capture_rich_output(rich_console, monkeypatch):
     """Capture Rich output by temporarily replacing the global console.
 
     This fixture allows testing functions that use the global console
-    from generativepoetry.rich_console.
+    from poetryplayground.rich_console.
 
     Returns the captured Console instance.
     """
     # Import modules first so they're loaded
-    import generativepoetry.rich_console
-    import generativepoetry.rich_output
-    import generativepoetry.cli
+    import poetryplayground.rich_console
+    import poetryplayground.rich_output
+    import poetryplayground.cli
 
     # Temporarily replace the global console in all modules that import it
-    monkeypatch.setattr(generativepoetry.rich_console, "console", rich_console)
-    monkeypatch.setattr(generativepoetry.rich_output, "console", rich_console)
-    monkeypatch.setattr(generativepoetry.cli, "console", rich_console)
+    monkeypatch.setattr(poetryplayground.rich_console, "console", rich_console)
+    monkeypatch.setattr(poetryplayground.rich_output, "console", rich_console)
+    monkeypatch.setattr(poetryplayground.cli, "console", rich_console)
 
     return rich_console

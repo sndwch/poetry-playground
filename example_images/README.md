@@ -10,16 +10,16 @@ Generate a Markov chain poem with forced rhyme schemes:
 
 ```bash
 # Basic Markov poem
-generative-poetry-cli --procedure markov --input-words "ocean" "storm" "silence"
+poetry-playground --procedure markov --input-words "ocean" "storm" "silence"
 
 # With profiling enabled
-generative-poetry-cli --procedure markov --input-words "ocean" "storm" "silence" --profile
+poetry-playground --procedure markov --input-words "ocean" "storm" "silence" --profile
 
 # With custom seed for reproducibility
-generative-poetry-cli --procedure markov --input-words "ocean" "storm" "silence" --seed 42
+poetry-playground --procedure markov --input-words "ocean" "storm" "silence" --seed 42
 
 # Longer poem with more lines
-generative-poetry-cli --procedure markov --input-words "ocean" "storm" "silence" --num-lines 15
+poetry-playground --procedure markov --input-words "ocean" "storm" "silence" --num-lines 15
 ```
 
 ### Futurist Poem (futurist_pdf.png)
@@ -28,13 +28,13 @@ Generate Marinetti-inspired visual poems with mathematical operators:
 
 ```bash
 # Basic futurist poem
-generative-poetry-cli --procedure futurist --input-words "velocity" "machine" "chaos"
+poetry-playground --procedure futurist --input-words "velocity" "machine" "chaos"
 
 # With profiling
-generative-poetry-cli --procedure futurist --input-words "velocity" "machine" "chaos" --profile
+poetry-playground --procedure futurist --input-words "velocity" "machine" "chaos" --profile
 
 # With custom seed
-generative-poetry-cli --procedure futurist --input-words "velocity" "machine" "chaos" --seed 123
+poetry-playground --procedure futurist --input-words "velocity" "machine" "chaos" --seed 123
 ```
 
 ### Chaotic Concrete Poem (chaotic_concrete_pdf.png)
@@ -43,13 +43,13 @@ Generate abstract spatial arrangements:
 
 ```bash
 # Basic chaotic concrete poem
-generative-poetry-cli --procedure chaotic-concrete --input-words "fragments" "space" "time"
+poetry-playground --procedure chaotic-concrete --input-words "fragments" "space" "time"
 
 # With profiling
-generative-poetry-cli --procedure chaotic-concrete --input-words "fragments" "space" "time" --profile
+poetry-playground --procedure chaotic-concrete --input-words "fragments" "space" "time" --profile
 
 # With custom seed
-generative-poetry-cli --procedure chaotic-concrete --input-words "fragments" "space" "time" --seed 456
+poetry-playground --procedure chaotic-concrete --input-words "fragments" "space" "time" --seed 456
 ```
 
 ### Character Soup (character_soup_pdf.png)
@@ -58,13 +58,13 @@ Generate minimalist visual experiments with strategic character placement:
 
 ```bash
 # Basic character soup
-generative-poetry-cli --procedure character-soup --input-words "abstract" "void" "echo"
+poetry-playground --procedure character-soup --input-words "abstract" "void" "echo"
 
 # With profiling
-generative-poetry-cli --procedure character-soup --input-words "abstract" "void" "echo" --profile
+poetry-playground --procedure character-soup --input-words "abstract" "void" "echo" --profile
 
 # With custom seed
-generative-poetry-cli --procedure character-soup --input-words "abstract" "void" "echo" --seed 789
+poetry-playground --procedure character-soup --input-words "abstract" "void" "echo" --seed 789
 ```
 
 ### Stop Word Soup (stopword_soup_pdf.png)
@@ -73,13 +73,13 @@ Generate visual experiments with common words:
 
 ```bash
 # Basic stopword soup
-generative-poetry-cli --procedure stopword-soup --input-words "the" "and" "or"
+poetry-playground --procedure stopword-soup --input-words "the" "and" "or"
 
 # With profiling
-generative-poetry-cli --procedure stopword-soup --input-words "the" "and" "or" --profile
+poetry-playground --procedure stopword-soup --input-words "the" "and" "or" --profile
 
 # With custom seed
-generative-poetry-cli --procedure stopword-soup --input-words "the" "and" "or" --seed 321
+poetry-playground --procedure stopword-soup --input-words "the" "and" "or" --seed 321
 ```
 
 ### Collage (collage.png)
@@ -88,13 +88,13 @@ Generate visual collage poems:
 
 ```bash
 # Basic collage
-generative-poetry-cli --procedure collage --input-words "memory" "fragment" "dream"
+poetry-playground --procedure collage --input-words "memory" "fragment" "dream"
 
 # With profiling
-generative-poetry-cli --procedure collage --input-words "memory" "fragment" "dream" --profile
+poetry-playground --procedure collage --input-words "memory" "fragment" "dream" --profile
 
 # With custom seed
-generative-poetry-cli --procedure collage --input-words "memory" "fragment" "dream" --seed 654
+poetry-playground --procedure collage --input-words "memory" "fragment" "dream" --seed 654
 ```
 
 ## Advanced Usage
@@ -104,7 +104,7 @@ generative-poetry-cli --procedure collage --input-words "memory" "fragment" "dre
 Test generation without creating PDFs:
 
 ```bash
-generative-poetry-cli --dry-run
+poetry-playground --dry-run
 ```
 
 ### Performance Profiling
@@ -112,7 +112,7 @@ generative-poetry-cli --dry-run
 Enable detailed performance profiling with timing and cache statistics:
 
 ```bash
-generative-poetry-cli --profile --procedure markov --input-words "test" "profiling"
+poetry-playground --profile --procedure markov --input-words "test" "profiling"
 ```
 
 ### Custom spaCy Models
@@ -121,13 +121,13 @@ Use different spaCy models for better accuracy or performance:
 
 ```bash
 # Small model (default, fast, 13MB)
-generative-poetry-cli --spacy-model sm --procedure markov --input-words "quick" "test"
+poetry-playground --spacy-model sm --procedure markov --input-words "quick" "test"
 
 # Medium model (balanced, 40MB)
-generative-poetry-cli --spacy-model md --procedure markov --input-words "balanced" "quality"
+poetry-playground --spacy-model md --procedure markov --input-words "balanced" "quality"
 
 # Large model (most accurate, 560MB)
-generative-poetry-cli --spacy-model lg --procedure markov --input-words "high" "accuracy"
+poetry-playground --spacy-model lg --procedure markov --input-words "high" "accuracy"
 ```
 
 ### Quiet Mode
@@ -135,7 +135,7 @@ generative-poetry-cli --spacy-model lg --procedure markov --input-words "high" "
 Suppress progress messages:
 
 ```bash
-generative-poetry-cli --quiet --procedure markov --input-words "silent" "mode"
+poetry-playground --quiet --procedure markov --input-words "silent" "mode"
 ```
 
 ### List All Procedures
@@ -143,7 +143,7 @@ generative-poetry-cli --quiet --procedure markov --input-words "silent" "mode"
 See all available poem generation procedures:
 
 ```bash
-generative-poetry-cli --list-procedures
+poetry-playground --list-procedures
 ```
 
 ## Reproducibility
@@ -152,7 +152,7 @@ All examples can be reproduced exactly by using the same seed value:
 
 ```bash
 # Generate the same poem every time
-generative-poetry-cli --procedure markov --input-words "ocean" "storm" --seed 42
+poetry-playground --procedure markov --input-words "ocean" "storm" --seed 42
 ```
 
 ## Creative Ideation Tools
@@ -161,25 +161,25 @@ Beyond visual poem generation, try these creative tools:
 
 ```bash
 # Generate opening lines and fragments
-generative-poetry-cli  # Select option 5: Line Seeds Generator
+poetry-playground  # Select option 5: Line Seeds Generator
 
 # Create AI-powered metaphors
-generative-poetry-cli  # Select option 6: Metaphor Generator
+poetry-playground  # Select option 6: Metaphor Generator
 
 # Mine classic literature for ideas
-generative-poetry-cli  # Select option 7: Poetry Idea Generator
+poetry-playground  # Select option 7: Poetry Idea Generator
 
 # Extract resonant fragments
-generative-poetry-cli  # Select option 8: Resonant Fragment Miner
+poetry-playground  # Select option 8: Resonant Fragment Miner
 
 # Explore word connections
-generative-poetry-cli  # Select option 9: Six Degrees Word Convergence
+poetry-playground  # Select option 9: Six Degrees Word Convergence
 
 # Analyze your poetry collection
-generative-poetry-cli  # Select option 10: Poetry Corpus Analyzer
+poetry-playground  # Select option 10: Poetry Corpus Analyzer
 
 # Transform existing poems
-generative-poetry-cli  # Select option 11: Ship of Theseus Transformer
+poetry-playground  # Select option 11: Ship of Theseus Transformer
 ```
 
 ## Docker Usage
@@ -188,20 +188,20 @@ Run in Docker for a completely isolated environment:
 
 ```bash
 # Build the Docker image
-docker build -t generativepoetry:latest .
+docker build -t poetryplayground:latest .
 
 # List available procedures
-docker run --rm generativepoetry:latest generative-poetry-cli --list-procedures
+docker run --rm poetryplayground:latest poetry-playground --list-procedures
 
 # Generate a poem (output to stdout)
-docker run --rm generativepoetry:latest generative-poetry-cli --dry-run
+docker run --rm poetryplayground:latest poetry-playground --dry-run
 
 # Save PDF output to local directory
-docker run --rm -v $(pwd)/output:/output generativepoetry:latest \
-  generative-poetry-cli --procedure markov --input-words "docker" "poetry"
+docker run --rm -v $(pwd)/output:/output poetryplayground:latest \
+  poetry-playground --procedure markov --input-words "docker" "poetry"
 
 # Interactive mode
-docker run --rm -it generativepoetry:latest bash
+docker run --rm -it poetryplayground:latest bash
 ```
 
 ## Notes
@@ -210,4 +210,4 @@ docker run --rm -it generativepoetry:latest bash
 - Use `--seed` for reproducible results
 - Use `--profile` to see detailed performance metrics
 - Use `--dry-run` to test without creating files
-- See `generative-poetry-cli --help` for all available options
+- See `poetry-playground --help` for all available options

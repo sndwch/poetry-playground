@@ -53,11 +53,11 @@ class POSVocabulary:
         """Initialize POS vocabulary.
 
         Args:
-            cache_dir: Directory for cache file (default: ~/.generativepoetry/)
+            cache_dir: Directory for cache file (default: ~/.poetryplayground/)
             rebuild_cache: If True, rebuild cache even if it exists
         """
         if cache_dir is None:
-            cache_dir = Path.home() / ".generativepoetry"
+            cache_dir = Path.home() / ".poetryplayground"
 
         cache_dir.mkdir(parents=True, exist_ok=True)
         self.cache_path = cache_dir / "pos_word_bank.pkl"

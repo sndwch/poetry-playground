@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Generative Poetry! This document 
 Get started with a single command that sets up everything you need:
 
 ```bash
-pip install -e ".[dev]" && python -m generativepoetry.setup_models && pytest
+pip install -e ".[dev]" && python -m poetryplayground.setup_models && pytest
 ```
 
 This command:
@@ -22,8 +22,8 @@ If you prefer a step-by-step approach:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/sndwch/generativepoetry-py.git
-cd generativepoetry-py
+git clone https://github.com/sndwch/poetryplayground-py.git
+cd poetryplayground-py
 ```
 
 ### 2. Install Development Dependencies
@@ -33,20 +33,20 @@ pip install -e ".[dev]"
 ```
 
 This installs:
-- The `generativepoetry` package in editable mode
+- The `poetryplayground` package in editable mode
 - All runtime dependencies (nltk, spacy, datamuse, etc.)
 - Development tools (pytest, ruff, mypy, black, pre-commit)
 
 ### 3. Download Required Models
 
 ```bash
-python -m generativepoetry.setup_models
+python -m poetryplayground.setup_models
 ```
 
 Or using the CLI:
 
 ```bash
-generative-poetry-cli --setup
+poetry-playground --setup
 ```
 
 This downloads:
@@ -62,7 +62,7 @@ pytest
 Run tests with coverage:
 
 ```bash
-pytest --cov=generativepoetry --cov-report=html
+pytest --cov=poetryplayground --cov-report=html
 ```
 
 ## Development Workflow
@@ -84,19 +84,19 @@ pre-commit install
 Run linting manually:
 
 ```bash
-ruff check generativepoetry/
+ruff check poetryplayground/
 ```
 
 Format code:
 
 ```bash
-black generativepoetry/ tests/
+black poetryplayground/ tests/
 ```
 
 Type check:
 
 ```bash
-mypy generativepoetry/
+mypy poetryplayground/
 ```
 
 ### Running Tests
@@ -136,21 +136,21 @@ pytest -k "test_cache"
 Test with profiling enabled:
 
 ```bash
-generative-poetry-cli --profile
+poetry-playground --profile
 ```
 
 Test in dry-run mode:
 
 ```bash
-generative-poetry-cli --dry-run
+poetry-playground --dry-run
 ```
 
 Test with different spaCy models:
 
 ```bash
-generative-poetry-cli --spacy-model sm  # Small (fast, 13MB)
-generative-poetry-cli --spacy-model md  # Medium (balanced, 40MB)
-generative-poetry-cli --spacy-model lg  # Large (accurate, 560MB)
+poetry-playground --spacy-model sm  # Small (fast, 13MB)
+poetry-playground --spacy-model md  # Medium (balanced, 40MB)
+poetry-playground --spacy-model lg  # Large (accurate, 560MB)
 ```
 
 ## Making Changes
@@ -221,8 +221,8 @@ Then create a pull request on GitHub with:
 ## Project Structure
 
 ```
-generativepoetry-py/
-├── generativepoetry/          # Main package
+poetryplayground-py/
+├── poetryplayground/          # Main package
 │   ├── __init__.py
 │   ├── cache.py               # API caching with diskcache
 │   ├── cli.py                 # Command-line interface
@@ -286,7 +286,7 @@ generativepoetry-py/
 Enable profiling to measure performance:
 
 ```bash
-generative-poetry-cli --profile
+poetry-playground --profile
 ```
 
 This tracks:
@@ -298,7 +298,7 @@ This tracks:
 Add profiling to new code using decorators:
 
 ```python
-from generativepoetry.logger import timed
+from poetryplayground.logger import timed
 
 @timed("operation_name")
 def my_function():
@@ -330,13 +330,13 @@ def my_function():
 2. Add timing decorator: `@timed("poem_generation.algorithm_name")`
 3. Add corresponding PDF generator in `pdf.py` if needed
 4. Add CLI menu item in `cli.py`
-5. Add tests in `tests/test_generativepoetry.py`
+5. Add tests in `tests/test_poetryplayground.py`
 6. Add example to `example_images/`
 
 ## Getting Help
 
-- **Issues**: Check [GitHub Issues](https://github.com/sndwch/generativepoetry-py/issues) for known problems
-- **Discussions**: Start a [GitHub Discussion](https://github.com/sndwch/generativepoetry-py/discussions) for questions
+- **Issues**: Check [GitHub Issues](https://github.com/sndwch/poetryplayground-py/issues) for known problems
+- **Discussions**: Start a [GitHub Discussion](https://github.com/sndwch/poetryplayground-py/discussions) for questions
 - **Documentation**: See [README.md](README.md) for user documentation
 
 ## Code of Conduct

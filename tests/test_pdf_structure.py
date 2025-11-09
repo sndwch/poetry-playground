@@ -10,13 +10,13 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from generativepoetry.pdf import (
+from poetryplayground.pdf import (
     FuturistPoemPDFGenerator,
     MarkovPoemPDFGenerator,
     PDFGenerator,
     StopwordSoupPoemPDFGenerator,
 )
-from generativepoetry.seed_manager import set_global_seed
+from poetryplayground.seed_manager import set_global_seed
 
 
 class TestPDFGeneratorStructure(unittest.TestCase):

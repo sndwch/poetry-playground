@@ -149,10 +149,10 @@ def filter_word(string, spellcheck=True, exclude_words=None, word_frequency_thre
     if exclude_words is None:
         exclude_words = []
     unfitting_words = (
-        pkgutil.get_data("generativepoetry", "data/hate_words.txt").decode("utf-8").splitlines()
+        pkgutil.get_data("poetryplayground", "data/hate_words.txt").decode("utf-8").splitlines()
     )
     unfitting_words.extend(
-        pkgutil.get_data("generativepoetry", "data/abbreviations_etc.txt")
+        pkgutil.get_data("poetryplayground", "data/abbreviations_etc.txt")
         .decode("utf-8")
         .splitlines()
     )

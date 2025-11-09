@@ -228,7 +228,7 @@ class ConfigFormScreen(Screen):
             ValueError: If procedure ID is not recognized
         """
         if procedure_id in ["haiku", "tanka", "senryu"]:
-            from generativepoetry.forms import FormGenerator
+            from poetryplayground.forms import FormGenerator
 
             generator = FormGenerator()
             seed_words = None
@@ -253,7 +253,7 @@ class ConfigFormScreen(Screen):
             return result
 
         elif procedure_id == "metaphor":
-            from generativepoetry.metaphor_generator import MetaphorGenerator
+            from poetryplayground.metaphor_generator import MetaphorGenerator
 
             count = int(config.get("count", 10))
             generator = MetaphorGenerator()
@@ -262,7 +262,7 @@ class ConfigFormScreen(Screen):
             return "\n\n".join(f"{i + 1}. {m}" for i, m in enumerate(metaphors[:count]))
 
         elif procedure_id == "lineseeds":
-            from generativepoetry.line_seeds import LineSeedGenerator
+            from poetryplayground.line_seeds import LineSeedGenerator
 
             seed_words_str = config.get("seed_words", "")
             seed_words = (
@@ -278,7 +278,7 @@ class ConfigFormScreen(Screen):
             return "\n\n".join(f"{i + 1}. {seed}" for i, seed in enumerate(seeds))
 
         elif procedure_id == "ideas":
-            from generativepoetry.idea_generator import IdeaGenerator
+            from poetryplayground.idea_generator import IdeaGenerator
 
             count = int(config.get("count", 10))
             generator = IdeaGenerator()
@@ -294,7 +294,7 @@ class ConfigFormScreen(Screen):
             return "\n".join(result_lines)
 
         elif procedure_id == "fragments":
-            from generativepoetry.causal_poetry import ResonantFragmentMiner
+            from poetryplayground.causal_poetry import ResonantFragmentMiner
 
             count = int(config.get("count", 50))
             miner = ResonantFragmentMiner()
@@ -311,7 +311,7 @@ class ConfigFormScreen(Screen):
             return "\n".join(result_lines)
 
         elif procedure_id == "equidistant":
-            from generativepoetry.finders import find_equidistant
+            from poetryplayground.finders import find_equidistant
 
             word_a = config.get("word_a", "").strip()
             word_b = config.get("word_b", "").strip()
@@ -348,7 +348,7 @@ class ConfigFormScreen(Screen):
             return "\n".join(result_lines)
 
         else:
-            return f"Generator for '{procedure_id}' not yet implemented in TUI.\n\nUse the CLI interface for now:\n  generative-poetry-cli"
+            return f"Generator for '{procedure_id}' not yet implemented in TUI.\n\nUse the CLI interface for now:\n  poetry-playground"
 
     def _on_generation_complete(self, result: str) -> None:
         """Handle successful generation completion (main thread).
@@ -361,7 +361,7 @@ class ConfigFormScreen(Screen):
         status_widget.update("✓ Generation complete!")
 
         # Show output screen
-        from generativepoetry.tui.screens.output_view import OutputViewScreen
+        from poetryplayground.tui.screens.output_view import OutputViewScreen
 
         self.app.push_screen(OutputViewScreen(result, self.config["name"]))
 

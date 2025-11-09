@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from generativepoetry.ship_of_theseus import (
+from poetryplayground.ship_of_theseus import (
     ShipOfTheseusTransformer,
     TransformationResult,
     create_ship_of_theseus_transformer,

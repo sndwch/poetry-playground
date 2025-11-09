@@ -1,9 +1,9 @@
-"""Configuration management for generativepoetry.
+"""Configuration management for poetryplayground.
 
 Supports loading configuration from multiple sources with priority:
 1. CLI flags (highest priority)
 2. --config CONFIG.yml file
-3. pyproject.toml [tool.generativepoetry]
+3. pyproject.toml [tool.poetryplayground]
 4. Environment variables (GP_* prefix)
 5. Defaults (lowest priority)
 """
@@ -176,7 +176,7 @@ class Config(BaseModel):
     def model_post_init(self, __context):
         """Initialize paths and create directories if needed."""
         if self.cache_dir is None:
-            self.cache_dir = Path.home() / ".cache" / "generativepoetry"
+            self.cache_dir = Path.home() / ".cache" / "poetryplayground"
 
         # Create cache directory if caching is enabled
         if self.enable_cache and self.cache_dir:
@@ -227,7 +227,7 @@ class Config(BaseModel):
 
     @classmethod
     def from_pyproject(cls, pyproject_path: Optional[Path] = None) -> "Config":
-        """Load config from pyproject.toml [tool.generativepoetry] section."""
+        """Load config from pyproject.toml [tool.poetryplayground] section."""
         if pyproject_path is None:
             # Look for pyproject.toml in current directory or parent directories
             current = Path.cwd()
@@ -254,7 +254,7 @@ class Config(BaseModel):
                 with open(pyproject_path, "rb") as f:
                     data = tomli.load(f)
 
-            tool_config = data.get("tool", {}).get("generativepoetry", {})
+            tool_config = data.get("tool", {}).get("poetryplayground", {})
             return cls(**tool_config)
         except Exception:
             # If parsing fails, return defaults

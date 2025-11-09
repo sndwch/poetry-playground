@@ -1,4 +1,4 @@
-"""Type definitions for generativepoetry."""
+"""Type definitions for poetryplayground."""
 
 from typing import List, Tuple, Union
 

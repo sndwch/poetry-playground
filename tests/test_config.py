@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from generativepoetry.config import (
+from poetryplayground.config import (
     Config,
     DocumentConfig,
     PerformanceConfig,

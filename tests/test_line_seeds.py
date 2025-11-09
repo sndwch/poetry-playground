@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
-from generativepoetry.line_seeds import LineSeed, LineSeedGenerator, SeedType
+from poetryplayground.line_seeds import LineSeed, LineSeedGenerator, SeedType
 
 
 def test_line_seed_generator():

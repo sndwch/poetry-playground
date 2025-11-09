@@ -5,7 +5,7 @@ import pytest
 
 def test_list_procedures(capture_rich_output):
     """Test that --list-procedures displays a Rich table."""
-    from generativepoetry.cli import _list_procedures
+    from poetryplayground.cli import _list_procedures
 
     # Call the function with our captured console
     _list_procedures()
@@ -29,7 +29,7 @@ def test_list_procedures(capture_rich_output):
 
 def test_list_fonts(capture_rich_output):
     """Test that --list-fonts displays fonts in Rich panels/columns."""
-    from generativepoetry.cli import _list_fonts
+    from poetryplayground.cli import _list_fonts
 
     # Call the function with our captured console
     _list_fonts()
@@ -51,7 +51,7 @@ def test_list_fonts(capture_rich_output):
 
 def test_display_poem_output(capture_rich_output):
     """Test the display_poem_output helper function."""
-    from generativepoetry.rich_output import display_poem_output
+    from poetryplayground.rich_output import display_poem_output
 
     poem_lines = [
         "ancient pond",
@@ -81,7 +81,7 @@ def test_display_poem_output(capture_rich_output):
 
 def test_display_poem_output_no_metadata(capture_rich_output):
     """Test display_poem_output without metadata."""
-    from generativepoetry.rich_output import display_poem_output
+    from poetryplayground.rich_output import display_poem_output
 
     poem_lines = ["line one", "line two", "line three"]
 
@@ -100,7 +100,7 @@ def test_display_poem_output_no_metadata(capture_rich_output):
 
 def test_display_error(capture_rich_output):
     """Test the display_error helper function."""
-    from generativepoetry.rich_output import display_error
+    from poetryplayground.rich_output import display_error
 
     display_error("Something went wrong", details="Check your input parameters")
 
@@ -113,7 +113,7 @@ def test_display_error(capture_rich_output):
 
 def test_display_success(capture_rich_output):
     """Test the display_success helper function."""
-    from generativepoetry.rich_output import display_success
+    from poetryplayground.rich_output import display_success
 
     display_success("Operation completed successfully!")
 
@@ -125,7 +125,7 @@ def test_display_success(capture_rich_output):
 
 def test_rich_console_theme():
     """Test that the global console has the custom theme."""
-    from generativepoetry.rich_console import console, custom_theme
+    from poetryplayground.rich_console import console, custom_theme
 
     # Verify console exists
     assert console is not None

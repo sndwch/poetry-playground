@@ -1,18 +1,18 @@
-# Pre-commit hooks for generativepoetry
+# Pre-commit hooks for poetryplayground
 # See https://pre-commit.com for more information
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.8.4
     hooks:
-      # Run the linter - only on generativepoetry/ package
+      # Run the linter - only on poetryplayground/ package
       - id: ruff
         args: [--fix]
-        files: ^generativepoetry/
+        files: ^poetryplayground/
         exclude: __pycache__|\.pyc$
-      # Run the formatter - only on generativepoetry/ package
+      # Run the formatter - only on poetryplayground/ package
       - id: ruff-format
-        files: ^generativepoetry/
+        files: ^poetryplayground/
         exclude: __pycache__|\.pyc$
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

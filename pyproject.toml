@@ -3,13 +3,13 @@ requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "generativepoetry"
-version = "0.3.4"
-description = "A library primarily for procedurally generating visual poems"
-readme = "README.rst"
+name = "poetryplayground"
+version = "0.1.0"
+description = "A Python playground for experimenting with generative poetry techniques"
+readme = "README.md"
 requires-python = ">=3.8"
 authors = [
-    {name = "Corey Bobco", email = "corey.bobco@gmail.com"}
+    {name = "J Parker", email = "jparker@example.com"}
 ]
 license = {text = "MIT"}
 keywords = ["poetry", "generative", "art", "nlp"]
@@ -52,14 +52,13 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/coreybobco/generativepoetry-py"
-Repository = "https://github.com/coreybobco/generativepoetry-py"
-Issues = "https://github.com/coreybobco/generativepoetry-py/issues"
-Documentation = "https://generativepoetry.readthedocs.io/"
+Homepage = "https://github.com/jparker/poetry-playground"
+Repository = "https://github.com/jparker/poetry-playground"
+Issues = "https://github.com/jparker/poetry-playground/issues"
 
 [project.scripts]
-generative-poetry-cli = "generativepoetry.cli:main"
-generative-poetry-tui = "generativepoetry.tui.app:run"
+poetry-playground = "poetryplayground.cli:main"
+poetry-playground-tui = "poetryplayground.tui.app:run"
 
 [project.optional-dependencies]
 spellcheck = [
@@ -80,10 +79,10 @@ docs = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["generativepoetry*"]
+include = ["poetryplayground*"]
 
 [tool.setuptools.package-data]
-generativepoetry = ["data/hate_words.txt", "data/abbreviations_etc.txt", "tui/tui.tcss"]
+poetryplayground = ["data/hate_words.txt", "data/abbreviations_etc.txt", "tui/tui.tcss"]
 
 [tool.ruff]
 line-length = 100
@@ -137,7 +136,7 @@ python_functions = ["test_*"]
 addopts = "-ra -q --strict-markers"
 
 [tool.coverage.run]
-source = ["generativepoetry"]
+source = ["poetryplayground"]
 omit = ["*/tests/*", "*/test_*.py"]
 
 [tool.coverage.report]
@@ -152,7 +151,7 @@ exclude_lines = [
     "if __name__ == .__main__.:",
 ]
 
-[tool.generativepoetry]
+[tool.poetryplayground]
 # API Settings
 datamuse_api_max = 50
 datamuse_timeout = 10

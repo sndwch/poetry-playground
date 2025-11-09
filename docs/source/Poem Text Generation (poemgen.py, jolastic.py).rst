@@ -5,17 +5,17 @@ Poem Text Generation (poemgen.py, jolastic.py)
 
 These functions generate the actual text of poems.
 
-.. automodule:: generativepoetry.poemgen
+.. automodule:: poetryplayground.poemgen
    :members:
 
-.. autoclass:: generativepoetry.poemgen.Poem
+.. autoclass:: poetryplayground.poemgen.Poem
    :members
 
-.. autoclass:: generativepoetry.poemgen.PoemGenerator
+.. autoclass:: poetryplayground.poemgen.PoemGenerator
    :members
 
-.. automodule:: generativepoetry.jolastic
+.. automodule:: poetryplayground.jolastic
    :members:
 
-.. autoclass:: generativepoetry.jolastic.StochasticJolasticWordGenerator
+.. autoclass:: poetryplayground.jolastic.StochasticJolasticWordGenerator
    :members

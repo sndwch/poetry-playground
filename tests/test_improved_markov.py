@@ -6,7 +6,7 @@ import sys
 sys.stderr = open("/dev/null", "w")  # Suppress warnings
 
 import pytest
-from generativepoetry.poemgen import PoemGenerator
+from poetryplayground.poemgen import PoemGenerator
 
 
 def test_markov():

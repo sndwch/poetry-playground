@@ -4,9 +4,9 @@ import argparse
 
 import pytest
 
-from generativepoetry.cli import parse_syllable_range
-from generativepoetry.finders import find_equidistant
-from generativepoetry.lexicon import get_lexicon_data
+from poetryplayground.cli import parse_syllable_range
+from poetryplayground.finders import find_equidistant
+from poetryplayground.lexicon import get_lexicon_data
 
 
 @pytest.fixture(scope="module")

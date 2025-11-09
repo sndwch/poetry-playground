@@ -146,6 +146,6 @@ class MainMenuScreen(Screen):
             proc_id = event.item.id
 
             # Import here to avoid circular dependencies
-            from generativepoetry.tui.screens.config_form import ConfigFormScreen
+            from poetryplayground.tui.screens.config_form import ConfigFormScreen
 
             await self.app.push_screen(ConfigFormScreen(proc_id))

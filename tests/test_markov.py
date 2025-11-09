@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Test Markov poem generation directly."""
 
-from generativepoetry.poemgen import PoemGenerator
+from poetryplayground.poemgen import PoemGenerator
 
 
 def test_markov():

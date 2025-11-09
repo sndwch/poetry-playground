@@ -4,7 +4,7 @@
 import unittest
 from pathlib import Path
 
-from generativepoetry.corpus_analyzer import PersonalCorpusAnalyzer, PoetryMetrics
+from poetryplayground.corpus_analyzer import PersonalCorpusAnalyzer, PoetryMetrics
 
 
 class TestPoetryMetrics(unittest.TestCase):
