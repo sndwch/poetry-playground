@@ -8,6 +8,8 @@ from textual.containers import Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Static, TextArea
 
+from .config_form import ConfigFormScreen
+
 
 class UnifiedTUIScreen(Screen):
     """Main TUI screen with 3-column layout: List | Config | Output."""
@@ -211,83 +213,6 @@ class UnifiedTUIScreen(Screen):
         ("deps", "Check System Dependencies", "Verify installation and dependencies", "System"),
     ]
 
-    # Configuration for each procedure
-    PROCEDURE_CONFIG: ClassVar[dict] = {
-        "haiku": {
-            "name": "Haiku Generator",
-            "description": "Generate 5-7-5 syllable haiku with grammatical templates",
-            "inputs": [("seed_words", "Seed Words (optional, comma-separated)", "")],
-        },
-        "tanka": {
-            "name": "Tanka Generator",
-            "description": "Generate 5-7-5-7-7 syllable tanka",
-            "inputs": [("seed_words", "Seed Words (optional, comma-separated)", "")],
-        },
-        "senryu": {
-            "name": "Senryu Generator",
-            "description": "Generate 5-7-5 syllable senryu focused on human nature",
-            "inputs": [("seed_words", "Seed Words (optional, comma-separated)", "")],
-        },
-        "metaphor": {
-            "name": "Metaphor Generator",
-            "description": "Generate fresh metaphors from Project Gutenberg texts",
-            "inputs": [("count", "Number of metaphors", "10")],
-        },
-        "lineseeds": {
-            "name": "Line Seeds Generator",
-            "description": "Generate evocative incomplete phrases and line beginnings",
-            "inputs": [
-                ("seed_words", "Seed Words (space or comma-separated)", ""),
-                ("count", "Number of seeds", "10"),
-            ],
-        },
-        "ideas": {
-            "name": "Poetry Idea Generator",
-            "description": "Mine creative seeds from classic literature",
-            "inputs": [("count", "Number of ideas", "10")],
-        },
-        "fragments": {
-            "name": "Resonant Fragment Miner",
-            "description": "Extract poetic sentence fragments from literature",
-            "inputs": [("count", "Number of fragments", "50")],
-        },
-        "equidistant": {
-            "name": "Equidistant Word Finder",
-            "description": "Find words equidistant from two anchor words",
-            "inputs": [
-                ("word_a", "First anchor word", ""),
-                ("word_b", "Second anchor word", ""),
-                ("mode", "Mode (orth/phono)", "orth"),
-                ("window", "Window (distance tolerance)", "0"),
-            ],
-        },
-        "semantic_path": {
-            "name": "Semantic Geodesic Finder",
-            "description": "Find semantic paths between words through meaning-space",
-            "inputs": [
-                ("start_word", "Start word", ""),
-                ("end_word", "End word", ""),
-                ("steps", "Number of steps", "5"),
-                ("alternatives", "Alternatives per step", "3"),
-                ("method", "Method (linear/bezier/shortest)", "linear"),
-            ],
-        },
-        "conceptual_cloud": {
-            "name": "Conceptual Cloud Generator",
-            "description": "Generate multi-dimensional word associations (poet's radar)",
-            "inputs": [
-                ("center_word", "Center word or phrase", ""),
-                ("k_per_cluster", "Words per cluster", "10"),
-                (
-                    "sections",
-                    "Sections (all or comma-separated: semantic,contextual,opposite,phonetic,imagery,rare)",
-                    "all",
-                ),
-                ("output_format", "Format (rich/json/markdown/simple)", "rich"),
-            ],
-        },
-    }
-
     def __init__(self):
         """Initialize the unified screen."""
         super().__init__()
@@ -346,7 +271,7 @@ class UnifiedTUIScreen(Screen):
 
     async def _update_config_form(self, procedure_id: str) -> None:
         """Update the config form based on selected procedure."""
-        config = self.PROCEDURE_CONFIG.get(
+        config = ConfigFormScreen.PROCEDURE_CONFIG.get(
             procedure_id,
             {
                 "name": "Unknown Procedure",
@@ -383,7 +308,7 @@ class UnifiedTUIScreen(Screen):
             return
 
         # Get config for selected procedure
-        config = self.PROCEDURE_CONFIG.get(self.selected_procedure, {})
+        config = ConfigFormScreen.PROCEDURE_CONFIG.get(self.selected_procedure, {})
 
         # Extract configuration from input fields
         config_values = {}

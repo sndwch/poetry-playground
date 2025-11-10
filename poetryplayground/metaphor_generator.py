@@ -81,11 +81,12 @@ class MetaphorGenerator:
         """Initialize verb associations using shared vocabulary."""
         self.verb_associations = vocabulary.domain_verb_associations
 
-    def extract_metaphor_patterns(self, num_texts: int = 3) -> List[str]:
+    def extract_metaphor_patterns(self, num_texts: int = 3, verbose: bool = True) -> List[str]:
         """Extract metaphorical patterns from multiple Gutenberg texts.
 
         Args:
             num_texts: Number of different texts to sample from (default: 3)
+            verbose: Whether to print progress messages (default: True for CLI, False for TUI)
 
         Returns:
             List of extracted metaphor patterns from diverse sources
@@ -93,20 +94,25 @@ class MetaphorGenerator:
         all_metaphors = []
 
         # Get diverse documents using centralized system
-        print(f"📚 Retrieving {num_texts} diverse documents for metaphor extraction...")
+        if verbose:
+            print(f"📚 Retrieving {num_texts} diverse documents for metaphor extraction...")
         documents = get_diverse_gutenberg_documents(
             count=num_texts, min_length=DocumentConfig.MIN_LENGTH_METAPHORS
         )
 
         if not documents:
-            print("❌ Failed to retrieve documents for metaphor extraction")
+            if verbose:
+                print("❌ Failed to retrieve documents for metaphor extraction")
             return all_metaphors
 
-        print(f"✓ Successfully retrieved {len(documents)} diverse documents")
+        if verbose:
+            print(f"✓ Successfully retrieved {len(documents)} diverse documents")
 
         # Process each document using helper method
         for doc_index, text in enumerate(documents, 1):
-            found_metaphors = self._extract_metaphors_from_text(text, doc_index, len(documents))
+            found_metaphors = self._extract_metaphors_from_text(
+                text, doc_index, len(documents), verbose=verbose
+            )
             if found_metaphors:
                 all_metaphors.extend(found_metaphors[: QualityConfig.MAX_METAPHORS_PER_TEXT])
 
@@ -121,22 +127,24 @@ class MetaphorGenerator:
                 max(DocumentConfig.MIN_ADAPTIVE_BATCH, remaining_needed // 3),
             )
 
-            print(
-                f"  📚 Found {len(all_metaphors)} metaphors, need {remaining_needed} more. Retrieving {additional_batch} additional documents..."
-            )
+            if verbose:
+                print(
+                    f"  📚 Found {len(all_metaphors)} metaphors, need {remaining_needed} more. Retrieving {additional_batch} additional documents..."
+                )
 
             additional_docs = get_diverse_gutenberg_documents(
                 count=additional_batch, min_length=DocumentConfig.MIN_LENGTH_METAPHORS
             )
 
             if not additional_docs:
-                print("  ⚠ Could not retrieve additional documents")
+                if verbose:
+                    print("  ⚠ Could not retrieve additional documents")
                 break
 
             for text in additional_docs:
                 documents_processed += 1
                 found_metaphors = self._extract_metaphors_from_text(
-                    text, documents_processed, None, is_additional=True
+                    text, documents_processed, None, is_additional=True, verbose=verbose
                 )
                 if found_metaphors:
                     all_metaphors.extend(found_metaphors[: QualityConfig.MAX_METAPHORS_PER_TEXT])
@@ -162,12 +170,13 @@ class MetaphorGenerator:
                 else:
                     quality_filtered += 1
 
-        if quality_filtered > 0:
+        if quality_filtered > 0 and verbose:
             print(f"  🎯 Filtered out {quality_filtered} low-quality metaphors")
 
-        print(
-            f"🎉 Extracted {len(unique_metaphors)} unique metaphor patterns from {documents_processed} diverse texts!"
-        )
+        if verbose:
+            print(
+                f"🎉 Extracted {len(unique_metaphors)} unique metaphor patterns from {documents_processed} diverse texts!"
+            )
 
         self._gutenberg_patterns.extend(unique_metaphors)
         return unique_metaphors
@@ -244,6 +253,7 @@ class MetaphorGenerator:
         doc_index: int,
         total_docs: Optional[int] = None,
         is_additional: bool = False,
+        verbose: bool = True,
     ) -> List[Tuple[str, str, str]]:
         """Extract metaphors from a single text using defined patterns."""
         patterns = [
@@ -255,10 +265,11 @@ class MetaphorGenerator:
         ]
 
         try:
-            if is_additional:
-                print(f"  🔍 Extracting metaphors from additional document {doc_index}...")
-            else:
-                print(f"  🔍 Extracting metaphors from document {doc_index}/{total_docs}...")
+            if verbose:
+                if is_additional:
+                    print(f"  🔍 Extracting metaphors from additional document {doc_index}...")
+                else:
+                    print(f"  🔍 Extracting metaphors from document {doc_index}/{total_docs}...")
 
             parsed = ParsedText(text)
             found_metaphors = []
@@ -300,19 +311,24 @@ class MetaphorGenerator:
                 # Convert back to original format (drop the score)
                 found_metaphors = [(s, t, sent) for s, t, sent, _ in scored_metaphors]
 
-                if is_additional:
-                    print(
-                        f"    ✓ Found {len(found_metaphors)} additional metaphor patterns (quality-sorted)"
-                    )
-                else:
-                    print(f"    ✓ Found {len(found_metaphors)} metaphor patterns (quality-sorted)")
+                if verbose:
+                    if is_additional:
+                        print(
+                            f"    ✓ Found {len(found_metaphors)} additional metaphor patterns (quality-sorted)"
+                        )
+                    else:
+                        print(
+                            f"    ✓ Found {len(found_metaphors)} metaphor patterns (quality-sorted)"
+                        )
             else:
-                print("    ✓ Found 0 metaphor patterns")
+                if verbose:
+                    print("    ✓ Found 0 metaphor patterns")
 
             return found_metaphors
 
         except Exception as e:
-            print(f"    ⚠ Error processing document {doc_index}: {e}")
+            if verbose:
+                print(f"    ⚠ Error processing document {doc_index}: {e}")
             return []
 
     def generate_metaphor_batch(self, source_words: List[str], count: int = 10) -> List[Metaphor]:

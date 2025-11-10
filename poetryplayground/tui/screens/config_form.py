@@ -199,6 +199,32 @@ class ConfigFormScreen(Screen):
             "description": "PDF-only minimalist word placement",
             "inputs": [],
         },
+        "semantic_path": {
+            "name": "Semantic Geodesic Finder",
+            "description": "Find transitional paths through meaning-space",
+            "inputs": [
+                ("start_word", "Starting word", ""),
+                ("end_word", "Ending word", ""),
+                ("steps", "Number of steps (min 3)", "5"),
+                ("alternatives", "Alternative words per step", "3"),
+                ("method", "Path method (linear/bezier/shortest)", "linear"),
+            ],
+        },
+        "conceptual_cloud": {
+            "name": "Conceptual Cloud Generator",
+            "description": "Multi-dimensional word associations",
+            "inputs": [
+                ("center_word", "Center word", ""),
+                ("k_per_cluster", "Words per cluster", "10"),
+                ("sections", "Sections (all or comma-separated)", "all"),
+                ("output_format", "Output format (simple/markdown/json/rich)", "simple"),
+            ],
+        },
+        "deps": {
+            "name": "Check System Dependencies",
+            "description": "Verify spaCy, NLTK, and other dependencies",
+            "inputs": [],
+        },
     }
 
     def __init__(self, procedure_id: str):
@@ -320,9 +346,19 @@ class ConfigFormScreen(Screen):
 
             count = int(config.get("count", 10))
             generator = MetaphorGenerator()
-            metaphors = generator.generate_metaphors(target_count=count, num_texts=5)
 
-            return "\n\n".join(f"{i + 1}. {m}" for i, m in enumerate(metaphors[:count]))
+            # Extract metaphor patterns from Project Gutenberg texts
+            # (Using extract_metaphor_patterns since no source words provided in TUI config)
+            num_texts = max(3, count // 3)  # Use more texts for larger counts
+            metaphors = generator.extract_metaphor_patterns(num_texts=num_texts, verbose=False)
+
+            # Return the requested count
+            result_lines = []
+            for i, metaphor in enumerate(metaphors[:count], 1):
+                result_lines.append(f"{i}. {metaphor}")
+                result_lines.append("")
+
+            return "\n".join(result_lines)
 
         elif procedure_id == "lineseeds":
             from poetryplayground.line_seeds import LineSeedGenerator
@@ -522,9 +558,9 @@ class ConfigFormScreen(Screen):
             else:
                 sections = [s.strip() for s in sections_input.split(",")]
 
-            output_format = config.get("output_format", "rich").strip().lower()
+            output_format = config.get("output_format", "simple").strip().lower()
             if output_format not in ["rich", "json", "markdown", "simple"]:
-                output_format = "rich"
+                output_format = "simple"  # Default to simple for TUI compatibility
 
             try:
                 # Generate cloud
@@ -539,10 +575,12 @@ class ConfigFormScreen(Screen):
                     return format_as_json(cloud)
                 elif output_format == "markdown":
                     return format_as_markdown(cloud, show_scores=True)
-                elif output_format == "simple":
+                elif output_format == "rich":
+                    # Strip ANSI codes from Rich output for plain text TUI display
+                    rich_output = format_as_rich(cloud, show_scores=True)
+                    return self._strip_ansi_codes(rich_output)
+                else:  # simple (default for TUI)
                     return format_as_simple(cloud)
-                else:  # rich (default)
-                    return format_as_rich(cloud, show_scores=True)
 
             except Exception as e:
                 import traceback
@@ -800,8 +838,50 @@ class ConfigFormScreen(Screen):
                 "  generator.generate_pdf(input_words=['your', 'words'])"
             )
 
+        elif procedure_id == "deps":
+            from poetryplayground.system_utils import check_system_dependencies
+
+            try:
+                # Run dependency checks
+                result_lines = ["=" * 60, "SYSTEM DEPENDENCY CHECK", "=" * 60, ""]
+
+                # Get dependency status
+                deps_report = check_system_dependencies()
+
+                # Format the report for display
+                result_lines.append(deps_report)
+
+                return "\n".join(result_lines)
+
+            except Exception as e:
+                import traceback
+
+                return f"Error checking dependencies:\n{e!s}\n\n{traceback.format_exc()}"
+
         else:
             return f"Generator for '{procedure_id}' not yet implemented in TUI.\n\nUse the CLI interface for now:\n  poetry-playground"
+
+    @staticmethod
+    def _strip_ansi_codes(text: str) -> str:
+        """Strip ANSI escape codes from text for plain text display.
+
+        Args:
+            text: Text potentially containing ANSI escape sequences
+
+        Returns:
+            Clean text without ANSI codes
+        """
+        import re
+
+        # Strip ANSI escape sequences (colors, formatting)
+        ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+        text = ansi_escape.sub("", text)
+
+        # Strip other control sequences
+        ansi_control = re.compile(r"\x1b\[[^m]*m?")
+        text = ansi_control.sub("", text)
+
+        return text
 
     def _on_generation_complete(self, result: str) -> None:
         """Handle successful generation completion (main thread).

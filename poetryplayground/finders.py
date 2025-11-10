@@ -53,7 +53,7 @@ def _calculate_craft_score(
     This scoring function goes beyond pure mathematical distance to consider
     poetic usefulness:
     - Exactness: Bonus for being exactly at target distance
-    - Frequency: Common words are often more useful (easier to read)
+    - Quality: Uses universal Quality Scorer (novelty, non-cliché, good frequency)
     - Length: Penalize words that are very different in length from anchors
     - Rime: Bonus for sharing rime with either anchor (assonance)
 
@@ -61,7 +61,7 @@ def _calculate_craft_score(
         target_d: The target Levenshtein distance
         dist_a: Actual distance from anchor A
         dist_b: Actual distance from anchor B
-        zipf: Word frequency on Zipf scale (1-10)
+        zipf: Word frequency on Zipf scale (1-10) (kept for backwards compat, not used)
         word_len: Length of the candidate word
         anchor_len_avg: Average length of the two anchor words
         word: The candidate word
@@ -71,6 +71,9 @@ def _calculate_craft_score(
     Returns:
         Score value (higher is better)
     """
+    from poetryplayground.quality_scorer import get_quality_scorer
+
+    scorer = get_quality_scorer()
     score = 0.0
 
     # Bonus for being exactly at target distance (not in window)
@@ -79,9 +82,10 @@ def _calculate_craft_score(
     if dist_b == target_d:
         score += 2.0
 
-    # Bonus for word frequency (common words are often more useful)
-    # Zipf ranges from ~1 (very rare) to ~8 (very common like "the")
-    score += 0.25 * zipf
+    # Use Quality Scorer instead of raw frequency
+    # This rewards novelty, non-clichéd words, and good (not too rare, not too common) frequency
+    quality = scorer.score_word(word)
+    score += 5.0 * quality.overall  # Scale to match other bonuses
 
     # Penalty for large length deviation from anchors
     # This helps avoid finding very short or very long outliers

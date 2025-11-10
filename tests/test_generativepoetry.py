@@ -149,35 +149,29 @@ class TestUtils(unittest.TestCase):
 class TestLexigen(unittest.TestCase):
     def test_rhymes(self):
         self.assertEqual(rhymes("metamorphosis"), [])
-        rhymes_with_clouds = ["crowds", "shrouds"]
+        # rhymes() filters out rare words (zipf < 3.0) by default
+        # 'crowds' (zipf 3.87) passes, 'shrouds' (zipf 2.47) is filtered
+        rhymes_with_clouds = ["crowds"]
         results = rhymes("clouds")
         self.assertEqual(sorted(results), rhymes_with_clouds)
-        rhymes_with_sprouting = [
-            "doubting",
-            "flouting",
-            "grouting",
-            "outing",
-            "pouting",
-            "rerouting",
-            "routing",
-            "scouting",
-            "shouting",
-            "spouting",
-            "touting",
-        ]
+        # Only common rhymes pass the zipf >= 3.0 filter
+        # Most -outing words are rare, only 'shouting' is common enough
+        rhymes_with_sprouting = ["shouting"]
         self.assertEqual(sorted(rhymes("sprouting", sample_size=None)), rhymes_with_sprouting)
         results = rhymes("sprouting")
         self.assertNotIn("sprouting", results)
         self.assertEqual(sorted(results), rhymes_with_sprouting)
+        # With only 1 rhyme available, sample_size=6 returns just that 1
         results = rhymes("sprouting", sample_size=6)
-        self.assertEqual(len(results), 6)
+        self.assertEqual(len(results), 1)
         self.assertTrue(set(rhymes_with_sprouting).issuperset(set(results)))
         rhymes_with_either = sorted(rhymes_with_clouds + rhymes_with_sprouting)
         self.assertEqual(
             sorted(rhymes(["sprouting", "clouds"], sample_size=None)), rhymes_with_either
         )
+        # With only 2 total rhymes (crowds + shouting), sample_size=6 returns 2
         results = rhymes(["clouds", "sprouting"], sample_size=6)
-        self.assertEqual(len(results), 6)
+        self.assertEqual(len(results), 2)
         self.assertTrue(set(rhymes_with_either).issuperset(set(results)))
 
     def test_rhyme(self):
