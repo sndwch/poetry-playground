@@ -145,9 +145,6 @@ class MetaphorGenerator:
                     break
 
         # Remove duplicates, apply quality filtering, and store for later use
-        from .quality_scorer import get_quality_scorer
-        scorer = get_quality_scorer()
-
         unique_metaphors = []
         seen_pairs = set()
         quality_filtered = 0
@@ -280,9 +277,6 @@ class MetaphorGenerator:
 
             # Sort by quality using comprehensive quality scoring
             if found_metaphors:
-                from .quality_scorer import get_quality_scorer
-                scorer = get_quality_scorer()
-
                 # Score each metaphor and sort by quality
                 scored_metaphors = []
                 for source, target, sentence in found_metaphors:

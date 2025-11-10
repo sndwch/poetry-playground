@@ -1,8 +1,9 @@
 """Enhanced word validation to ensure quality output."""
 
+from typing import Dict, Optional
+
 import nltk
 from nltk.corpus import brown, words
-from typing import Dict, Optional
 from wordfreq import word_frequency
 
 # Optional imports for advanced features
@@ -250,7 +251,7 @@ class WordValidator:
         # Fallback: check if it's capitalized and not in dictionary
         return bool(word[0].isupper() and word.lower() not in self._nltk_words)
 
-    def clean_word_list(self, words: list, allow_rare: bool = False, exclude_words: list = None) -> list:
+    def clean_word_list(self, words: list, allow_rare: bool = False, exclude_words: Optional[list] = None) -> list:
         """
         Clean a list of words, removing invalid ones.
 
@@ -397,11 +398,7 @@ class WordValidator:
             sentiment = self.get_sentiment(word)
             compound = sentiment["compound"]
 
-            if emotional_tone == "positive" and compound > 0.1:
-                filtered.append(word)
-            elif emotional_tone == "negative" and compound < -0.1:
-                filtered.append(word)
-            elif emotional_tone == "neutral" and -0.1 <= compound <= 0.1:
+            if (emotional_tone == "positive" and compound > 0.1) or (emotional_tone == "negative" and compound < -0.1) or (emotional_tone == "neutral" and -0.1 <= compound <= 0.1):
                 filtered.append(word)
 
         return filtered

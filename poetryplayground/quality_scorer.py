@@ -23,7 +23,7 @@ import math
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Optional, Set
 
 from wordfreq import word_frequency
 
@@ -171,7 +171,7 @@ class QualityScorer:
             return
 
         try:
-            with open(cliche_file, "r", encoding="utf-8") as f:
+            with open(cliche_file, encoding="utf-8") as f:
                 data = json.load(f)
                 self.cliche_phrases = set(data.get("phrases", []))
                 self.cliche_words = set(data.get("words", []))
@@ -191,7 +191,7 @@ class QualityScorer:
             return
 
         try:
-            with open(concreteness_file, "r", encoding="utf-8") as f:
+            with open(concreteness_file, encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith("#"):

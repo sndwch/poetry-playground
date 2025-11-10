@@ -17,20 +17,17 @@ Example:
 import functools
 import heapq
 import pickle
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Set, Tuple, Dict
+from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import spacy
-from pydantic import BaseModel
 from sklearn.neighbors import NearestNeighbors
 
-from poetryplayground.config import get_config
-from poetryplayground.lexicon import get_lexicon_data, LexiconData
+from poetryplayground.lexicon import LexiconData, get_lexicon_data
 from poetryplayground.logger import logger
 from poetryplayground.setup_models import lazy_ensure_spacy_model
-
 
 # ============================================================================
 # Dataclasses for Results
@@ -186,7 +183,7 @@ class SemanticSpace:
         # Get all words with vectors from the vector table
         # Note: spaCy vocab is sparse, so we need to iterate vector keys
         valid_words = []
-        for key in self.nlp.vocab.vectors.keys():
+        for key in self.nlp.vocab.vectors:
             # Get the lexeme for this key
             lex = self.nlp.vocab[key]
             text = lex.text.lower()
@@ -619,7 +616,7 @@ def _find_shortest_path(
 
     if path_words is None or len(path_words) < steps:
         # Fallback to linear if no path found or path too short
-        logger.warning(f"Shortest path failed, falling back to linear")
+        logger.warning("Shortest path failed, falling back to linear")
         return _find_linear_path(
             start, end, steps, k, min_zipf, pos_filter,
             syllable_min, syllable_max, semantic_space, lexicon_data
@@ -811,9 +808,9 @@ def _astar_search(
         visited.add(current)
 
         # Explore neighbors
-        for neighbor, sim in graph.get(current, []):
+        for neighbor, _sim in graph.get(current, []):
             if neighbor not in visited:
-                new_path = path + [neighbor]
+                new_path = [*path, neighbor]
                 g_score = len(new_path)  # Path length
                 h_score = heuristic(neighbor)
                 f_score = g_score + h_score

@@ -1085,9 +1085,10 @@ def six_degrees_action():
 
 def semantic_geodesic_action():
     """Find semantic paths between words"""
-    from poetryplayground.semantic_geodesic import find_semantic_path, get_semantic_space
     from rich.panel import Panel
     from rich.table import Table
+
+    from poetryplayground.semantic_geodesic import find_semantic_path, get_semantic_space
 
     console.print("\n[bold cyan]🌉 SEMANTIC GEODESIC FINDER[/bold cyan]")
     console.print("=" * 60)
@@ -1170,9 +1171,9 @@ def semantic_geodesic_action():
 
             # Suggestions
             console.print("\n[dim]💡 Try different parameters:[/dim]")
-            console.print(f"[dim]  • More steps: --steps 10 for finer gradations[/dim]")
-            console.print(f"[dim]  • Bezier curve: --method bezier for curved paths[/dim]")
-            console.print(f"[dim]  • Shortest path: --method shortest for graph-based paths[/dim]")
+            console.print("[dim]  • More steps: --steps 10 for finer gradations[/dim]")
+            console.print("[dim]  • Bezier curve: --method bezier for curved paths[/dim]")
+            console.print("[dim]  • Shortest path: --method shortest for graph-based paths[/dim]")
 
         except ValueError as e:
             console.print(f"\n[bold red]Invalid input:[/bold red] {e}")
@@ -1188,15 +1189,14 @@ def semantic_geodesic_action():
 
 def conceptual_cloud_action():
     """Generate conceptual cloud of word associations"""
+
     from poetryplayground.conceptual_cloud import (
-        generate_conceptual_cloud,
-        format_as_rich,
         format_as_json,
         format_as_markdown,
+        format_as_rich,
         format_as_simple,
-        ClusterType,
+        generate_conceptual_cloud,
     )
-    from rich.panel import Panel
 
     console.print("\n[bold cyan]🌥️  CONCEPTUAL CLOUD GENERATOR[/bold cyan]")
     console.print("=" * 60)

@@ -12,7 +12,7 @@ Example:
 """
 
 from functools import lru_cache
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from datamuse import Datamuse
 

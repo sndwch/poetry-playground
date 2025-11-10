@@ -17,27 +17,25 @@ Example:
 import json
 from dataclasses import dataclass, field
 from enum import Enum
-from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
 from rich import box
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
 
 from poetryplayground.cache import cached_api_call
+from poetryplayground.datamuse_api import DatamuseAPI
 from poetryplayground.lexicon import get_lexicon_data
 from poetryplayground.lexigen import (
-    similar_meaning_words,
     contextually_linked_words,
     frequently_following_words,
     phonetically_related_words,
     related_rare_words,
+    similar_meaning_words,
 )
 from poetryplayground.logger import logger
 from poetryplayground.word_validator import WordValidator
-from poetryplayground.datamuse_api import DatamuseAPI
-
 
 # ============================================================================
 # Enums and Constants
@@ -300,7 +298,7 @@ def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
             neighbors = space.find_nearest(vec, k=k, exclude={word})
 
             # Merge results
-            for neighbor_word, score in neighbors:
+            for neighbor_word, _score in neighbors:
                 if neighbor_word not in similar_words:
                     similar_words.append(neighbor_word)
         except Exception as e:
@@ -685,8 +683,6 @@ def format_as_rich(cloud: ConceptualCloud, show_scores: bool = True) -> str:
     Returns:
         Rich-formatted string (will be rendered by Rich console)
     """
-    console = Console()
-
     # Create table
     table = Table(
         title=f"Conceptual Cloud: '{cloud.center_word}'",
@@ -696,7 +692,7 @@ def format_as_rich(cloud: ConceptualCloud, show_scores: bool = True) -> str:
     )
 
     # Add columns for each cluster type
-    active_clusters = [ct for ct in ClusterType if ct in cloud.clusters and cloud.clusters[ct]]
+    active_clusters = [ct for ct in ClusterType if cloud.clusters.get(ct)]
 
     for cluster_type in active_clusters:
         table.add_column(

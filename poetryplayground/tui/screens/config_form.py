@@ -136,6 +136,69 @@ class ConfigFormScreen(Screen):
                 ("window", "Window (distance tolerance)", "0"),
             ],
         },
+        "corpus": {
+            "name": "Personal Corpus Analyzer",
+            "description": "Analyze your personal poetry collection for style insights",
+            "inputs": [
+                ("directory", "Poetry directory path", "/Users/jparker/Desktop/free-verse"),
+            ],
+        },
+        "theseus": {
+            "name": "Ship of Theseus Transformer",
+            "description": "Gradually transform a poem while maintaining structure",
+            "inputs": [
+                ("poem_text", "Original poem text", ""),
+                ("steps", "Number of transformation steps", "5"),
+                ("preserve_pos", "Preserve part-of-speech (yes/no)", "yes"),
+                ("preserve_syllables", "Preserve syllable counts (yes/no)", "yes"),
+            ],
+        },
+        "sixdegrees": {
+            "name": "Six Degrees Word Convergence",
+            "description": "Find convergence paths between two words",
+            "inputs": [
+                ("word_a", "First word", ""),
+                ("word_b", "Second word", ""),
+            ],
+        },
+        "futurist": {
+            "name": "Futurist Poem",
+            "description": "Marinetti-inspired mathematical word connections",
+            "inputs": [
+                ("input_words", "Input words (comma-separated)", ""),
+                ("num_lines", "Number of lines", "25"),
+            ],
+        },
+        "markov": {
+            "name": "Stochastic Jolastic (Markov)",
+            "description": "Joyce-like wordplay with rhyme schemes",
+            "inputs": [
+                ("input_words", "Input words (comma-separated)", ""),
+                ("num_lines", "Number of lines", "10"),
+            ],
+        },
+        "puzzle": {
+            "name": "Visual Puzzle Poem",
+            "description": "Word list-based terminal poem",
+            "inputs": [
+                ("input_words", "Input words (comma-separated)", ""),
+            ],
+        },
+        "chaotic": {
+            "name": "Chaotic Concrete Poem",
+            "description": "PDF-only visual spatial arrangements",
+            "inputs": [],
+        },
+        "charsoup": {
+            "name": "Character Soup Poem",
+            "description": "PDF-only typographic experiments",
+            "inputs": [],
+        },
+        "wordsoup": {
+            "name": "Stop Word Soup Poem",
+            "description": "PDF-only minimalist word placement",
+            "inputs": [],
+        },
     }
 
     def __init__(self, procedure_id: str):
@@ -286,17 +349,22 @@ class ConfigFormScreen(Screen):
             return "\n".join(result)
 
         elif procedure_id == "ideas":
-            from poetryplayground.idea_generator import IdeaGenerator
+            from poetryplayground.idea_generator import PoetryIdeaGenerator
 
             count = int(config.get("count", 10))
-            generator = IdeaGenerator()
-            ideas = generator.mine_poetry_ideas(target_count=count, num_texts=5)
+            generator = PoetryIdeaGenerator()
+            collection = generator.generate_ideas(num_ideas=count)
+
+            # Get mixed selection of ideas across all types
+            ideas = collection.get_random_mixed_selection(count=count, prefer_quality=True)
 
             result_lines = []
-            for i, idea in enumerate(ideas[:count], 1):
-                result_lines.append(f"{i}. [{idea.category}] {idea.text}")
-                if idea.source_info:
-                    result_lines.append(f"   Source: {idea.source_info}")
+            for i, idea in enumerate(ideas, 1):
+                result_lines.append(f"{i}. [{idea.idea_type.value}] {idea.text}")
+                result_lines.append(f"   Prompt: {idea.creative_prompt}")
+                if idea.keywords:
+                    result_lines.append(f"   Keywords: {', '.join(idea.keywords[:3])}")
+                result_lines.append(f"   Quality: {idea.quality_score:.2f}")
                 result_lines.append("")
 
             return "\n".join(result_lines)
@@ -401,7 +469,7 @@ class ConfigFormScreen(Screen):
                     f"Semantic Path ({method} method):",
                     f"{' → '.join(primary_path)}",
                     "",
-                    f"Quality Metrics:",
+                    "Quality Metrics:",
                     f"  Smoothness: {path.smoothness_score:.3f} {'★' * int(path.smoothness_score * 5)}",
                     f"  Deviation:  {path.deviation_score:.3f}",
                     f"  Diversity:  {path.diversity_score:.3f}",
@@ -421,15 +489,15 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
-                return f"Error finding semantic path:\n{str(e)}\n\n{traceback.format_exc()}"
+                return f"Error finding semantic path:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "conceptual_cloud":
             from poetryplayground.conceptual_cloud import (
-                generate_conceptual_cloud,
-                format_as_rich,
                 format_as_json,
                 format_as_markdown,
+                format_as_rich,
                 format_as_simple,
+                generate_conceptual_cloud,
             )
 
             center_word = config.get("center_word", "").strip()
@@ -474,7 +542,248 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
-                return f"Error generating conceptual cloud:\n{str(e)}\n\n{traceback.format_exc()}"
+                return f"Error generating conceptual cloud:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "corpus":
+            from poetryplayground.corpus_analyzer import PersonalCorpusAnalyzer
+
+            directory = config.get("directory", "").strip()
+
+            if not directory:
+                return "Error: Directory path is required"
+
+            try:
+                # Initialize analyzer
+                analyzer = PersonalCorpusAnalyzer()
+
+                # Analyze the directory
+                fingerprint = analyzer.analyze_directory(directory)
+
+                # Generate reports
+                style_report = analyzer.generate_style_report(fingerprint)
+                inspiration_report = analyzer.generate_inspiration_report(fingerprint)
+
+                # Combine reports for display
+                result_lines = [
+                    "=" * 60,
+                    "STYLE ANALYSIS",
+                    "=" * 60,
+                    "",
+                    style_report,
+                    "",
+                    "=" * 60,
+                    "CREATIVE INSPIRATIONS",
+                    "=" * 60,
+                    "",
+                    inspiration_report,
+                ]
+
+                return "\n".join(result_lines)
+
+            except FileNotFoundError:
+                return f"Error: Directory not found: {directory}\n\nPlease check the path and try again."
+            except Exception as e:
+                import traceback
+                return f"Error during corpus analysis:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "theseus":
+            from poetryplayground.ship_of_theseus import ShipOfTheseusTransformer
+
+            poem_text = config.get("poem_text", "").strip()
+
+            if not poem_text:
+                return "Error: Poem text is required"
+
+            try:
+                steps = int(config.get("steps", 5))
+                if steps < 1:
+                    steps = 5
+            except ValueError:
+                steps = 5
+
+            preserve_pos = config.get("preserve_pos", "yes").lower() in ["yes", "true", "1"]
+            preserve_syllables = config.get("preserve_syllables", "yes").lower() in ["yes", "true", "1"]
+
+            try:
+                # Initialize transformer
+                transformer = ShipOfTheseusTransformer()
+
+                # Perform gradual transformation
+                results = transformer.gradual_transform(
+                    original=poem_text,
+                    steps=steps,
+                    preserve_pos=preserve_pos,
+                    preserve_syllables=preserve_syllables,
+                )
+
+                # Format results showing progression
+                result_lines = [
+                    f"Ship of Theseus Transformation ({steps} steps)",
+                    "=" * 60,
+                    "",
+                ]
+
+                for i, result in enumerate(results):
+                    result_lines.append(f"Step {i}: {result.replacement_ratio:.0%} replaced")
+                    result_lines.append(result.transformed)
+                    result_lines.append("")
+
+                result_lines.append("=" * 60)
+                result_lines.append("Transformation Complete!")
+                result_lines.append(
+                    f"Total replacements: {results[-1].num_replacements if results else 0} words"
+                )
+
+                return "\n".join(result_lines)
+
+            except Exception as e:
+                import traceback
+                return f"Error during transformation:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "sixdegrees":
+            from poetryplayground.six_degrees import SixDegrees
+
+            word_a = config.get("word_a", "").strip()
+            word_b = config.get("word_b", "").strip()
+
+            if not word_a or not word_b:
+                return "Error: Both words are required"
+
+            try:
+                # Initialize six degrees explorer
+                sd = SixDegrees()
+
+                # Find convergence
+                convergence = sd.find_convergence(word_a, word_b)
+
+                if convergence:
+                    # Format the convergence report
+                    report = sd.format_convergence_report(convergence)
+                    return report
+                else:
+                    return (
+                        f"❌ No convergence found between '{word_a}' and '{word_b}'\n\n"
+                        "These words may be too semantically distant to connect\n"
+                        "within a reasonable number of steps."
+                    )
+
+            except Exception as e:
+                import traceback
+                return f"Error during convergence search:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "futurist":
+            from poetryplayground.lexigen import phonetically_related_words
+            from poetryplayground.poemgen import PoemGenerator
+
+            input_words_str = config.get("input_words", "").strip()
+
+            if not input_words_str:
+                return "Error: Input words are required"
+
+            # Parse comma-separated input words
+            input_words = [w.strip() for w in input_words_str.split(",") if w.strip()]
+
+            try:
+                num_lines = int(config.get("num_lines", 25))
+                if num_lines < 1:
+                    num_lines = 25
+            except ValueError:
+                num_lines = 25
+
+            try:
+                # Generate futurist poem
+                import random
+
+                connectors = [" + ", " - ", " * ", " % ", " = ", " != ", " :: "]
+                word_list = input_words + phonetically_related_words(input_words)
+                poem_lines = []
+                pgen = PoemGenerator()
+
+                for _ in range(num_lines):
+                    random.shuffle(word_list)
+                    poem_lines.append(
+                        pgen.poem_line_from_word_list(
+                            word_list, connectors=connectors, max_line_length=40
+                        )
+                    )
+
+                return "\n".join(poem_lines)
+
+            except Exception as e:
+                import traceback
+                return f"Error generating futurist poem:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "markov":
+            from poetryplayground.poemgen import PoemGenerator
+
+            input_words_str = config.get("input_words", "").strip()
+
+            if not input_words_str:
+                return "Error: Input words are required"
+
+            # Parse comma-separated input words
+            input_words = [w.strip() for w in input_words_str.split(",") if w.strip()]
+
+            try:
+                num_lines = int(config.get("num_lines", 10))
+                if num_lines < 1:
+                    num_lines = 10
+            except ValueError:
+                num_lines = 10
+
+            try:
+                # Generate markov poem
+                pgen = PoemGenerator()
+                poem_text = pgen.poem_from_markov(input_words, num_lines=num_lines)
+
+                return poem_text
+
+            except Exception as e:
+                import traceback
+                return f"Error generating markov poem:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "puzzle":
+            from poetryplayground.poemgen import PoemGenerator
+
+            input_words_str = config.get("input_words", "").strip()
+
+            if not input_words_str:
+                return "Error: Input words are required"
+
+            # Parse comma-separated input words
+            input_words = [w.strip() for w in input_words_str.split(",") if w.strip()]
+
+            try:
+                # Generate puzzle poem
+                pgen = PoemGenerator()
+                poem_text = pgen.poem_from_word_list(input_words)
+
+                return poem_text
+
+            except Exception as e:
+                import traceback
+                return f"Error generating puzzle poem:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id in ["chaotic", "charsoup", "wordsoup"]:
+            # PDF-only generators
+            generator_names = {
+                "chaotic": "Chaotic Concrete Poem",
+                "charsoup": "Character Soup Poem",
+                "wordsoup": "Stop Word Soup Poem",
+            }
+            name = generator_names.get(procedure_id, "This generator")
+
+            return (
+                f"{name} is a PDF-only visual poetry generator.\n\n"
+                "This generator creates spatial/visual arrangements that cannot be\n"
+                "displayed in text-only format. To generate these poems, use the\n"
+                "legacy PDF generator:\n\n"
+                "  poetry-playground\n\n"
+                "Or import the PDF generator directly:\n\n"
+                "  from poetryplayground.pdf import ChaoticConcretePoemPDFGenerator\n"
+                "  generator = ChaoticConcretePoemPDFGenerator()\n"
+                "  generator.generate_pdf(input_words=['your', 'words'])"
+            )
 
         else:
             return f"Generator for '{procedure_id}' not yet implemented in TUI.\n\nUse the CLI interface for now:\n  poetry-playground"
