@@ -20,6 +20,8 @@ The original generativepoetry-py library is a comprehensive and well-architected
 
 **This fork (poetry-playground) is a personal experiment** and diverges from the original project's goals. For production use or a full-featured generative poetry toolkit, please use the original [generativepoetry-py](https://github.com/sndwch/generativepoetry-py) project instead.
 
+This fork has evolved to focus on intelligent ideation and creative scaffolding. It's a suite of "smart" tools designed to be a true creative partner, helping you explore thematic connections, analyze your own style, and build the "bones" of a poem.
+
 ## Quick Start
 
 ### Installation
@@ -50,15 +52,36 @@ poetry-playground
 poetry-playground-tui
 ```
 
-## Features
+## Core Features
 
-This playground includes tools for:
-- **Visual Poetry Generation** - Futurist poems, concrete poems, typographic experiments
-- **Creative Ideation** - Line seeds, metaphor generation, idea mining from classic literature
-- **Text Analysis** - Corpus analysis, word relationships, semantic exploration
-- **Experimental Transformations** - Markov chains, cut-ups, systematic poem transformation
+This playground is now organized around a few powerful, interconnected concepts:
 
-See the original [generativepoetry-py documentation](https://github.com/sndwch/generativepoetry-py) for detailed feature descriptions, as many features are inherited from that project.
+### 1. High-Level Creative Strategies 🧠
+
+* **Poem Scaffold Generator**: The "conductor" for your ideas. Give it a start concept ("rust") and an end concept ("forgiveness"), and it orchestrates all the other smart generators to build a complete, multi-stanza thematic scaffold for your poem.
+* **Bridge Two Concepts**: A focused strategy that finds the semantic path, key metaphors, and conceptual cloud to bridge two words.
+
+### 2. Personalized Generation & Analysis 🔬
+
+* **Personal Corpus Analyzer**: Ingests your own body of work to create a StyleFingerprint, analyzing your unique vocabulary (using Affinity Scoring), syntactic habits, and thematic tendencies.
+* **Personalized Line Seeds**: Uses your StyleFingerprint to generate new line seeds, pivots, and images in your own voice, matching your style based on a 70/30 quality-vs-style score.
+
+### 3. Conceptual & Semantic Tools 🗺️
+
+* **Definitional Finder**: An incredibly powerful "lateral search" tool. It finds words by searching the definitions of other words in the dictionary (e.g., searching "bean" finds "chocolate," "casserole," and "Carver").
+* **Conceptual Cloud**: A "poet's radar" that maps the 6-dimensional neighborhood of a word: Semantic, Contextual, Opposite, Phonetic, Imagery, and Rare (your "strange orbit" words).
+* **Semantic Pathfinders**: Tools to find the "semantic journey" between two words, with methods like "bezier" curves for more creative, non-linear paths.
+* **Equidistant Finder**: The "smart" version that finds words orthographically or phonetically between two anchors, now ranked by creative quality, not just frequency (so you get "fog" instead of "the").
+
+### 4. Literature Mining & Transformation 📚
+
+* **"Smart" Metaphor Generator**: Mines Project Gutenberg for poetic metaphors. This uses a robust pipeline (LoCC filtering, text cleaning, POS-first analysis, NER filtering, and semantic distance checks) to find actual poetic metaphors, not just literal chapter headings.
+* **Poetry Idea Generator**: Mines classic literature for 10 different categories of creative seeds (vivid imagery, philosophical fragments, etc.).
+* **Ship of Theseus Transformer**: Gradually transforms a poem by replacing words one by one, allowing you to see it evolve.
+
+### A Note on Visual Poetry
+
+This fork originally included several "chaotic" visual poetry generators (pdf.py, poemgen.py). As the project's focus has shifted entirely to intelligent, semantic, and structural generation, these legacy tools are no longer the primary goal. They are still present, but the core of the playground is now the "smart" engine for creative ideation.
 
 ## Requirements
 
