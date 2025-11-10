@@ -2,11 +2,10 @@ import random
 from typing import List, Optional, TypeVar
 
 import pronouncing
-from datamuse import datamuse
 
 from .cache import cached_api_call
+from .datamuse_api import get_datamuse_instance
 from .utils import (
-    filter_word_list,
     sort_by_rarity,
     too_similar,
     validate_str_or_list_of_str,
@@ -29,17 +28,18 @@ def clean_api_results(word_list, exclude_words=None, use_validator=True):
     if exclude_words is None:
         exclude_words = []
 
-    # First pass: basic filtering
-    filtered = filter_word_list(word_list, spellcheck=False, exclude_words=exclude_words)
-
-    # Second pass: enhanced validation
+    # Use centralized WordValidator for all validation
     if use_validator:
-        filtered = word_validator.clean_word_list(filtered, allow_rare=False)
+        filtered = word_validator.clean_word_list(word_list, allow_rare=False, exclude_words=exclude_words)
+    else:
+        # Even without validator, filter out excluded words
+        filtered = [w for w in word_list if w.lower() not in {e.lower() for e in exclude_words}]
 
     return filtered
 
 
-api = datamuse.Datamuse()
+# Centralized Datamuse API instance (singleton)
+api = get_datamuse_instance()
 str_or_list_of_str = TypeVar("str_or_list_of_str", str, List[str])
 
 
@@ -89,7 +89,7 @@ def rhymes(input_val: str_or_list_of_str, sample_size=None) -> List[str]:
     for input_word in input_words:
         # Use cached wrapper for CMU lookups
         cached_rhymes = _cached_pronouncing_rhymes(input_word)
-        rhyme_words.extend(filter_word_list(list(set(cached_rhymes))))
+        rhyme_words.extend(word_validator.clean_word_list(list(set(cached_rhymes)), allow_rare=False))
     return extract_sample(rhyme_words, sample_size=sample_size)
 
 
@@ -341,9 +341,8 @@ def phonetically_related_words(
         similar_words = similar_sounding_words(
             word, sample_size=sample_size, datamuse_api_max=datamuse_api_max
         )
-        # Apply enhanced filtering
-        similar_words = word_validator.clean_word_list(similar_words, allow_rare=False)
-        nonrhymes = filter_word_list(similar_words, exclude_words=exclude_words)
+        # Apply enhanced filtering with exclusions
+        nonrhymes = word_validator.clean_word_list(similar_words, allow_rare=False, exclude_words=exclude_words)
         results.extend(nonrhymes[:max_results_per_input_word])
     results = extract_sample(results, sample_size=sample_size)
     return results

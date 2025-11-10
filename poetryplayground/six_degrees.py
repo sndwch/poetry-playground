@@ -10,9 +10,14 @@ import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from datamuse import datamuse
+from rich.console import Console
 
+from .datamuse_api import get_datamuse_api
+from .logger import logger
 from .word_validator import WordValidator
+
+# Initialize Rich console for formatted output
+console = Console()
 
 
 @dataclass
@@ -53,7 +58,7 @@ class SixDegrees:
     """Bidirectional word exploration to find convergence paths"""
 
     def __init__(self, max_levels: int = 3, max_words_per_level: int = 8):
-        self.datamuse_api = datamuse.Datamuse()
+        self.datamuse_api = get_datamuse_api()
         self.word_validator = WordValidator()
         self.max_levels = max_levels
         self.max_words_per_level = max_words_per_level
@@ -68,7 +73,8 @@ class SixDegrees:
 
     def find_convergence(self, word_a: str, word_b: str) -> Optional[ConvergencePath]:
         """Find convergence path between two words"""
-        print(f"🔍 Exploring convergence between '{word_a}' and '{word_b}'...")
+        console.print(f"[cyan]🔍 Exploring convergence between[/cyan] [bold yellow]'{word_a}'[/bold yellow] [cyan]and[/cyan] [bold yellow]'{word_b}'[/bold yellow][cyan]...[/cyan]")
+        logger.info(f"Starting convergence search: {word_a} → {word_b}")
 
         # Initialize exploration trees
         tree_a = {0: [WordNode(word_a, 0)]}  # level -> nodes
@@ -80,7 +86,7 @@ class SixDegrees:
 
         # Explore level by level
         for level in range(1, self.max_levels + 1):
-            print(f"  Level {level}...")
+            console.print(f"  [dim]Level {level}...[/dim]")
 
             # Expand from A
             if level - 1 in tree_a:
@@ -100,7 +106,8 @@ class SixDegrees:
             convergence = self._check_convergence(words_from_a, words_from_b)
             if convergence:
                 convergence_word, node_a, node_b = convergence
-                print(f"  ✅ Convergence found at '{convergence_word}' (level {level})")
+                console.print(f"  [bold green]✅ Convergence found at[/bold green] [bold magenta]'{convergence_word}'[/bold magenta] [green](level {level})[/green]")
+                logger.info(f"Convergence found: {convergence_word} at level {level}")
 
                 # Reconstruct paths
                 path_a = self._reconstruct_path(node_a)
@@ -119,7 +126,8 @@ class SixDegrees:
             # Brief pause to avoid API rate limits
             time.sleep(0.5)
 
-        print(f"  ❌ No convergence found within {self.max_levels} levels")
+        console.print(f"  [bold red]❌ No convergence found within {self.max_levels} levels[/bold red]")
+        logger.warning(f"No convergence found within {self.max_levels} levels")
         return None
 
     def _expand_level(
@@ -149,7 +157,8 @@ class SixDegrees:
                     )
                     new_nodes.append(node)
 
-        print(f"    {direction}: Found {len(new_nodes)} new words")
+        console.print(f"    [dim]{direction}: Found {len(new_nodes)} new words[/dim]")
+        logger.debug(f"Direction {direction}: Found {len(new_nodes)} new words at level {level}")
         return new_nodes
 
     def _get_related_words(self, word: str) -> List[Tuple[str, str, float]]:
@@ -186,11 +195,10 @@ class SixDegrees:
 
                         all_related.append((word_result, rel_name, final_confidence))
 
-                # Small delay between API calls
-                time.sleep(0.2)
+                # No delay needed - centralized API has built-in caching
 
             except Exception as e:
-                print(f"    Warning: Error getting {rel_name} for '{word}': {e}")
+                logger.warning(f"Error getting {rel_name} for '{word}': {e}")
                 continue
 
         return all_related
@@ -331,7 +339,8 @@ class SixDegrees:
 
     def calculate_semantic_distance(self, word_a: str, word_b: str) -> Dict[str, Any]:
         """Calculate semantic distance between two words"""
-        print(f"🔢 Calculating semantic distance between '{word_a}' and '{word_b}'...")
+        console.print(f"[cyan]🔢 Calculating semantic distance between[/cyan] [bold yellow]'{word_a}'[/bold yellow] [cyan]and[/cyan] [bold yellow]'{word_b}'[/bold yellow][cyan]...[/cyan]")
+        logger.info(f"Calculating semantic distance: {word_a} → {word_b}")
 
         # Try to find convergence with extended search
         original_max_levels = self.max_levels
@@ -372,7 +381,8 @@ class SixDegrees:
         paths = []
 
         for attempt in range(num_attempts):
-            print(f"\n--- Attempt {attempt + 1} ---")
+            console.print(f"\n[bold cyan]--- Attempt {attempt + 1} ---[/bold cyan]")
+            logger.info(f"Attempt {attempt + 1} of {num_attempts}")
             path = self.find_convergence(word_a, word_b)
             if path:
                 paths.append(path)

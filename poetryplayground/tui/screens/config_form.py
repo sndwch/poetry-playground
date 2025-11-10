@@ -347,6 +347,127 @@ class ConfigFormScreen(Screen):
 
             return "\n".join(result_lines)
 
+        elif procedure_id == "semantic_path":
+            from poetryplayground.semantic_geodesic import find_semantic_path, get_semantic_space
+
+            start_word = config.get("start_word", "").strip()
+            end_word = config.get("end_word", "").strip()
+
+            if not start_word or not end_word:
+                return "Error: Both start and end words are required"
+
+            try:
+                steps = int(config.get("steps", 5))
+                if steps < 3:
+                    steps = 3
+            except ValueError:
+                steps = 5
+
+            try:
+                alternatives = int(config.get("alternatives", 3))
+                if alternatives < 1:
+                    alternatives = 1
+            except ValueError:
+                alternatives = 3
+
+            method = config.get("method", "linear").lower()
+            if method not in ["linear", "bezier", "shortest"]:
+                method = "linear"
+
+            try:
+                # Load semantic space (cached)
+                semantic_space = get_semantic_space()
+
+                # Find path
+                path = find_semantic_path(
+                    start_word, end_word,
+                    steps=steps,
+                    k=alternatives,
+                    method=method,
+                    semantic_space=semantic_space
+                )
+
+                # Format output
+                primary_path = path.get_primary_path()
+                result_lines = [
+                    f"Semantic Path ({method} method):",
+                    f"{' → '.join(primary_path)}",
+                    "",
+                    f"Quality Metrics:",
+                    f"  Smoothness: {path.smoothness_score:.3f} {'★' * int(path.smoothness_score * 5)}",
+                    f"  Deviation:  {path.deviation_score:.3f}",
+                    f"  Diversity:  {path.diversity_score:.3f}",
+                    "",
+                ]
+
+                # Add alternatives if k > 1
+                if alternatives > 1 and path.bridges:
+                    result_lines.append("Alternatives at each step:")
+                    for i, step in enumerate(path.bridges, 1):
+                        if step:
+                            alts = ", ".join([f"{b.word} ({b.similarity:.3f})" for b in step[:3]])
+                            result_lines.append(f"  Step {i}: {alts}")
+                    result_lines.append("")
+
+                return "\n".join(result_lines)
+
+            except Exception as e:
+                import traceback
+                return f"Error finding semantic path:\n{str(e)}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "conceptual_cloud":
+            from poetryplayground.conceptual_cloud import (
+                generate_conceptual_cloud,
+                format_as_rich,
+                format_as_json,
+                format_as_markdown,
+                format_as_simple,
+            )
+
+            center_word = config.get("center_word", "").strip()
+
+            if not center_word:
+                return "Error: Center word is required"
+
+            try:
+                k_per_cluster = int(config.get("k_per_cluster", 10))
+                if k_per_cluster < 1:
+                    k_per_cluster = 10
+            except ValueError:
+                k_per_cluster = 10
+
+            sections_input = config.get("sections", "all").strip()
+            if sections_input.lower() == "all" or not sections_input:
+                sections = None
+            else:
+                sections = [s.strip() for s in sections_input.split(",")]
+
+            output_format = config.get("output_format", "rich").strip().lower()
+            if output_format not in ["rich", "json", "markdown", "simple"]:
+                output_format = "rich"
+
+            try:
+                # Generate cloud
+                cloud = generate_conceptual_cloud(
+                    center_word=center_word,
+                    k_per_cluster=k_per_cluster,
+                    sections=sections,
+                )
+
+                # Format output based on user preference
+                if output_format == "json":
+                    return format_as_json(cloud)
+                elif output_format == "markdown":
+                    return format_as_markdown(cloud, show_scores=True)
+                elif output_format == "simple":
+                    return format_as_simple(cloud)
+                else:  # rich (default)
+                    return format_as_rich(cloud, show_scores=True)
+
+            except Exception as e:
+                import traceback
+                return f"Error generating conceptual cloud:\n{str(e)}\n\n{traceback.format_exc()}"
+
         else:
             return f"Generator for '{procedure_id}' not yet implemented in TUI.\n\nUse the CLI interface for now:\n  poetry-playground"
 

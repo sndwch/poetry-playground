@@ -13,10 +13,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from datamuse import datamuse
+from rich.console import Console
 
 from .lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
+from .logger import logger
 from .word_validator import WordValidator
+
+# Initialize Rich console for formatted output
+console = Console()
 
 
 @dataclass
@@ -45,8 +49,8 @@ class PoemTransformer:
     """Transforms poems through iterative Datamuse API replacements"""
 
     def __init__(self):
-        self.datamuse_api = datamuse.Datamuse()
         self.word_validator = WordValidator()
+        # Note: Datamuse API access is now centralized via lexigen.py functions
 
         # Words to avoid transforming (preserve poem structure)
         self.preserve_words = {
@@ -134,10 +138,11 @@ class PoemTransformer:
         transformations = []
         current_poem = poem_text.strip()
 
-        print(f"Starting Ship of Theseus transformation with {num_passes} passes...")
+        console.print(f"[cyan]🔄 Starting Ship of Theseus transformation with[/cyan] [bold yellow]{num_passes}[/bold yellow] [cyan]passes...[/cyan]")
+        logger.info(f"Starting transformation with {num_passes} passes")
 
         for pass_num in range(1, num_passes + 1):
-            print(f"\nPass {pass_num}/{num_passes}...")
+            console.print(f"\n[bold cyan]Pass {pass_num}/{num_passes}...[/bold cyan]")
 
             transformation = self._single_transformation_pass(
                 current_poem, pass_num, words_per_pass
@@ -149,12 +154,14 @@ class PoemTransformer:
 
                 # Show progress
                 changed_words = len(transformation.steps)
-                print(f"  Changed {changed_words} words in this pass")
+                console.print(f"  [green]✓ Changed {changed_words} words in this pass[/green]")
+                logger.info(f"Pass {pass_num}: Changed {changed_words} words")
 
                 # Brief pause to avoid API rate limits
                 time.sleep(0.5)
             else:
-                print(f"  No changes made in pass {pass_num}")
+                console.print(f"  [yellow]⚠️  No changes made in pass {pass_num}[/yellow]")
+                logger.warning(f"No changes made in pass {pass_num}")
                 break
 
         return transformations
@@ -272,7 +279,7 @@ class PoemTransformer:
                 return random.choice(valid_replacements)
 
         except Exception as e:
-            print(f"Error getting replacement for '{word}': {e}")
+            logger.warning(f"Error getting replacement for '{word}': {e}")
 
         return None
 

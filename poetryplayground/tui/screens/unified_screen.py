@@ -191,6 +191,8 @@ class UnifiedTUIScreen(Screen):
         ),
         ("fragments", "Resonant Fragment Miner", "Extract poetic sentence fragments", "Ideation"),
         ("equidistant", "Equidistant Word Finder", "Find words bridging two anchors", "Ideation"),
+        ("semantic_path", "Semantic Geodesic Finder", "Find transitional paths through meaning-space", "Ideation"),
+        ("conceptual_cloud", "Conceptual Cloud Generator", "Multi-dimensional word associations", "Ideation"),
         # Syllabic Forms
         ("haiku", "Haiku Generator", "5-7-5 syllable haiku with templates", "Forms"),
         ("tanka", "Tanka Generator", "5-7-5-7-7 syllable tanka", "Forms"),
@@ -247,6 +249,27 @@ class UnifiedTUIScreen(Screen):
                 ("word_b", "Second anchor word", ""),
                 ("mode", "Mode (orth/phono)", "orth"),
                 ("window", "Window (distance tolerance)", "0"),
+            ],
+        },
+        "semantic_path": {
+            "name": "Semantic Geodesic Finder",
+            "description": "Find semantic paths between words through meaning-space",
+            "inputs": [
+                ("start_word", "Start word", ""),
+                ("end_word", "End word", ""),
+                ("steps", "Number of steps", "5"),
+                ("alternatives", "Alternatives per step", "3"),
+                ("method", "Method (linear/bezier/shortest)", "linear"),
+            ],
+        },
+        "conceptual_cloud": {
+            "name": "Conceptual Cloud Generator",
+            "description": "Generate multi-dimensional word associations (poet's radar)",
+            "inputs": [
+                ("center_word", "Center word or phrase", ""),
+                ("k_per_cluster", "Words per cluster", "10"),
+                ("sections", "Sections (all or comma-separated: semantic,contextual,opposite,phonetic,imagery,rare)", "all"),
+                ("output_format", "Format (rich/json/markdown/simple)", "rich"),
             ],
         },
     }

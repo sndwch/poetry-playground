@@ -15,11 +15,15 @@ from typing import Dict, List, Optional, Tuple
 
 import nltk
 import spacy
-from datamuse import datamuse
+from rich.console import Console
 from wordfreq import word_frequency
 
 from .lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
+from .logger import logger
 from .word_validator import WordValidator
+
+# Initialize Rich console for formatted output
+console = Console()
 
 
 @dataclass
@@ -123,17 +127,19 @@ class PersonalCorpusAnalyzer:
         try:
             self.nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
         except OSError:
-            print("Warning: spaCy model not found. Some analysis features will be limited.")
+            console.print("[yellow]⚠️  Warning: spaCy model not found. Some analysis features will be limited.[/yellow]")
+            logger.warning("spaCy model not found. Analysis features limited.")
             self.nlp = None
 
         try:
             nltk.data.find("tokenizers/punkt")
         except LookupError:
-            print("Downloading NLTK punkt tokenizer...")
+            console.print("[cyan]📦 Downloading NLTK punkt tokenizer...[/cyan]")
+            logger.info("Downloading NLTK punkt tokenizer")
             nltk.download("punkt")
 
         self.word_validator = WordValidator()
-        self.datamuse_api = datamuse.Datamuse()
+        # Note: Datamuse API access is now centralized via lexigen.py functions
 
         # Extended stop words including function words and common contractions
         self.stop_words = {
@@ -321,7 +327,7 @@ class PersonalCorpusAnalyzer:
                             {"title": file_path.stem, "content": content, "path": str(file_path)}
                         )
             except Exception as e:
-                print(f"Warning: Could not read {file_path}: {e}")
+                logger.warning(f"Could not read {file_path}: {e}")
                 continue
 
         if not poems:
@@ -1005,7 +1011,8 @@ class PersonalCorpusAnalyzer:
 
     def _generate_vocabulary_expansions(self, fingerprint: StyleFingerprint):
         """Generate vocabulary expansions using Datamuse API for signature words"""
-        print("Generating vocabulary expansions...")
+        console.print("[cyan]🔄 Generating vocabulary expansions...[/cyan]")
+        logger.info("Generating vocabulary expansions for signature words")
 
         # Take top signature words for expansion
         top_words = [word for word, _ in fingerprint.vocabulary.signature_words[:12]]
@@ -1037,12 +1044,13 @@ class PersonalCorpusAnalyzer:
                     fingerprint.vocabulary_expansions.append(expansion)
 
             except Exception as e:
-                print(f"Could not expand '{word}': {e}")
+                logger.warning(f"Could not expand '{word}': {e}")
                 continue
 
     def _generate_inspired_stanzas(self, all_lines: List[str], fingerprint: StyleFingerprint):
         """Generate sample stanzas using vocabulary expansions"""
-        print("Generating inspired stanzas...")
+        console.print("[cyan]✨ Generating inspired stanzas...[/cyan]")
+        logger.info("Generating inspired stanzas from original lines")
 
         if not fingerprint.vocabulary_expansions:
             return
@@ -1063,7 +1071,7 @@ class PersonalCorpusAnalyzer:
                 if stanza:
                     fingerprint.inspired_stanzas.append(stanza)
             except Exception as e:
-                print(f"Could not generate {inspiration_type} stanza: {e}")
+                logger.warning(f"Could not generate {inspiration_type} stanza: {e}")
 
     def _create_inspired_stanza(
         self, source_lines: List[str], fingerprint: StyleFingerprint, inspiration_type: str

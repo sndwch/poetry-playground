@@ -1083,6 +1083,218 @@ def six_degrees_action():
             break
 
 
+def semantic_geodesic_action():
+    """Find semantic paths between words"""
+    from poetryplayground.semantic_geodesic import find_semantic_path, get_semantic_space
+    from rich.panel import Panel
+    from rich.table import Table
+
+    console.print("\n[bold cyan]🌉 SEMANTIC GEODESIC FINDER[/bold cyan]")
+    console.print("=" * 60)
+    console.print("\n[dim]Draw a straight line through meaning-space and find the words along that path.[/dim]")
+    console.print("[dim]Explore gradual transformations: fire → flame → heat → warmth → cool → frost → ice[/dim]\n")
+
+    # Initialize semantic space (with progress indicator)
+    with console.status("[bold green]Loading semantic space (this may take 10-30 seconds)...", spinner="dots"):
+        try:
+            semantic_space = get_semantic_space()
+        except Exception as e:
+            console.print(f"\n[bold red]Error loading semantic space:[/bold red] {e}")
+            console.print("\n[yellow]Tip: Make sure you have en_core_web_lg installed:[/yellow]")
+            console.print("  python -m spacy download en_core_web_lg")
+            return
+
+    console.print("[green]✓[/green] Semantic space loaded!\n")
+
+    while True:
+        console.print("[bold]─[/bold]" * 40)
+        word_a = input("Enter start word (or 'exit' to return): ").strip()
+        if word_a.lower() == "exit":
+            break
+
+        word_b = input("Enter end word: ").strip()
+        if not word_a or not word_b:
+            console.print("[yellow]Please enter both words.[/yellow]")
+            continue
+
+        # Get parameters
+        steps_input = input("Steps (default 5): ").strip()
+        steps = int(steps_input) if steps_input else 5
+
+        k_input = input("Alternatives per step (default 3): ").strip()
+        k = int(k_input) if k_input else 3
+
+        method_input = input("Method - linear/bezier/shortest (default linear): ").strip()
+        method = method_input.lower() if method_input in ("linear", "bezier", "shortest") else "linear"
+
+        console.print(f"\n[bold green]Finding {method} path from '{word_a}' to '{word_b}'...[/bold green]")
+
+        try:
+            path = find_semantic_path(
+                word_a, word_b,
+                steps=steps,
+                k=k,
+                method=method,
+                semantic_space=semantic_space
+            )
+
+            # Display primary path
+            primary_path = path.get_primary_path()
+            console.print(f"\n[bold cyan]Primary Path:[/bold cyan] {' → '.join(primary_path)}\n")
+
+            # Display alternatives table
+            if k > 1 and path.bridges:
+                table = Table(title="Alternatives at Each Step", show_header=True)
+                table.add_column("Step", style="cyan")
+                table.add_column("Position", style="dim")
+                table.add_column("Alternatives", style="yellow")
+
+                for i, step in enumerate(path.bridges, 1):
+                    if step:
+                        alts = ", ".join([f"{b.word} ({b.similarity:.3f})" for b in step[:3]])
+                        pos = f"{step[0].position:.2f}"
+                        table.add_row(str(i), pos, alts)
+
+                console.print(table)
+
+            # Display quality metrics
+            metrics_panel = Panel(
+                f"[cyan]Smoothness:[/cyan] {path.smoothness_score:.3f} "
+                f"{'★' * int(path.smoothness_score * 5)}\n"
+                f"[cyan]Deviation:[/cyan] {path.deviation_score:.3f}\n"
+                f"[cyan]Diversity:[/cyan] {path.diversity_score:.3f}",
+                title="[bold]Quality Metrics[/bold]",
+                border_style="green"
+            )
+            console.print(f"\n{metrics_panel}")
+
+            # Suggestions
+            console.print("\n[dim]💡 Try different parameters:[/dim]")
+            console.print(f"[dim]  • More steps: --steps 10 for finer gradations[/dim]")
+            console.print(f"[dim]  • Bezier curve: --method bezier for curved paths[/dim]")
+            console.print(f"[dim]  • Shortest path: --method shortest for graph-based paths[/dim]")
+
+        except ValueError as e:
+            console.print(f"\n[bold red]Invalid input:[/bold red] {e}")
+        except Exception as e:
+            console.print(f"\n[bold red]Error finding path:[/bold red] {e}")
+            import traceback
+            traceback.print_exc()
+
+        console.print("\n[dim]Try another pair? (Enter to continue, 'exit' to return)[/dim]")
+        if input().strip().lower() == "exit":
+            break
+
+
+def conceptual_cloud_action():
+    """Generate conceptual cloud of word associations"""
+    from poetryplayground.conceptual_cloud import (
+        generate_conceptual_cloud,
+        format_as_rich,
+        format_as_json,
+        format_as_markdown,
+        format_as_simple,
+        ClusterType,
+    )
+    from rich.panel import Panel
+
+    console.print("\n[bold cyan]🌥️  CONCEPTUAL CLOUD GENERATOR[/bold cyan]")
+    console.print("=" * 60)
+    console.print("\n[dim]Multi-dimensional word associations - a poet's radar[/dim]")
+    console.print("[dim]Generates 6 types of clusters: semantic, contextual, opposite, phonetic, imagery, rare[/dim]\n")
+
+    while True:
+        console.print("[bold]─[/bold]" * 40)
+        center_word = input("Enter center word or phrase (or 'exit' to return): ").strip()
+        if center_word.lower() == "exit":
+            break
+
+        if not center_word:
+            console.print("[yellow]Please enter a word or phrase.[/yellow]")
+            continue
+
+        # Get parameters
+        k_input = input("Words per cluster (default 10): ").strip()
+        k = int(k_input) if k_input else 10
+
+        sections_input = input(
+            "Sections to include (comma-separated or 'all', default all):\n"
+            "  [dim]Options: semantic, contextual, opposite, phonetic, imagery, rare[/dim]\n"
+            "  > "
+        ).strip()
+
+        if sections_input.lower() == "all" or not sections_input:
+            sections = None
+        else:
+            sections = [s.strip() for s in sections_input.split(",")]
+
+        format_input = input(
+            "Output format (rich/json/markdown/simple, default rich): "
+        ).strip().lower()
+        output_format = format_input if format_input in ("rich", "json", "markdown", "simple") else "rich"
+
+        console.print(f"\n[bold green]Generating conceptual cloud for '{center_word}'...[/bold green]")
+
+        try:
+            # Generate cloud
+            cloud = generate_conceptual_cloud(
+                center_word=center_word,
+                k_per_cluster=k,
+                sections=sections,
+            )
+
+            console.print(f"\n[green]✓[/green] Generated {cloud.total_terms} terms across {len(cloud.clusters)} clusters\n")
+
+            # Format and display
+            if output_format == "rich":
+                output = format_as_rich(cloud, show_scores=True)
+                console.print(output)
+            elif output_format == "json":
+                output = format_as_json(cloud)
+                console.print(output)
+            elif output_format == "markdown":
+                output = format_as_markdown(cloud, show_scores=True)
+                console.print(output)
+            else:  # simple
+                output = format_as_simple(cloud)
+                console.print(output)
+
+            # Offer to save
+            save_input = input("\nSave to file? (y/N): ").strip().lower()
+            if save_input == "y":
+                from datetime import datetime
+                from pathlib import Path
+
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                safe_name = "".join(c if c.isalnum() or c in (" ", "-", "_") else "_" for c in center_word.lower()).replace(" ", "_")
+                ext = ".json" if output_format == "json" else ".md" if output_format == "markdown" else ".txt"
+                filename = f"cloud_{safe_name}_{timestamp}{ext}"
+
+                output_dir = Path("output")
+                output_dir.mkdir(exist_ok=True)
+                file_path = output_dir / filename
+
+                file_path.write_text(output, encoding="utf-8")
+                console.print(f"[green]✓[/green] Saved to {file_path}")
+
+            # Usage tips
+            console.print("\n[dim]💡 Tips:[/dim]")
+            console.print("[dim]  • Try selecting specific sections for focused exploration[/dim]")
+            console.print("[dim]  • Use JSON output for integration with other tools[/dim]")
+            console.print("[dim]  • The 'rare' cluster finds unusual but connected words[/dim]")
+
+        except ValueError as e:
+            console.print(f"\n[bold red]Invalid input:[/bold red] {e}")
+        except Exception as e:
+            console.print(f"\n[bold red]Error generating cloud:[/bold red] {e}")
+            import traceback
+            traceback.print_exc()
+
+        console.print("\n[dim]Try another word? (Enter to continue, 'exit' to return)[/dim]")
+        if input().strip().lower() == "exit":
+            break
+
+
 def causal_poetry_action():
     """Mine resonant fragments from classic literature"""
     miner = ResonantFragmentMiner()
@@ -1530,6 +1742,12 @@ def main():
     equidistant_item = FunctionItem(
         "🎯 Equidistant Word Finder (Bridge Discovery)", equidistant_action
     )
+    semantic_geodesic_item = FunctionItem(
+        "🌉 Semantic Geodesic Finder (Transitional Paths)", semantic_geodesic_action
+    )
+    conceptual_cloud_item = FunctionItem(
+        "🌥️  Conceptual Cloud Generator (Word Associations)", conceptual_cloud_action
+    )
 
     # Syllable-constrained form generators
     haiku_item = FunctionItem("🌸 Generate Haiku (5-7-5 syllables)", haiku_action)
@@ -1553,6 +1771,8 @@ def main():
     menu.append_item(six_degrees_item)
     menu.append_item(causal_poetry_item)
     menu.append_item(equidistant_item)
+    menu.append_item(semantic_geodesic_item)
+    menu.append_item(conceptual_cloud_item)
     menu.append_item(haiku_item)
     menu.append_item(tanka_item)
     menu.append_item(senryu_item)

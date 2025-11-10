@@ -2,7 +2,23 @@
 
 import nltk
 from nltk.corpus import brown, words
+from typing import Dict, Optional
 from wordfreq import word_frequency
+
+# Optional imports for advanced features
+try:
+    import spacy
+    SPACY_AVAILABLE = True
+except ImportError:
+    SPACY_AVAILABLE = False
+
+try:
+    from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+    VADER_AVAILABLE = True
+except ImportError:
+    VADER_AVAILABLE = False
+
+from .logger import logger
 
 # Try to ensure NLTK data is available
 try:
@@ -25,7 +41,7 @@ class WordValidator:
     """Validate words to ensure they are real English words."""
 
     def __init__(self):
-        """Initialize word validator with dictionaries."""
+        """Initialize word validator with dictionaries and NLP tools."""
         # Load English word lists
         try:
             self._nltk_words = {word.lower() for word in words.words()}
@@ -39,6 +55,24 @@ class WordValidator:
             }
         except Exception:
             self._brown_words = set()
+
+        # Initialize spaCy for NER (if available)
+        self.nlp = None
+        if SPACY_AVAILABLE:
+            try:
+                self.nlp = spacy.load("en_core_web_sm")
+                logger.info("WordValidator: spaCy NER enabled")
+            except Exception as e:
+                logger.warning(f"WordValidator: Could not load spaCy model: {e}")
+
+        # Initialize VADER sentiment analyzer (if available)
+        self.sentiment_analyzer = None
+        if VADER_AVAILABLE:
+            try:
+                self.sentiment_analyzer = SentimentIntensityAnalyzer()
+                logger.info("WordValidator: VADER sentiment analysis enabled")
+            except Exception as e:
+                logger.warning(f"WordValidator: Could not initialize VADER: {e}")
 
         # Common proper nouns and names to exclude
         self._proper_nouns = {
@@ -170,30 +204,65 @@ class WordValidator:
         # Additional check: must start with a common letter pattern
         return word_lower[:2] not in ["xz", "qx", "qz", "zx", "vx"]
 
-    def is_proper_noun(self, word: str) -> bool:
-        """Check if word is likely a proper noun."""
-        # Check if in our known proper nouns list
+    def is_proper_noun(self, word: str, use_nlp: bool = True) -> bool:
+        """Check if word is likely a proper noun.
+
+        Args:
+            word: Word to check
+            use_nlp: Whether to use spaCy NER (if available)
+
+        Returns:
+            True if word appears to be a proper noun
+        """
+        # Check if in our known proper nouns list (fallback)
         if word.lower() in self._proper_nouns:
             return True
 
-        # Check if it's capitalized and not in dictionary
+        # Use spaCy NER if available and requested
+        if use_nlp and self.nlp:
+            try:
+                doc = self.nlp(word)
+                if len(doc) > 0:
+                    # Check if it's tagged as a named entity
+                    # Common entity types: PERSON, GPE (Geo-Political Entity),
+                    # ORG, LOC, FAC, NORP, EVENT
+                    ent_type = doc[0].ent_type_
+                    if ent_type in ['PERSON', 'GPE', 'ORG', 'LOC', 'FAC', 'NORP', 'EVENT']:
+                        return True
+
+                    # Also check POS tag
+                    if doc[0].pos_ == 'PROPN':  # Proper noun
+                        return True
+            except Exception as e:
+                logger.debug(f"NER check failed for '{word}': {e}")
+
+        # Fallback: check if it's capitalized and not in dictionary
         return bool(word[0].isupper() and word.lower() not in self._nltk_words)
 
-    def clean_word_list(self, words: list, allow_rare: bool = False) -> list:
+    def clean_word_list(self, words: list, allow_rare: bool = False, exclude_words: list = None) -> list:
         """
         Clean a list of words, removing invalid ones.
 
         Args:
             words: List of words to clean
             allow_rare: Whether to allow rare words
+            exclude_words: Optional list of words to exclude
 
         Returns:
             List of valid English words
         """
+        if exclude_words is None:
+            exclude_words = []
+
+        # Normalize exclude list to lowercase
+        exclude_set = {w.lower() for w in exclude_words if isinstance(w, str)}
+
         cleaned = []
         for word in words:
-            if isinstance(word, str) and self.is_valid_english_word(word, allow_rare):
-                cleaned.append(word.lower())
+            if isinstance(word, str):
+                word_lower = word.lower()
+                if word_lower not in exclude_set and self.is_valid_english_word(word, allow_rare):
+                    cleaned.append(word_lower)
         return cleaned
 
     def get_word_quality_score(self, word: str) -> float:
@@ -231,6 +300,83 @@ class WordValidator:
             score = min(1.0, score * 1.2)
 
         return score
+
+    def get_sentiment(self, word: str) -> Dict[str, float]:
+        """Get sentiment scores for a word.
+
+        Args:
+            word: Word to analyze
+
+        Returns:
+            Dictionary with sentiment scores:
+            - pos: positive score (0-1)
+            - neg: negative score (0-1)
+            - neu: neutral score (0-1)
+            - compound: compound score (-1 to 1)
+        """
+        if not self.sentiment_analyzer:
+            # Return neutral if VADER not available
+            return {"pos": 0.0, "neg": 0.0, "neu": 1.0, "compound": 0.0}
+
+        try:
+            scores = self.sentiment_analyzer.polarity_scores(word)
+            return scores
+        except Exception as e:
+            logger.debug(f"Sentiment analysis failed for '{word}': {e}")
+            return {"pos": 0.0, "neg": 0.0, "neu": 1.0, "compound": 0.0}
+
+    def has_positive_sentiment(self, word: str, threshold: float = 0.1) -> bool:
+        """Check if word has positive sentiment.
+
+        Args:
+            word: Word to check
+            threshold: Minimum compound score to consider positive
+
+        Returns:
+            True if word is positively valenced
+        """
+        sentiment = self.get_sentiment(word)
+        return sentiment["compound"] > threshold
+
+    def has_negative_sentiment(self, word: str, threshold: float = -0.1) -> bool:
+        """Check if word has negative sentiment.
+
+        Args:
+            word: Word to check
+            threshold: Maximum compound score to consider negative
+
+        Returns:
+            True if word is negatively valenced
+        """
+        sentiment = self.get_sentiment(word)
+        return sentiment["compound"] < threshold
+
+    def filter_by_sentiment(self, words: list, emotional_tone: str) -> list:
+        """Filter words by emotional tone.
+
+        Args:
+            words: List of words to filter
+            emotional_tone: Desired tone ("positive", "negative", "neutral", "any")
+
+        Returns:
+            Filtered list of words matching the tone
+        """
+        if emotional_tone == "any":
+            return words
+
+        filtered = []
+        for word in words:
+            sentiment = self.get_sentiment(word)
+            compound = sentiment["compound"]
+
+            if emotional_tone == "positive" and compound > 0.1:
+                filtered.append(word)
+            elif emotional_tone == "negative" and compound < -0.1:
+                filtered.append(word)
+            elif emotional_tone == "neutral" and -0.1 <= compound <= 0.1:
+                filtered.append(word)
+
+        return filtered
 
 
 # Global validator instance
