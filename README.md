@@ -20,7 +20,7 @@ This project has evolved to focus on intelligent ideation and creative scaffoldi
 
 ```bash
 # Clone this repository
-git clone https://github.com/jparker/poetry-playground.git
+git clone https://github.com/sndwch/poetry-playground.git
 cd poetry-playground
 pip install -r requirements.txt
 
@@ -126,7 +126,6 @@ pre-commit install
 ## Acknowledgements
 
 ### Direct Attribution
-- **[@sndwch](https://github.com/sndwch)** - Author of the generativepoetry-py fork this project is based on
 - **[Corey Bobco](https://github.com/coreybobco)** - Original creator of generativepoetry-py
 
 ### Technical & Creative Influences
@@ -151,6 +150,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Links
 
-- **Original Project**: [generativepoetry-py by sndwch](https://github.com/sndwch/generativepoetry-py)
-- **Original Original Project**: [generativepoetry-py by coreybobco](https://github.com/coreybobco/generativepoetry-py)
-- **This Playground**: [poetry-playground](https://github.com/jparker/poetry-playground)
+- **Original Project**: [generativepoetry-py by coreybobco](https://github.com/coreybobco/generativepoetry-py)
