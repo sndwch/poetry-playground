@@ -61,13 +61,13 @@ This playground is now organized around a few powerful, interconnected concepts:
 ### 3. Conceptual & Semantic Tools 🗺️
 
 * **Definitional Finder**: An incredibly powerful "lateral search" tool. It finds words by searching the definitions of other words in the dictionary (e.g., searching "bean" finds "chocolate," "casserole," and "Carver").
-* **Conceptual Cloud**: A "poet's radar" that maps the 6-dimensional neighborhood of a word: Semantic, Contextual, Opposite, Phonetic, Imagery, and Rare (your "strange orbit" words).
+* **Conceptual Cloud**: A "poet's radar" that maps the 6-dimensional neighborhood of a word: Semantic, Contextual, Opposite, Phonetic, Imagery, and Rare ("strange orbit" words).
 * **Semantic Pathfinders**: Tools to find the "semantic journey" between two words, with methods like "bezier" curves for more creative, non-linear paths.
-* **Equidistant Finder**: The "smart" version that finds words orthographically or phonetically between two anchors, now ranked by creative quality, not just frequency (so you get "fog" instead of "the").
+* **Equidistant Finder**: Finds words orthographically or phonetically between two anchors, ranked by creative quality.
 
 ### 4. Literature Mining & Transformation 📚
 
-* **"Smart" Metaphor Generator**: Mines Project Gutenberg for poetic metaphors. This uses a robust pipeline (LoCC filtering, text cleaning, POS-first analysis, NER filtering, and semantic distance checks) to find actual poetic metaphors, not just literal chapter headings.
+* **Metaphor Generator**: Mines Project Gutenberg for poetic metaphors. This uses a robust pipeline (LoCC filtering, text cleaning, POS-first analysis, NER filtering, and semantic distance checks) to find actual poetic metaphors.
 * **Poetry Idea Generator**: Mines classic literature for 10 different categories of creative seeds (vivid imagery, philosophical fragments, etc.).
 * **Ship of Theseus Transformer**: Gradually transforms a poem by replacing words one by one, allowing you to see it evolve.
 
