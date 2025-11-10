@@ -8,19 +8,11 @@ This is a personal experimental fork exploring various approaches to generative 
 
 ### Attribution
 
-This project is forked from [generativepoetry-py](https://github.com/sndwch/generativepoetry-py) by [@sndwch](https://github.com/sndwch), which itself was originally created by [Corey Bobco](https://github.com/coreybobco).
+This project began as a fork of [generativepoetry-py](https://github.com/coreybobco/generativepoetry-py) by [@sndwch](https://github.com/coreybobco).
 
-The original generativepoetry-py library is a comprehensive and well-architected tool for procedurally generating visual concrete poems. That project has evolved into a feature-rich library with:
-- Multiple visual poem generation procedures
-- Creative writing and ideation tools
-- Poetry corpus analysis capabilities
-- A modern configuration system
-- Both CLI and TUI interfaces
-- Extensive documentation and examples
+**This repo (poetry-playground) diverges from the original project's goals.**
 
-**This fork (poetry-playground) is a personal experiment** and diverges from the original project's goals. For production use or a full-featured generative poetry toolkit, please use the original [generativepoetry-py](https://github.com/sndwch/generativepoetry-py) project instead.
-
-This fork has evolved to focus on intelligent ideation and creative scaffolding. It's a suite of "smart" tools designed to be a true creative partner, helping you explore thematic connections, analyze your own style, and build the "bones" of a poem.
+This project has evolved to focus on intelligent ideation and creative scaffolding. It's a suite of "smart" tools designed to be a true creative partner, helping you explore thematic connections, analyze your own style, and build the "bones" of a poem.
 
 ## Quick Start
 
