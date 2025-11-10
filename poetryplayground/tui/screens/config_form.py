@@ -342,7 +342,9 @@ class ConfigFormScreen(Screen):
             result = []
             for i, seed in enumerate(seeds, 1):
                 result.append(f"{i}. [{seed.seed_type.value}] {seed.text}")
-                result.append(f"   Quality: {seed.quality_score:.2f}, Momentum: {seed.momentum:.2f}")
+                result.append(
+                    f"   Quality: {seed.quality_score:.2f}, Momentum: {seed.momentum:.2f}"
+                )
                 if seed.notes:
                     result.append(f"   Note: {seed.notes}")
 
@@ -456,11 +458,12 @@ class ConfigFormScreen(Screen):
 
                 # Find path
                 path = find_semantic_path(
-                    start_word, end_word,
+                    start_word,
+                    end_word,
                     steps=steps,
                     k=alternatives,
                     method=method,
-                    semantic_space=semantic_space
+                    semantic_space=semantic_space,
                 )
 
                 # Format output
@@ -489,6 +492,7 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
+
                 return f"Error finding semantic path:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "conceptual_cloud":
@@ -542,6 +546,7 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
+
                 return f"Error generating conceptual cloud:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "corpus":
@@ -584,6 +589,7 @@ class ConfigFormScreen(Screen):
                 return f"Error: Directory not found: {directory}\n\nPlease check the path and try again."
             except Exception as e:
                 import traceback
+
                 return f"Error during corpus analysis:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "theseus":
@@ -602,7 +608,11 @@ class ConfigFormScreen(Screen):
                 steps = 5
 
             preserve_pos = config.get("preserve_pos", "yes").lower() in ["yes", "true", "1"]
-            preserve_syllables = config.get("preserve_syllables", "yes").lower() in ["yes", "true", "1"]
+            preserve_syllables = config.get("preserve_syllables", "yes").lower() in [
+                "yes",
+                "true",
+                "1",
+            ]
 
             try:
                 # Initialize transformer
@@ -638,6 +648,7 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
+
                 return f"Error during transformation:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "sixdegrees":
@@ -669,6 +680,7 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
+
                 return f"Error during convergence search:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "futurist":
@@ -711,6 +723,7 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
+
                 return f"Error generating futurist poem:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "markov":
@@ -740,6 +753,7 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
+
                 return f"Error generating markov poem:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "puzzle":
@@ -762,6 +776,7 @@ class ConfigFormScreen(Screen):
 
             except Exception as e:
                 import traceback
+
                 return f"Error generating puzzle poem:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id in ["chaotic", "charsoup", "wordsoup"]:

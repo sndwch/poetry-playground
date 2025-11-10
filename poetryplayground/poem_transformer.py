@@ -138,7 +138,9 @@ class PoemTransformer:
         transformations = []
         current_poem = poem_text.strip()
 
-        console.print(f"[cyan]🔄 Starting Ship of Theseus transformation with[/cyan] [bold yellow]{num_passes}[/bold yellow] [cyan]passes...[/cyan]")
+        console.print(
+            f"[cyan]🔄 Starting Ship of Theseus transformation with[/cyan] [bold yellow]{num_passes}[/bold yellow] [cyan]passes...[/cyan]"
+        )
         logger.info(f"Starting transformation with {num_passes} passes")
 
         for pass_num in range(1, num_passes + 1):

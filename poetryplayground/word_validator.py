@@ -9,12 +9,14 @@ from wordfreq import word_frequency
 # Optional imports for advanced features
 try:
     import spacy
+
     SPACY_AVAILABLE = True
 except ImportError:
     SPACY_AVAILABLE = False
 
 try:
     from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+
     VADER_AVAILABLE = True
 except ImportError:
     VADER_AVAILABLE = False
@@ -24,13 +26,16 @@ from .logger import logger
 # Lazy import to avoid circular dependencies
 _quality_scorer = None
 
+
 def _get_quality_scorer():
     """Lazy import and cache quality scorer."""
     global _quality_scorer
     if _quality_scorer is None:
         from .quality_scorer import get_quality_scorer
+
         _quality_scorer = get_quality_scorer()
     return _quality_scorer
+
 
 # Try to ensure NLTK data is available
 try:
@@ -239,11 +244,11 @@ class WordValidator:
                     # Common entity types: PERSON, GPE (Geo-Political Entity),
                     # ORG, LOC, FAC, NORP, EVENT
                     ent_type = doc[0].ent_type_
-                    if ent_type in ['PERSON', 'GPE', 'ORG', 'LOC', 'FAC', 'NORP', 'EVENT']:
+                    if ent_type in ["PERSON", "GPE", "ORG", "LOC", "FAC", "NORP", "EVENT"]:
                         return True
 
                     # Also check POS tag
-                    if doc[0].pos_ == 'PROPN':  # Proper noun
+                    if doc[0].pos_ == "PROPN":  # Proper noun
                         return True
             except Exception as e:
                 logger.debug(f"NER check failed for '{word}': {e}")
@@ -251,7 +256,9 @@ class WordValidator:
         # Fallback: check if it's capitalized and not in dictionary
         return bool(word[0].isupper() and word.lower() not in self._nltk_words)
 
-    def clean_word_list(self, words: list, allow_rare: bool = False, exclude_words: Optional[list] = None) -> list:
+    def clean_word_list(
+        self, words: list, allow_rare: bool = False, exclude_words: Optional[list] = None
+    ) -> list:
         """
         Clean a list of words, removing invalid ones.
 
@@ -398,7 +405,11 @@ class WordValidator:
             sentiment = self.get_sentiment(word)
             compound = sentiment["compound"]
 
-            if (emotional_tone == "positive" and compound > 0.1) or (emotional_tone == "negative" and compound < -0.1) or (emotional_tone == "neutral" and -0.1 <= compound <= 0.1):
+            if (
+                (emotional_tone == "positive" and compound > 0.1)
+                or (emotional_tone == "negative" and compound < -0.1)
+                or (emotional_tone == "neutral" and -0.1 <= compound <= 0.1)
+            ):
                 filtered.append(word)
 
         return filtered

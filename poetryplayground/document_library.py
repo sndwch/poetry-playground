@@ -164,7 +164,7 @@ class DocumentLibrary:
         Returns:
             Tuple of (title, author)
         """
-        lines = text.split('\n')[:50]  # Check first 50 lines
+        lines = text.split("\n")[:50]  # Check first 50 lines
 
         title = "Unknown"
         author = "Unknown"
@@ -173,23 +173,23 @@ class DocumentLibrary:
             line = line.strip()
 
             # Look for title patterns
-            if 'Title:' in line:
-                title = line.split('Title:', 1)[1].strip()
+            if "Title:" in line:
+                title = line.split("Title:", 1)[1].strip()
             elif (
                 (not title or title == "Unknown")
                 and line
                 and len(line) > 3
                 and i < 5
-                and not any(x in line.lower() for x in ['project gutenberg', 'ebook', 'copyright'])
+                and not any(x in line.lower() for x in ["project gutenberg", "ebook", "copyright"])
             ):
                 # Sometimes title is just on the first non-empty line
                 title = line
 
             # Look for author patterns
-            if 'Author:' in line:
-                author = line.split('Author:', 1)[1].strip()
-            elif 'by ' in line.lower() and len(line) < 100:
-                parts = line.lower().split('by ')
+            if "Author:" in line:
+                author = line.split("Author:", 1)[1].strip()
+            elif "by " in line.lower() and len(line) < 100:
+                parts = line.lower().split("by ")
                 if len(parts) > 1:
                     potential_author = parts[1].strip()
                     if len(potential_author) > 2 and len(potential_author) < 50:
@@ -234,7 +234,9 @@ class DocumentLibrary:
         # 4. Non-numeric content score (0-1)
         if len(words) >= 100:
             numeric_ratio = len([w for w in words[:100] if any(c.isdigit() for c in w)]) / 100
-            non_numeric_score = max(1.0 - (numeric_ratio * 2), 0.0)  # Penalize heavy numeric content
+            non_numeric_score = max(
+                1.0 - (numeric_ratio * 2), 0.0
+            )  # Penalize heavy numeric content
         else:
             non_numeric_score = 0.5
         scores.append(non_numeric_score)
@@ -297,8 +299,8 @@ class DocumentLibrary:
             author=author,
             length=len(text),
             genre="unknown",  # Genre detection could be added later
-            language="en",    # Assume English for now
-            quality_score=quality_score
+            language="en",  # Assume English for now
+            quality_score=quality_score,
         )
 
     def _track_usage(self, document_id: int):
@@ -333,8 +335,7 @@ class DocumentLibrary:
             List of DocumentInfo sorted by quality score descending
         """
         filtered = [
-            info for info in self.document_metadata.values()
-            if info.quality_score >= min_quality
+            info for info in self.document_metadata.values() if info.quality_score >= min_quality
         ]
         return sorted(filtered, key=lambda x: x.quality_score, reverse=True)
 

@@ -207,13 +207,16 @@ class MetaphorGenerator:
             return False
 
         # Use word validator for basic checks
-        if not (word_validator.is_valid_english_word(source) and
-                word_validator.is_valid_english_word(target)):
+        if not (
+            word_validator.is_valid_english_word(source)
+            and word_validator.is_valid_english_word(target)
+        ):
             return False
 
         # Apply quality filtering if requested
         if check_quality:
             from .quality_scorer import get_quality_scorer
+
             scorer = get_quality_scorer()
 
             # Reject if the phrase itself is a cliché
@@ -298,7 +301,9 @@ class MetaphorGenerator:
                 found_metaphors = [(s, t, sent) for s, t, sent, _ in scored_metaphors]
 
                 if is_additional:
-                    print(f"    ✓ Found {len(found_metaphors)} additional metaphor patterns (quality-sorted)")
+                    print(
+                        f"    ✓ Found {len(found_metaphors)} additional metaphor patterns (quality-sorted)"
+                    )
                 else:
                     print(f"    ✓ Found {len(found_metaphors)} metaphor patterns (quality-sorted)")
             else:

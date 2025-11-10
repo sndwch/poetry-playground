@@ -94,7 +94,9 @@ class IdeaCollection:
         """Get total number of ideas collected"""
         return sum(len(self.get_ideas_by_type(idea_type)) for idea_type in IdeaType)
 
-    def get_random_mixed_selection(self, count: int, prefer_quality: bool = True) -> List[PoetryIdea]:
+    def get_random_mixed_selection(
+        self, count: int, prefer_quality: bool = True
+    ) -> List[PoetryIdea]:
         """Get a random mix of ideas across all types.
 
         Args:
@@ -461,7 +463,25 @@ class PoetryIdeaGenerator:
 
         # Extract meaningful words
         words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
-        stop_words = {"a", "an", "the", "of", "in", "on", "at", "to", "for", "is", "was", "are", "were", "and", "but", "or", "with"}
+        stop_words = {
+            "a",
+            "an",
+            "the",
+            "of",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "is",
+            "was",
+            "are",
+            "were",
+            "and",
+            "but",
+            "or",
+            "with",
+        }
         meaningful_words = [w for w in words if w not in stop_words and len(w) > 2]
 
         if not meaningful_words:

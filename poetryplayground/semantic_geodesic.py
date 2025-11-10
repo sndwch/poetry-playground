@@ -46,6 +46,7 @@ class BridgeWord:
         syllables: Number of syllables (if available)
         pos: Part of speech tag (if available)
     """
+
     word: str
     position: float  # 0.0 to 1.0
     similarity: float
@@ -70,6 +71,7 @@ class SemanticPath:
         deviation_score: Average deviation from ideal path
         diversity_score: Variance in alternative candidates
     """
+
     start: str
     end: str
     bridges: List[List[BridgeWord]]  # k alternatives per step
@@ -152,7 +154,7 @@ class SemanticSpace:
         logger.info(f"Loading spaCy model: {model_name}...")
         self.nlp = spacy.load(
             model_name,
-            disable=["parser", "ner", "lemmatizer"]  # Only need vectors
+            disable=["parser", "ner", "lemmatizer"],  # Only need vectors
         )
         logger.info(f"Loaded {len(self.nlp.vocab)} words with vectors")
 
@@ -190,11 +192,13 @@ class SemanticSpace:
 
             # Filter out unwanted words
             # Note: Keeping filters simple - rely on frequency sorting to prefer good words
-            if (lex.has_vector
+            if (
+                lex.has_vector
                 and lex.is_alpha
                 and not lex.is_stop
                 and len(text) >= 3  # Minimum 3 letters (blocks "mo", "pa", "ve")
-                and not any(c in text for c in "''-_")):  # Skip contractions/hyphenated
+                and not any(c in text for c in "''-_")
+            ):  # Skip contractions/hyphenated
                 valid_words.append(lex)
 
         logger.info(f"Found {len(valid_words)} valid words with vectors")
@@ -208,7 +212,7 @@ class SemanticSpace:
 
         # Sort by frequency (log probability), take top N
         valid_words.sort(key=lambda w: w.prob, reverse=True)
-        valid_words = valid_words[:self.vocab_size]
+        valid_words = valid_words[: self.vocab_size]
 
         # Build index structures
         self.index_to_word = [word.text.lower() for word in valid_words]
@@ -220,21 +224,22 @@ class SemanticSpace:
         logger.info("Building k-NN index...")
         n_neighbors = min(100, max(1, len(self.vectors)))  # Ensure at least 1
         self.nn_index = NearestNeighbors(
-            n_neighbors=n_neighbors,
-            algorithm='brute',
-            metric='cosine'
+            n_neighbors=n_neighbors, algorithm="brute", metric="cosine"
         )
         self.nn_index.fit(self.vectors)
 
         # Cache to disk
         logger.info(f"Caching k-NN index to {cache_path}...")
         with open(cache_path, "wb") as f:
-            pickle.dump({
-                "index_to_word": self.index_to_word,
-                "word_to_index": self.word_to_index,
-                "vectors": self.vectors,
-                "nn_index": self.nn_index,
-            }, f)
+            pickle.dump(
+                {
+                    "index_to_word": self.index_to_word,
+                    "word_to_index": self.word_to_index,
+                    "vectors": self.vectors,
+                    "nn_index": self.nn_index,
+                },
+                f,
+            )
 
         logger.info(f"Indexed {len(self.index_to_word)} words")
 
@@ -256,10 +261,7 @@ class SemanticSpace:
         return self.nlp(word).vector
 
     def find_nearest(
-        self,
-        target_vec: np.ndarray,
-        k: int = 1,
-        exclude: Optional[Set[str]] = None
+        self, target_vec: np.ndarray, k: int = 1, exclude: Optional[Set[str]] = None
     ) -> List[Tuple[str, float]]:
         """Find k nearest words to target vector.
 
@@ -273,10 +275,7 @@ class SemanticSpace:
         """
         # Fetch more than k to account for exclusions
         n_fetch = min(k * 3, len(self.vectors))
-        distances, indices = self.nn_index.kneighbors(
-            [target_vec],
-            n_neighbors=n_fetch
-        )
+        distances, indices = self.nn_index.kneighbors([target_vec], n_neighbors=n_fetch)
 
         results = []
         exclude = exclude or set()
@@ -381,18 +380,43 @@ def find_semantic_path(
     # Dispatch to method-specific function
     if method == "linear":
         return _find_linear_path(
-            start, end, steps, k, min_zipf, pos_filter,
-            syllable_min, syllable_max, semantic_space, lexicon_data
+            start,
+            end,
+            steps,
+            k,
+            min_zipf,
+            pos_filter,
+            syllable_min,
+            syllable_max,
+            semantic_space,
+            lexicon_data,
         )
     elif method == "bezier":
         return _find_bezier_path(
-            start, end, steps, k, min_zipf, pos_filter,
-            syllable_min, syllable_max, control_words, semantic_space, lexicon_data
+            start,
+            end,
+            steps,
+            k,
+            min_zipf,
+            pos_filter,
+            syllable_min,
+            syllable_max,
+            control_words,
+            semantic_space,
+            lexicon_data,
         )
     else:  # shortest
         return _find_shortest_path(
-            start, end, steps, k, min_zipf, pos_filter,
-            syllable_min, syllable_max, semantic_space, lexicon_data
+            start,
+            end,
+            steps,
+            k,
+            min_zipf,
+            pos_filter,
+            syllable_min,
+            syllable_max,
+            semantic_space,
+            lexicon_data,
         )
 
 
@@ -445,8 +469,9 @@ def _find_linear_path(
             # Calculate deviation from ideal line
             word_vec = semantic_space.get_vector(word)
             ideal_vec = vec_start + t * path_vec
-            deviation = 1 - (np.dot(word_vec, ideal_vec) /
-                           (np.linalg.norm(word_vec) * np.linalg.norm(ideal_vec)))
+            deviation = 1 - (
+                np.dot(word_vec, ideal_vec) / (np.linalg.norm(word_vec) * np.linalg.norm(ideal_vec))
+            )
 
             # Create BridgeWord
             bridge = BridgeWord(
@@ -516,7 +541,9 @@ def _find_bezier_path(
         vec_p2 = vec_end + 0.3 * (midpoint - vec_end)
     else:
         vec_p1 = semantic_space.get_vector(control_words[0].lower())
-        vec_p2 = semantic_space.get_vector(control_words[1].lower() if len(control_words) > 1 else control_words[0].lower())
+        vec_p2 = semantic_space.get_vector(
+            control_words[1].lower() if len(control_words) > 1 else control_words[0].lower()
+        )
 
     # Find bridges using Bezier interpolation
     bridges = []
@@ -529,10 +556,10 @@ def _find_bezier_path(
 
         # Cubic Bezier formula
         vec_t = (
-            (1-t)**3 * vec_start +
-            3*(1-t)**2*t * vec_p1 +
-            3*(1-t)*t**2 * vec_p2 +
-            t**3 * vec_end
+            (1 - t) ** 3 * vec_start
+            + 3 * (1 - t) ** 2 * t * vec_p1
+            + 3 * (1 - t) * t**2 * vec_p2
+            + t**3 * vec_end
         )
 
         # Find and filter candidates (same as linear)
@@ -546,8 +573,9 @@ def _find_bezier_path(
                 continue
 
             word_vec = semantic_space.get_vector(word)
-            deviation = 1 - (np.dot(word_vec, vec_t) /
-                           (np.linalg.norm(word_vec) * np.linalg.norm(vec_t)))
+            deviation = 1 - (
+                np.dot(word_vec, vec_t) / (np.linalg.norm(word_vec) * np.linalg.norm(vec_t))
+            )
 
             bridge = BridgeWord(
                 word=word,
@@ -607,8 +635,15 @@ def _find_shortest_path(
     # Build local graph (BFS from both ends)
     max_graph_size = min(1000, semantic_space.vocab_size // 10)
     graph = _build_local_graph(
-        start, end, max_graph_size, semantic_space, lexicon_data,
-        min_zipf, pos_filter, syllable_min, syllable_max
+        start,
+        end,
+        max_graph_size,
+        semantic_space,
+        lexicon_data,
+        min_zipf,
+        pos_filter,
+        syllable_min,
+        syllable_max,
     )
 
     # A* search
@@ -618,8 +653,16 @@ def _find_shortest_path(
         # Fallback to linear if no path found or path too short
         logger.warning("Shortest path failed, falling back to linear")
         return _find_linear_path(
-            start, end, steps, k, min_zipf, pos_filter,
-            syllable_min, syllable_max, semantic_space, lexicon_data
+            start,
+            end,
+            steps,
+            k,
+            min_zipf,
+            pos_filter,
+            syllable_min,
+            syllable_max,
+            semantic_space,
+            lexicon_data,
         )
 
     # Subsample to get desired number of steps
@@ -629,7 +672,7 @@ def _find_shortest_path(
     bridges = []
     for i, word in enumerate(bridge_words):
         t = (i + 1) / (steps - 1)
-        sim = semantic_space.get_similarity(word, start if i == 0 else bridge_words[i-1])
+        sim = semantic_space.get_similarity(word, start if i == 0 else bridge_words[i - 1])
 
         bridge = BridgeWord(
             word=word,
@@ -694,10 +737,7 @@ def _passes_filters(
 
 
 def _calculate_smoothness(
-    start: str,
-    end: str,
-    bridges: List[List[BridgeWord]],
-    semantic_space: SemanticSpace
+    start: str, end: str, bridges: List[List[BridgeWord]], semantic_space: SemanticSpace
 ) -> float:
     """Calculate smoothness score (avg similarity between adjacent words)."""
     if not bridges:
@@ -707,7 +747,7 @@ def _calculate_smoothness(
     similarities = []
 
     for i in range(len(path) - 1):
-        sim = semantic_space.get_similarity(path[i], path[i+1])
+        sim = semantic_space.get_similarity(path[i], path[i + 1])
         similarities.append(sim)
 
     return float(np.mean(similarities))

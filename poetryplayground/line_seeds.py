@@ -301,12 +301,8 @@ class LineSeedGenerator:
         # Get related words for variety - use ALL seed words with larger samples
         expanded_words = []
         for word in seed_words:  # Use all seed words for maximum diversity
-            expanded_words.extend(
-                similar_meaning_words(word, sample_size=8, min_quality=0.6)
-            )
-            expanded_words.extend(
-                phonetically_related_words(word, sample_size=6, min_quality=0.6)
-            )
+            expanded_words.extend(similar_meaning_words(word, sample_size=8, min_quality=0.6))
+            expanded_words.extend(phonetically_related_words(word, sample_size=6, min_quality=0.6))
 
         expanded_words = word_validator.clean_word_list(expanded_words)
 
@@ -368,9 +364,7 @@ class LineSeedGenerator:
         # Get contextual words - use ALL seed words with larger samples
         context_words = []
         for word in seed_words:  # Use all seed words for maximum diversity
-            context_words.extend(
-                contextually_linked_words(word, sample_size=15, min_quality=0.6)
-            )
+            context_words.extend(contextually_linked_words(word, sample_size=15, min_quality=0.6))
 
         context_words = word_validator.clean_word_list(context_words)
 
@@ -450,12 +444,12 @@ class LineSeedGenerator:
             pattern = f"{sound_words[0]}, {sound_words[1]}, {sound_words[2]}"
         else:
             # Fallback to rhythm pattern - use atmospheric nouns for rhythm words
-            rhythm_words = ['pause', 'beat', 'breath', 'silence', 'moment', 'stillness']
+            rhythm_words = ["pause", "beat", "breath", "silence", "moment", "stillness"]
             try:
                 # Sample from atmospheric nouns related to rhythm/time
                 rhythm_word = random.choice(rhythm_words)
             except (AttributeError, IndexError):
-                rhythm_word = 'pause'  # Fallback
+                rhythm_word = "pause"  # Fallback
             pattern = f"{seed_words[0]}-{rhythm_word}-{seed_words[-1]}"
 
         quality = self._evaluate_quality(pattern)
@@ -504,7 +498,7 @@ class LineSeedGenerator:
                 question_verbs = [v for v in vocabulary.evocative_verbs if len(v) <= 10]
                 question_verb = random.choice(question_verbs) if question_verbs else "remains"
             except (AttributeError, IndexError):
-                question_verb = random.choice(['remains', 'persists', 'echoes'])
+                question_verb = random.choice(["remains", "persists", "echoes"])
             ending = f"What {question_verb} when {seed_words[0]}...?"
         else:
             # Emotional truth or paradox
@@ -554,6 +548,7 @@ class LineSeedGenerator:
 
             # Average the word vectors for the new text
             import numpy as np
+
             new_vec = np.mean(new_vectors, axis=0)
 
             # Check similarity against each existing text
@@ -661,7 +656,7 @@ class LineSeedGenerator:
             possessive_nouns = [n for n in vocabulary.atmospheric_nouns if len(n) <= 8]
             possessive_noun = random.choice(possessive_nouns) if possessive_nouns else "shadow"
         except (AttributeError, IndexError):
-            possessive_noun = random.choice(['shadow', 'echo', 'ghost'])
+            possessive_noun = random.choice(["shadow", "echo", "ghost"])
         return f"The {seed_words[0]}'s {possessive_noun}..."
 
     def _generate_temporal_opening(self, seed_words: List[str]) -> str:
@@ -700,10 +695,22 @@ class LineSeedGenerator:
                 return random.choice(list(vocabulary.evocative_verbs))
             except (AttributeError, IndexError):
                 # Fallback to static list
-                return random.choice([
-                    "carries", "holds", "breaks", "turns", "waits", "drifts", "fades",
-                    "whispers", "trembles", "shifts", "lingers", "dissolves"
-                ])
+                return random.choice(
+                    [
+                        "carries",
+                        "holds",
+                        "breaks",
+                        "turns",
+                        "waits",
+                        "drifts",
+                        "fades",
+                        "whispers",
+                        "trembles",
+                        "shifts",
+                        "lingers",
+                        "dissolves",
+                    ]
+                )
 
         def get_adjective():
             """Get random adjective from vocabulary (~hundreds of options)."""
@@ -715,10 +722,23 @@ class LineSeedGenerator:
                 return random.choice(all_adjectives)
             except (AttributeError, IndexError, ValueError):
                 # Fallback to static list
-                return random.choice([
-                    "distant", "quiet", "sharp", "soft", "strange", "hollow", "bright",
-                    "faint", "worn", "ancient", "still", "fleeting", "hidden"
-                ])
+                return random.choice(
+                    [
+                        "distant",
+                        "quiet",
+                        "sharp",
+                        "soft",
+                        "strange",
+                        "hollow",
+                        "bright",
+                        "faint",
+                        "worn",
+                        "ancient",
+                        "still",
+                        "fleeting",
+                        "hidden",
+                    ]
+                )
 
         def get_abstract():
             """Get random abstract noun from vocabulary (~498 options)."""
@@ -726,31 +746,87 @@ class LineSeedGenerator:
                 return random.choice(list(vocabulary.atmospheric_nouns))
             except (AttributeError, IndexError):
                 # Fallback to static list
-                return random.choice([
-                    "memory", "time", "silence", "distance", "shadow", "light", "absence",
-                    "presence", "longing", "stillness", "movement", "echo"
-                ])
+                return random.choice(
+                    [
+                        "memory",
+                        "time",
+                        "silence",
+                        "distance",
+                        "shadow",
+                        "light",
+                        "absence",
+                        "presence",
+                        "longing",
+                        "stillness",
+                        "movement",
+                        "echo",
+                    ]
+                )
 
         replacements = {
             "{noun}": lambda: random.choice(words) if words else "word",
             "{verb}": get_verb,
             "{adjective}": get_adjective,
-            "{pronoun}": lambda: random.choice([
-                "we", "they", "it", "you", "she", "he", "one", "someone",
-                "something", "everything", "nothing", "anyone", "anything"
-            ]),
-            "{Pronoun}": lambda: random.choice([
-                "We", "They", "It", "You", "She", "He", "One", "Someone",
-                "Something", "Everything", "Nothing", "Anyone", "Anything"
-            ]),
+            "{pronoun}": lambda: random.choice(
+                [
+                    "we",
+                    "they",
+                    "it",
+                    "you",
+                    "she",
+                    "he",
+                    "one",
+                    "someone",
+                    "something",
+                    "everything",
+                    "nothing",
+                    "anyone",
+                    "anything",
+                ]
+            ),
+            "{Pronoun}": lambda: random.choice(
+                [
+                    "We",
+                    "They",
+                    "It",
+                    "You",
+                    "She",
+                    "He",
+                    "One",
+                    "Someone",
+                    "Something",
+                    "Everything",
+                    "Nothing",
+                    "Anyone",
+                    "Anything",
+                ]
+            ),
             "{Temporal}": lambda: random.choice(self.temporal_markers),
             "{preposition}": lambda: random.choice(self.spatial_prepositions),
             "{abstract}": get_abstract,
-            "{comparative}": lambda: random.choice([
-                "more", "less", "almost", "nearly", "barely", "scarcely", "hardly",
-                "quite", "rather", "somewhat", "partly", "fully", "half", "mostly",
-                "entirely", "completely", "utterly", "slightly", "deeply"
-            ]),
+            "{comparative}": lambda: random.choice(
+                [
+                    "more",
+                    "less",
+                    "almost",
+                    "nearly",
+                    "barely",
+                    "scarcely",
+                    "hardly",
+                    "quite",
+                    "rather",
+                    "somewhat",
+                    "partly",
+                    "fully",
+                    "half",
+                    "mostly",
+                    "entirely",
+                    "completely",
+                    "utterly",
+                    "slightly",
+                    "deeply",
+                ]
+            ),
         }
 
         for placeholder, func in replacements.items():
@@ -780,7 +856,23 @@ class LineSeedGenerator:
 
         # Extract meaningful words (filter out punctuation and common articles)
         words = text.split()
-        stop_words = {"a", "an", "the", "of", "in", "on", "at", "to", "for", "is", "was", "are", "were", "and", "but"}
+        stop_words = {
+            "a",
+            "an",
+            "the",
+            "of",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "is",
+            "was",
+            "are",
+            "were",
+            "and",
+            "but",
+        }
         meaningful_words = [
             w.strip(".,!?;:").lower() for w in words if w.strip(".,!?;:").lower() not in stop_words
         ]

@@ -127,7 +127,9 @@ class PersonalCorpusAnalyzer:
         try:
             self.nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
         except OSError:
-            console.print("[yellow]⚠️  Warning: spaCy model not found. Some analysis features will be limited.[/yellow]")
+            console.print(
+                "[yellow]⚠️  Warning: spaCy model not found. Some analysis features will be limited.[/yellow]"
+            )
             logger.warning("spaCy model not found. Analysis features limited.")
             self.nlp = None
 

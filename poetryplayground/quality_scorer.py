@@ -32,6 +32,7 @@ from .logger import logger
 
 class EmotionalTone(Enum):
     """Emotional tone classifications."""
+
     DARK = "dark"
     LIGHT = "light"
     NEUTRAL = "neutral"
@@ -40,6 +41,7 @@ class EmotionalTone(Enum):
 
 class FormalityLevel(Enum):
     """Formality/register levels."""
+
     ARCHAIC = "archaic"
     FORMAL = "formal"
     CONVERSATIONAL = "conversational"
@@ -57,6 +59,7 @@ class GenerationContext:
         avoid_cliches: Whether to strictly avoid clichéd expressions
         domain: Optional semantic domain (e.g., "nature", "urban", "emotion")
     """
+
     emotional_tone: EmotionalTone = EmotionalTone.NEUTRAL
     concreteness_target: float = 0.5  # 0=abstract, 1=concrete
     formality_level: FormalityLevel = FormalityLevel.CONVERSATIONAL
@@ -79,6 +82,7 @@ class QualityScore:
         imagery: Concreteness score when imagery is desired
         component_scores: Dict of all individual component scores
     """
+
     overall: float
     frequency: float
     novelty: float
@@ -89,10 +93,12 @@ class QualityScore:
 
     def __str__(self) -> str:
         """Human-readable quality score."""
-        return (f"QualityScore(overall={self.overall:.2f}, "
-                f"freq={self.frequency:.2f}, "
-                f"novelty={self.novelty:.2f}, "
-                f"coherence={self.coherence:.2f})")
+        return (
+            f"QualityScore(overall={self.overall:.2f}, "
+            f"freq={self.frequency:.2f}, "
+            f"novelty={self.novelty:.2f}, "
+            f"coherence={self.coherence:.2f})"
+        )
 
     def get_grade(self) -> str:
         """Get letter grade for overall score."""
@@ -161,12 +167,24 @@ class QualityScorer:
             logger.warning(f"Cliché database not found at {cliche_file}")
             # Use minimal built-in set
             self.cliche_phrases = {
-                "life is a journey", "love is a rose", "time is a river",
-                "heart of stone", "mind like an ocean", "death is sleep"
+                "life is a journey",
+                "love is a rose",
+                "time is a river",
+                "heart of stone",
+                "mind like an ocean",
+                "death is sleep",
             }
             self.cliche_words = {
-                "heart", "soul", "love", "dream", "tears", "broken",
-                "forever", "eternity", "destiny", "fate"
+                "heart",
+                "soul",
+                "love",
+                "dream",
+                "tears",
+                "broken",
+                "forever",
+                "eternity",
+                "destiny",
+                "fate",
             }
             return
 
@@ -175,8 +193,10 @@ class QualityScorer:
                 data = json.load(f)
                 self.cliche_phrases = set(data.get("phrases", []))
                 self.cliche_words = set(data.get("words", []))
-                logger.info(f"Loaded {len(self.cliche_phrases)} cliché phrases, "
-                           f"{len(self.cliche_words)} cliché words")
+                logger.info(
+                    f"Loaded {len(self.cliche_phrases)} cliché phrases, "
+                    f"{len(self.cliche_words)} cliché words"
+                )
         except Exception as e:
             logger.error(f"Error loading cliché database: {e}")
             self.cliche_phrases = set()
@@ -241,11 +261,11 @@ class QualityScorer:
         # Weights: frequency (0.2), novelty (0.3), register (0.15),
         #          imagery (0.25), coherence (0.1)
         overall = (
-            freq_score * 0.2 +
-            novelty_score * 0.3 +
-            register_score * 0.15 +
-            imagery_score * 0.25 +
-            coherence_score * 0.1
+            freq_score * 0.2
+            + novelty_score * 0.3
+            + register_score * 0.15
+            + imagery_score * 0.25
+            + coherence_score * 0.1
         )
 
         return QualityScore(
@@ -260,11 +280,13 @@ class QualityScorer:
                 "novelty": novelty_score,
                 "register": register_score,
                 "imagery": imagery_score,
-                "coherence": coherence_score
-            }
+                "coherence": coherence_score,
+            },
         )
 
-    def score_phrase(self, phrase: str, context: Optional[GenerationContext] = None) -> QualityScore:
+    def score_phrase(
+        self, phrase: str, context: Optional[GenerationContext] = None
+    ) -> QualityScore:
         """Score a phrase or multi-word expression.
 
         Args:
@@ -288,19 +310,20 @@ class QualityScorer:
         # Score individual words for imagery
         words = phrase_lower.split()
         if words:
-            word_imagery_scores = [self._score_imagery(w, context.concreteness_target)
-                                   for w in words]
+            word_imagery_scores = [
+                self._score_imagery(w, context.concreteness_target) for w in words
+            ]
             imagery_score = sum(word_imagery_scores) / len(word_imagery_scores)
         else:
             imagery_score = 0.5
 
         # Calculate weighted overall score
         overall = (
-            freq_score * 0.15 +
-            novelty_score * 0.35 +  # Higher weight for phrases (more cliché risk)
-            register_score * 0.1 +
-            imagery_score * 0.25 +
-            coherence_score * 0.15
+            freq_score * 0.15
+            + novelty_score * 0.35  # Higher weight for phrases (more cliché risk)
+            + register_score * 0.1
+            + imagery_score * 0.25
+            + coherence_score * 0.15
         )
 
         return QualityScore(
@@ -309,7 +332,7 @@ class QualityScorer:
             novelty=novelty_score,
             coherence=coherence_score,
             register=register_score,
-            imagery=imagery_score
+            imagery=imagery_score,
         )
 
     def _score_frequency(self, word: str) -> float:
@@ -331,7 +354,9 @@ class QualityScorer:
             # Scale from min_frequency (0.2) to ideal_min (1.0)
             if freq < self.min_frequency:
                 return 0.2
-            ratio = math.log10(freq / self.min_frequency) / math.log10(self.ideal_min / self.min_frequency)
+            ratio = math.log10(freq / self.min_frequency) / math.log10(
+                self.ideal_min / self.min_frequency
+            )
             return 0.2 + (ratio * 0.8)
 
         # Too common
@@ -339,7 +364,9 @@ class QualityScorer:
             # Scale from ideal_max (1.0) to max_frequency (0.3)
             if freq > self.max_frequency:
                 return 0.3
-            ratio = math.log10(freq / self.ideal_max) / math.log10(self.max_frequency / self.ideal_max)
+            ratio = math.log10(freq / self.ideal_max) / math.log10(
+                self.max_frequency / self.ideal_max
+            )
             return 1.0 - (ratio * 0.7)
 
         return 0.8  # Shouldn't reach here, but reasonable default
@@ -462,6 +489,7 @@ class QualityScorer:
 
 # Global scorer instance
 _scorer_instance = None
+
 
 def get_quality_scorer() -> QualityScorer:
     """Get global QualityScorer instance (singleton pattern)."""

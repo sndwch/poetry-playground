@@ -33,7 +33,9 @@ def clean_api_results(word_list, exclude_words=None, use_validator=True):
 
     # Use centralized WordValidator for all validation
     if use_validator:
-        filtered = word_validator.clean_word_list(word_list, allow_rare=False, exclude_words=exclude_words)
+        filtered = word_validator.clean_word_list(
+            word_list, allow_rare=False, exclude_words=exclude_words
+        )
     else:
         # Even without validator, filter out excluded words
         filtered = [w for w in word_list if w.lower() not in {e.lower() for e in exclude_words}]
@@ -45,9 +47,9 @@ def score_and_filter_results(
     api_response: List[dict],
     exclude_words: Optional[List[str]] = None,
     min_quality: float = 0.5,
-    context: Optional['GenerationContext'] = None,
+    context: Optional["GenerationContext"] = None,
     use_datamuse_score: bool = True,
-    sample_size: Optional[int] = None
+    sample_size: Optional[int] = None,
 ) -> List[str]:
     """Score and filter API results using comprehensive quality metrics.
 
@@ -74,14 +76,14 @@ def score_and_filter_results(
     exclude_set = {w.lower() for w in exclude_words}
 
     # Find max Datamuse score for normalization
-    max_datamuse_score = max((item.get('score', 0) for item in api_response), default=1)
+    max_datamuse_score = max((item.get("score", 0) for item in api_response), default=1)
     if max_datamuse_score == 0:
         max_datamuse_score = 1  # Avoid division by zero
 
     # Score each word
     scored_words = []
     for item in api_response:
-        word = item.get('word', '')
+        word = item.get("word", "")
         if not word or word.lower() in exclude_set:
             continue
 
@@ -92,7 +94,7 @@ def score_and_filter_results(
         # Get Datamuse relevance score (normalized to 0-1)
         datamuse_score = 0.0
         if use_datamuse_score:
-            raw_score = item.get('score', 0)
+            raw_score = item.get("score", 0)
             datamuse_score = raw_score / max_datamuse_score if max_datamuse_score > 0 else 0.0
 
         # Get comprehensive quality score
@@ -172,7 +174,9 @@ def rhymes(input_val: str_or_list_of_str, sample_size=None) -> List[str]:
     for input_word in input_words:
         # Use cached wrapper for CMU lookups
         cached_rhymes = _cached_pronouncing_rhymes(input_word)
-        rhyme_words.extend(word_validator.clean_word_list(list(set(cached_rhymes)), allow_rare=False))
+        rhyme_words.extend(
+            word_validator.clean_word_list(list(set(cached_rhymes)), allow_rare=False)
+        )
     return extract_sample(rhyme_words, sample_size=sample_size)
 
 
@@ -256,7 +260,7 @@ def similar_meaning_words(
     sample_size: Optional[int] = 6,
     datamuse_api_max: Optional[int] = 20,
     min_quality: float = 0.5,
-    context: Optional['GenerationContext'] = None,
+    context: Optional["GenerationContext"] = None,
 ) -> list:
     """Return quality-filtered similar meaning words, sorted by quality.
 
@@ -281,7 +285,7 @@ def similar_meaning_words(
             min_quality=min_quality,
             context=context,
             use_datamuse_score=True,
-            sample_size=sample_size
+            sample_size=sample_size,
         )
         sm_words.extend(quality_words)
 
@@ -308,7 +312,7 @@ def contextually_linked_words(
     sample_size: Optional[int] = 6,
     datamuse_api_max: Optional[int] = 20,
     min_quality: float = 0.5,
-    context: Optional['GenerationContext'] = None,
+    context: Optional["GenerationContext"] = None,
 ) -> list:
     """Return quality-filtered contextually linked words (collocations).
 
@@ -334,7 +338,7 @@ def contextually_linked_words(
             min_quality=min_quality,
             context=context,
             use_datamuse_score=True,
-            sample_size=sample_size
+            sample_size=sample_size,
         )
         cl_words.extend(quality_words)
 
@@ -366,7 +370,7 @@ def frequently_following_words(
     sample_size: Optional[int] = 8,
     datamuse_api_max: Optional[int] = None,
     min_quality: float = 0.5,
-    context: Optional['GenerationContext'] = None,
+    context: Optional["GenerationContext"] = None,
 ) -> list:
     """Return quality-filtered words that frequently follow the given word.
 
@@ -391,7 +395,7 @@ def frequently_following_words(
             min_quality=min_quality,
             context=context,
             use_datamuse_score=True,
-            sample_size=None  # Get all quality words for rarity mixing
+            sample_size=None,  # Get all quality words for rarity mixing
         )
         ff_words.extend(quality_words)
 
@@ -437,7 +441,7 @@ def phonetically_related_words(
     datamuse_api_max=50,
     max_results_per_input_word: Optional[int] = None,
     min_quality: float = 0.5,
-    context: Optional['GenerationContext'] = None,
+    context: Optional["GenerationContext"] = None,
 ) -> list:
     """Returns quality-filtered rhymes and similar sounding words.
 
@@ -493,7 +497,7 @@ def related_rare_words(
     sample_size: Optional[int] = 8,
     rare_word_population_max: int = 20,
     min_quality: float = 0.5,
-    context: Optional['GenerationContext'] = None,
+    context: Optional["GenerationContext"] = None,
 ) -> list:
     """Return quality-filtered rare related words (phonetic, contextual, or semantic).
 
@@ -514,10 +518,7 @@ def related_rare_words(
     for input_word in input_words:
         # Get quality-filtered phonetically related words
         related_words = phonetically_related_words(
-            input_word,
-            sample_size=None,
-            min_quality=min_quality,
-            context=context
+            input_word, sample_size=None, min_quality=min_quality, context=context
         )
 
         # Add quality-filtered contextually linked words
@@ -528,7 +529,7 @@ def related_rare_words(
                 sample_size=None,
                 datamuse_api_max=100,
                 min_quality=min_quality,
-                context=context
+                context=context,
             )
             if word not in related_words
         )
@@ -541,7 +542,7 @@ def related_rare_words(
                 sample_size=None,
                 datamuse_api_max=100,
                 min_quality=min_quality,
-                context=context
+                context=context,
             )
             if word not in related_words
         )
@@ -559,7 +560,7 @@ def related_rare_word(
     input_word: str,
     rare_word_population_max: int = 10,
     min_quality: float = 0.5,
-    context: Optional['GenerationContext'] = None,
+    context: Optional["GenerationContext"] = None,
 ) -> Optional[str]:
     """Return a quality-filtered random rare related word (phonetic, contextual, or semantic).
 
@@ -576,7 +577,7 @@ def related_rare_word(
                 sample_size=1,
                 rare_word_population_max=rare_word_population_max,
                 min_quality=min_quality,
-                context=context
+                context=context,
             )
         ),
         None,

@@ -73,7 +73,9 @@ class SixDegrees:
 
     def find_convergence(self, word_a: str, word_b: str) -> Optional[ConvergencePath]:
         """Find convergence path between two words"""
-        console.print(f"[cyan]🔍 Exploring convergence between[/cyan] [bold yellow]'{word_a}'[/bold yellow] [cyan]and[/cyan] [bold yellow]'{word_b}'[/bold yellow][cyan]...[/cyan]")
+        console.print(
+            f"[cyan]🔍 Exploring convergence between[/cyan] [bold yellow]'{word_a}'[/bold yellow] [cyan]and[/cyan] [bold yellow]'{word_b}'[/bold yellow][cyan]...[/cyan]"
+        )
         logger.info(f"Starting convergence search: {word_a} → {word_b}")
 
         # Initialize exploration trees
@@ -106,7 +108,9 @@ class SixDegrees:
             convergence = self._check_convergence(words_from_a, words_from_b)
             if convergence:
                 convergence_word, node_a, node_b = convergence
-                console.print(f"  [bold green]✅ Convergence found at[/bold green] [bold magenta]'{convergence_word}'[/bold magenta] [green](level {level})[/green]")
+                console.print(
+                    f"  [bold green]✅ Convergence found at[/bold green] [bold magenta]'{convergence_word}'[/bold magenta] [green](level {level})[/green]"
+                )
                 logger.info(f"Convergence found: {convergence_word} at level {level}")
 
                 # Reconstruct paths
@@ -126,7 +130,9 @@ class SixDegrees:
             # Brief pause to avoid API rate limits
             time.sleep(0.5)
 
-        console.print(f"  [bold red]❌ No convergence found within {self.max_levels} levels[/bold red]")
+        console.print(
+            f"  [bold red]❌ No convergence found within {self.max_levels} levels[/bold red]"
+        )
         logger.warning(f"No convergence found within {self.max_levels} levels")
         return None
 
@@ -339,7 +345,9 @@ class SixDegrees:
 
     def calculate_semantic_distance(self, word_a: str, word_b: str) -> Dict[str, Any]:
         """Calculate semantic distance between two words"""
-        console.print(f"[cyan]🔢 Calculating semantic distance between[/cyan] [bold yellow]'{word_a}'[/bold yellow] [cyan]and[/cyan] [bold yellow]'{word_b}'[/bold yellow][cyan]...[/cyan]")
+        console.print(
+            f"[cyan]🔢 Calculating semantic distance between[/cyan] [bold yellow]'{word_a}'[/bold yellow] [cyan]and[/cyan] [bold yellow]'{word_b}'[/bold yellow][cyan]...[/cyan]"
+        )
         logger.info(f"Calculating semantic distance: {word_a} → {word_b}")
 
         # Try to find convergence with extended search

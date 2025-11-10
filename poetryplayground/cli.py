@@ -1092,11 +1092,17 @@ def semantic_geodesic_action():
 
     console.print("\n[bold cyan]🌉 SEMANTIC GEODESIC FINDER[/bold cyan]")
     console.print("=" * 60)
-    console.print("\n[dim]Draw a straight line through meaning-space and find the words along that path.[/dim]")
-    console.print("[dim]Explore gradual transformations: fire → flame → heat → warmth → cool → frost → ice[/dim]\n")
+    console.print(
+        "\n[dim]Draw a straight line through meaning-space and find the words along that path.[/dim]"
+    )
+    console.print(
+        "[dim]Explore gradual transformations: fire → flame → heat → warmth → cool → frost → ice[/dim]\n"
+    )
 
     # Initialize semantic space (with progress indicator)
-    with console.status("[bold green]Loading semantic space (this may take 10-30 seconds)...", spinner="dots"):
+    with console.status(
+        "[bold green]Loading semantic space (this may take 10-30 seconds)...", spinner="dots"
+    ):
         try:
             semantic_space = get_semantic_space()
         except Exception as e:
@@ -1126,17 +1132,17 @@ def semantic_geodesic_action():
         k = int(k_input) if k_input else 3
 
         method_input = input("Method - linear/bezier/shortest (default linear): ").strip()
-        method = method_input.lower() if method_input in ("linear", "bezier", "shortest") else "linear"
+        method = (
+            method_input.lower() if method_input in ("linear", "bezier", "shortest") else "linear"
+        )
 
-        console.print(f"\n[bold green]Finding {method} path from '{word_a}' to '{word_b}'...[/bold green]")
+        console.print(
+            f"\n[bold green]Finding {method} path from '{word_a}' to '{word_b}'...[/bold green]"
+        )
 
         try:
             path = find_semantic_path(
-                word_a, word_b,
-                steps=steps,
-                k=k,
-                method=method,
-                semantic_space=semantic_space
+                word_a, word_b, steps=steps, k=k, method=method, semantic_space=semantic_space
             )
 
             # Display primary path
@@ -1165,7 +1171,7 @@ def semantic_geodesic_action():
                 f"[cyan]Deviation:[/cyan] {path.deviation_score:.3f}\n"
                 f"[cyan]Diversity:[/cyan] {path.diversity_score:.3f}",
                 title="[bold]Quality Metrics[/bold]",
-                border_style="green"
+                border_style="green",
             )
             console.print(f"\n{metrics_panel}")
 
@@ -1180,6 +1186,7 @@ def semantic_geodesic_action():
         except Exception as e:
             console.print(f"\n[bold red]Error finding path:[/bold red] {e}")
             import traceback
+
             traceback.print_exc()
 
         console.print("\n[dim]Try another pair? (Enter to continue, 'exit' to return)[/dim]")
@@ -1201,7 +1208,9 @@ def conceptual_cloud_action():
     console.print("\n[bold cyan]🌥️  CONCEPTUAL CLOUD GENERATOR[/bold cyan]")
     console.print("=" * 60)
     console.print("\n[dim]Multi-dimensional word associations - a poet's radar[/dim]")
-    console.print("[dim]Generates 6 types of clusters: semantic, contextual, opposite, phonetic, imagery, rare[/dim]\n")
+    console.print(
+        "[dim]Generates 6 types of clusters: semantic, contextual, opposite, phonetic, imagery, rare[/dim]\n"
+    )
 
     while True:
         console.print("[bold]─[/bold]" * 40)
@@ -1228,12 +1237,16 @@ def conceptual_cloud_action():
         else:
             sections = [s.strip() for s in sections_input.split(",")]
 
-        format_input = input(
-            "Output format (rich/json/markdown/simple, default rich): "
-        ).strip().lower()
-        output_format = format_input if format_input in ("rich", "json", "markdown", "simple") else "rich"
+        format_input = (
+            input("Output format (rich/json/markdown/simple, default rich): ").strip().lower()
+        )
+        output_format = (
+            format_input if format_input in ("rich", "json", "markdown", "simple") else "rich"
+        )
 
-        console.print(f"\n[bold green]Generating conceptual cloud for '{center_word}'...[/bold green]")
+        console.print(
+            f"\n[bold green]Generating conceptual cloud for '{center_word}'...[/bold green]"
+        )
 
         try:
             # Generate cloud
@@ -1243,7 +1256,9 @@ def conceptual_cloud_action():
                 sections=sections,
             )
 
-            console.print(f"\n[green]✓[/green] Generated {cloud.total_terms} terms across {len(cloud.clusters)} clusters\n")
+            console.print(
+                f"\n[green]✓[/green] Generated {cloud.total_terms} terms across {len(cloud.clusters)} clusters\n"
+            )
 
             # Format and display
             if output_format == "rich":
@@ -1266,8 +1281,16 @@ def conceptual_cloud_action():
                 from pathlib import Path
 
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                safe_name = "".join(c if c.isalnum() or c in (" ", "-", "_") else "_" for c in center_word.lower()).replace(" ", "_")
-                ext = ".json" if output_format == "json" else ".md" if output_format == "markdown" else ".txt"
+                safe_name = "".join(
+                    c if c.isalnum() or c in (" ", "-", "_") else "_" for c in center_word.lower()
+                ).replace(" ", "_")
+                ext = (
+                    ".json"
+                    if output_format == "json"
+                    else ".md"
+                    if output_format == "markdown"
+                    else ".txt"
+                )
                 filename = f"cloud_{safe_name}_{timestamp}{ext}"
 
                 output_dir = Path("output")
@@ -1288,6 +1311,7 @@ def conceptual_cloud_action():
         except Exception as e:
             console.print(f"\n[bold red]Error generating cloud:[/bold red] {e}")
             import traceback
+
             traceback.print_exc()
 
         console.print("\n[dim]Try another word? (Enter to continue, 'exit' to return)[/dim]")

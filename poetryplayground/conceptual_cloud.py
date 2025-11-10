@@ -44,6 +44,7 @@ from poetryplayground.word_validator import WordValidator
 
 class ClusterType(str, Enum):
     """Types of word clusters."""
+
     SEMANTIC = "semantic"
     CONTEXTUAL = "contextual"
     OPPOSITE = "opposite"
@@ -78,6 +79,7 @@ class CloudTerm:
         freq_bucket: Frequency category ('common', 'mid', 'rare')
         metadata: Optional additional info (POS, syllables, etc.)
     """
+
     term: str
     cluster_type: ClusterType
     score: float
@@ -99,10 +101,11 @@ class ConceptualCloud:
         config: Configuration used to generate this cloud
         timestamp: When this cloud was generated
     """
+
     center_word: str
     clusters: Dict[ClusterType, List[CloudTerm]]
     total_terms: int = 0
-    config: Optional['CloudConfig'] = None
+    config: Optional["CloudConfig"] = None
     timestamp: Optional[str] = None
 
     def __post_init__(self):
@@ -111,6 +114,7 @@ class ConceptualCloud:
 
         if self.timestamp is None:
             from datetime import datetime
+
             self.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     def get_cluster(self, cluster_type: ClusterType) -> List[CloudTerm]:
@@ -138,6 +142,7 @@ class CloudConfig:
         min_score: Minimum similarity score threshold
         allow_rare: Allow rare/obscure words
     """
+
     k_per_cluster: int = 10
     total_limit: int = 50
     sections: Optional[List[ClusterType]] = None
@@ -190,7 +195,7 @@ def get_antonyms(word: str, k: int = 10) -> List[Tuple[str, float]]:
             return []
 
         # Find max score for normalization
-        max_score = max(item.get('score', 0) for item in results)
+        max_score = max(item.get("score", 0) for item in results)
         if max_score == 0:
             max_score = 1.0  # Avoid division by zero
 
@@ -199,8 +204,8 @@ def get_antonyms(word: str, k: int = 10) -> List[Tuple[str, float]]:
         valid_results = []
 
         for item in results:
-            ant_word = item.get('word', '')
-            raw_score = item.get('score', 0)
+            ant_word = item.get("word", "")
+            raw_score = item.get("score", 0)
             # Normalize to 0-1 based on max score in this result set
             score = raw_score / max_score if max_score > 0 else 0.0
 
@@ -237,7 +242,7 @@ def get_concrete_nouns(word_list: List[str], k: int = 10) -> List[str]:
     for word in word_list:
         # Check if it's a noun
         pos = lexicon.pos_cache.get(word.lower())
-        if pos and pos == 'NOUN':
+        if pos and pos == "NOUN":
             concrete_nouns.append(word)
 
     return concrete_nouns[:k]
@@ -293,6 +298,7 @@ def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
         # Also try semantic space if available
         try:
             from poetryplayground.semantic_geodesic import get_semantic_space
+
             space = get_semantic_space()
             vec = space.get_vector(word)
             neighbors = space.find_nearest(vec, k=k, exclude={word})
@@ -306,7 +312,7 @@ def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Score each word and sort by quality
         scored_words = []
-        for w in similar_words[:k * 2]:  # Get extras for filtering
+        for w in similar_words[: k * 2]:  # Get extras for filtering
             quality_score = scorer.score_word(w)
             scored_words.append((w, quality_score.overall))
 
@@ -315,12 +321,14 @@ def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Convert to CloudTerms
         for w, quality in scored_words[:k]:
-            terms.append(CloudTerm(
-                term=w,
-                cluster_type=ClusterType.SEMANTIC,
-                score=quality,  # Real quality score
-                freq_bucket=get_frequency_bucket(w)
-            ))
+            terms.append(
+                CloudTerm(
+                    term=w,
+                    cluster_type=ClusterType.SEMANTIC,
+                    score=quality,  # Real quality score
+                    freq_bucket=get_frequency_bucket(w),
+                )
+            )
 
     except Exception as e:
         logger.warning(f"Failed to generate semantic cluster: {e}")
@@ -357,7 +365,7 @@ def _generate_contextual_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Score each word and sort by quality
         scored_words = []
-        for w in all_words[:k * 2]:  # Get extras for filtering
+        for w in all_words[: k * 2]:  # Get extras for filtering
             quality_score = scorer.score_word(w)
             # Also check if this creates a clichéd phrase with the center word
             phrase_penalty = 0.0
@@ -371,12 +379,14 @@ def _generate_contextual_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Convert to CloudTerms
         for w, quality in scored_words[:k]:
-            terms.append(CloudTerm(
-                term=w,
-                cluster_type=ClusterType.CONTEXTUAL,
-                score=max(0.0, quality),  # Real quality score (clamped to 0)
-                freq_bucket=get_frequency_bucket(w)
-            ))
+            terms.append(
+                CloudTerm(
+                    term=w,
+                    cluster_type=ClusterType.CONTEXTUAL,
+                    score=max(0.0, quality),  # Real quality score (clamped to 0)
+                    freq_bucket=get_frequency_bucket(w),
+                )
+            )
 
     except Exception as e:
         logger.warning(f"Failed to generate contextual cluster: {e}")
@@ -418,12 +428,14 @@ def _generate_opposite_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Convert to CloudTerms
         for ant_word, quality in scored_words[:k]:
-            terms.append(CloudTerm(
-                term=ant_word,
-                cluster_type=ClusterType.OPPOSITE,
-                score=quality,  # Combined quality + Datamuse relevance
-                freq_bucket=get_frequency_bucket(ant_word)
-            ))
+            terms.append(
+                CloudTerm(
+                    term=ant_word,
+                    cluster_type=ClusterType.OPPOSITE,
+                    score=quality,  # Combined quality + Datamuse relevance
+                    freq_bucket=get_frequency_bucket(ant_word),
+                )
+            )
 
     except Exception as e:
         logger.warning(f"Failed to generate opposite cluster: {e}")
@@ -463,12 +475,14 @@ def _generate_phonetic_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Convert to CloudTerms
         for w, quality in scored_words[:k]:
-            terms.append(CloudTerm(
-                term=w,
-                cluster_type=ClusterType.PHONETIC,
-                score=quality,  # Real quality score
-                freq_bucket=get_frequency_bucket(w)
-            ))
+            terms.append(
+                CloudTerm(
+                    term=w,
+                    cluster_type=ClusterType.PHONETIC,
+                    score=quality,  # Real quality score
+                    freq_bucket=get_frequency_bucket(w),
+                )
+            )
 
     except Exception as e:
         logger.warning(f"Failed to generate phonetic cluster: {e}")
@@ -514,13 +528,15 @@ def _generate_imagery_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Convert to CloudTerms
         for w, combined, concreteness in scored_words[:k]:
-            terms.append(CloudTerm(
-                term=w,
-                cluster_type=ClusterType.IMAGERY,
-                score=combined,  # Combined quality + concreteness score
-                freq_bucket=get_frequency_bucket(w),
-                metadata={"pos": "NOUN", "concreteness": concreteness}
-            ))
+            terms.append(
+                CloudTerm(
+                    term=w,
+                    cluster_type=ClusterType.IMAGERY,
+                    score=combined,  # Combined quality + concreteness score
+                    freq_bucket=get_frequency_bucket(w),
+                    metadata={"pos": "NOUN", "concreteness": concreteness},
+                )
+            )
 
     except Exception as e:
         logger.warning(f"Failed to generate imagery cluster: {e}")
@@ -565,12 +581,14 @@ def _generate_rare_cluster(word: str, k: int) -> List[CloudTerm]:
 
         # Convert to CloudTerms
         for w, quality in scored_words[:k]:
-            terms.append(CloudTerm(
-                term=w,
-                cluster_type=ClusterType.RARE,
-                score=min(1.0, quality),  # Real quality score with rarity bonus
-                freq_bucket=get_frequency_bucket(w)
-            ))
+            terms.append(
+                CloudTerm(
+                    term=w,
+                    cluster_type=ClusterType.RARE,
+                    score=min(1.0, quality),  # Real quality score with rarity bonus
+                    freq_bucket=get_frequency_bucket(w),
+                )
+            )
 
     except Exception as e:
         logger.warning(f"Failed to generate rare cluster: {e}")
@@ -635,7 +653,9 @@ def generate_conceptual_cloud(
         cache_results=cache_results,
     )
 
-    logger.info(f"Generating conceptual cloud for '{center_word}' with {len(sections_enum)} sections")
+    logger.info(
+        f"Generating conceptual cloud for '{center_word}' with {len(sections_enum)} sections"
+    )
 
     # Generate clusters
     clusters = {}
@@ -730,6 +750,7 @@ def format_as_rich(cloud: ConceptualCloud, show_scores: bool = True) -> str:
 
     # Render to string
     from io import StringIO
+
     string_io = StringIO()
     temp_console = Console(file=string_io, force_terminal=True, width=120)
     temp_console.print(table)
@@ -754,7 +775,7 @@ def format_as_json(cloud: ConceptualCloud) -> str:
         "center_word": cloud.center_word,
         "timestamp": cloud.timestamp,
         "total_terms": cloud.total_terms,
-        "clusters": {}
+        "clusters": {},
     }
 
     for cluster_type, terms in cloud.clusters.items():
