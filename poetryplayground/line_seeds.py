@@ -461,12 +461,14 @@ class LineSeedGenerator:
             try:
                 # Use atmospheric_nouns which includes temporal/sonic words
                 atmos_nouns = list(vocabulary.atmospheric_nouns)
-                rhythm_word = random.choice(atmos_nouns) if atmos_nouns else "moment"
-            except (AttributeError, IndexError) as e:
+                if not atmos_nouns:
+                    raise ValueError("atmospheric_nouns is empty")
+                rhythm_word = random.choice(atmos_nouns)
+            except (AttributeError, IndexError, ValueError) as e:
                 import logging
 
-                logging.warning(f"Could not access vocabulary.atmospheric_nouns: {e}")
-                rhythm_word = "moment"  # Emergency fallback
+                logging.error(f"Could not access vocabulary.atmospheric_nouns: {e}")
+                raise  # NO hardcoded fallbacks
             pattern = f"{seed_words[0]}-{rhythm_word}-{seed_words[-1]}"
 
         quality = self._evaluate_quality(pattern)
@@ -704,7 +706,7 @@ class LineSeedGenerator:
             words = ["word"]  # Fallback word
 
         # Dynamic replacement logic using large vocabulary collections (~300-500 words each)
-        # Falls back to static lists only if vocabulary access fails
+        # Raises exception if vocabulary access fails (NO hardcoded fallbacks)
 
         def get_verb():
             """Get random verb from vocabulary (~298 options)."""
@@ -714,11 +716,11 @@ class LineSeedGenerator:
                     raise ValueError("evocative_verbs is empty")
                 return random.choice(verbs)
             except (AttributeError, IndexError, ValueError) as e:
-                # Log warning and use generic fallback
+                # Log error and re-raise - NO hardcoded fallbacks
                 import logging
 
-                logging.warning(f"Could not access vocabulary.evocative_verbs: {e}")
-                return "exists"  # Minimal generic fallback
+                logging.error(f"Could not access vocabulary.evocative_verbs: {e}")
+                raise
 
         def get_adjective():
             """Get random adjective from vocabulary (~hundreds of options)."""
@@ -731,11 +733,11 @@ class LineSeedGenerator:
                     raise ValueError("poetic_attributes is empty")
                 return random.choice(all_adjectives)
             except (AttributeError, IndexError, ValueError) as e:
-                # Log warning and use generic fallback
+                # Log error and re-raise - NO hardcoded fallbacks
                 import logging
 
-                logging.warning(f"Could not access vocabulary.poetic_attributes: {e}")
-                return "strange"  # Minimal generic fallback
+                logging.error(f"Could not access vocabulary.poetic_attributes: {e}")
+                raise
 
         def get_abstract():
             """Get random abstract noun from vocabulary (~498 options)."""
@@ -745,11 +747,11 @@ class LineSeedGenerator:
                     raise ValueError("atmospheric_nouns is empty")
                 return random.choice(nouns)
             except (AttributeError, IndexError, ValueError) as e:
-                # Log warning and use generic fallback
+                # Log error and re-raise - NO hardcoded fallbacks
                 import logging
 
-                logging.warning(f"Could not access vocabulary.atmospheric_nouns: {e}")
-                return "something"  # Minimal generic fallback
+                logging.error(f"Could not access vocabulary.atmospheric_nouns: {e}")
+                raise
 
         replacements = {
             "{noun}": lambda: random.choice(words) if words else "word",
