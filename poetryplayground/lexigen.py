@@ -38,6 +38,86 @@ def clean_api_results(word_list, exclude_words=None, use_validator=True):
     return filtered
 
 
+def score_and_filter_results(
+    api_response: List[dict],
+    exclude_words: Optional[List[str]] = None,
+    min_quality: float = 0.5,
+    context: Optional['GenerationContext'] = None,
+    use_datamuse_score: bool = True,
+    sample_size: Optional[int] = None
+) -> List[str]:
+    """Score and filter API results using comprehensive quality metrics.
+
+    Args:
+        api_response: List of dicts from Datamuse API with 'word' and 'score' keys
+        exclude_words: Words to exclude from results
+        min_quality: Minimum quality threshold (0-1)
+        context: Optional GenerationContext for tone/formality filtering
+        use_datamuse_score: Whether to incorporate Datamuse relevance scores
+        sample_size: If provided, return top N results after scoring
+
+    Returns:
+        List of words sorted by quality (best first)
+    """
+    from .quality_scorer import get_quality_scorer
+
+    if not api_response:
+        return []
+
+    if exclude_words is None:
+        exclude_words = []
+
+    scorer = get_quality_scorer()
+    exclude_set = {w.lower() for w in exclude_words}
+
+    # Find max Datamuse score for normalization
+    max_datamuse_score = max((item.get('score', 0) for item in api_response), default=1)
+    if max_datamuse_score == 0:
+        max_datamuse_score = 1  # Avoid division by zero
+
+    # Score each word
+    scored_words = []
+    for item in api_response:
+        word = item.get('word', '')
+        if not word or word.lower() in exclude_set:
+            continue
+
+        # Validate word
+        if not word_validator.is_valid_english_word(word, allow_rare=False):
+            continue
+
+        # Get Datamuse relevance score (normalized to 0-1)
+        datamuse_score = 0.0
+        if use_datamuse_score:
+            raw_score = item.get('score', 0)
+            datamuse_score = raw_score / max_datamuse_score if max_datamuse_score > 0 else 0.0
+
+        # Get comprehensive quality score
+        quality_score = scorer.score_word(word, context=context)
+
+        # Combine scores: Datamuse relevance (30%) + Quality (70%)
+        if use_datamuse_score:
+            combined_score = (datamuse_score * 0.3) + (quality_score.overall * 0.7)
+        else:
+            combined_score = quality_score.overall
+
+        # Filter by minimum quality
+        if combined_score >= min_quality:
+            scored_words.append((word, combined_score))
+
+    # Sort by combined score (descending)
+    scored_words.sort(key=lambda x: x[1], reverse=True)
+
+    # Extract words (drop scores)
+    words = [w for w, _ in scored_words]
+
+    # Return sample if requested
+    if sample_size and len(words) > sample_size:
+        return words[:sample_size]
+
+    return words
+
+
 # Centralized Datamuse API instance (singleton)
 api = get_datamuse_instance()
 str_or_list_of_str = TypeVar("str_or_list_of_str", str, List[str])
@@ -172,28 +252,38 @@ def similar_meaning_words(
     input_val: str_or_list_of_str,
     sample_size: Optional[int] = 6,
     datamuse_api_max: Optional[int] = 20,
+    min_quality: float = 0.5,
+    context: Optional['GenerationContext'] = None,
 ) -> list:
-    """Return a list of similar meaning words to a given word, in randomized order, if at least one can be found using
-    Datamuse API.
+    """Return quality-filtered similar meaning words, sorted by quality.
+
+    Uses comprehensive quality scoring to filter and rank results.
 
     :param input_val: the word or words in relation to which this function is looking up similar meaning words
-    :param sample_size: If provided, return a random sample of this many elements. If this number is greater than the
-                        length of the API results, then just return a shuffled copy of the filtered API results.
-    :param datamuse_api_max: specifies the maximum number of results returned by the API. The API client's results
-                             are always sorted from most to least similar meaning (according to a numeric score
-                             provided by Datamuse), hence by using both parameters, one can control the size of both
-                             the sample pool and the sample size.
+    :param sample_size: If provided, return top N quality-ranked results
+    :param datamuse_api_max: specifies the maximum number of results returned by the API
+    :param min_quality: minimum quality threshold (0-1, default 0.5)
+    :param context: optional GenerationContext for tone/formality filtering
     """
     input_words = validate_str_or_list_of_str(input_val)
     sm_words: List[str] = []
     for input_word in input_words:
         # Use cached wrapper for Datamuse API
         response = _cached_datamuse_similar_meaning(input_word, datamuse_api_max or 20)
-        exclude_words = sm_words.copy()
-        sm_words.extend(
-            clean_api_results([obj["word"] for obj in response], exclude_words=exclude_words)
+        exclude_words = input_words + sm_words
+        # Use quality-aware filtering
+        quality_words = score_and_filter_results(
+            response,
+            exclude_words=exclude_words,
+            min_quality=min_quality,
+            context=context,
+            use_datamuse_score=True,
+            sample_size=sample_size
         )
-    return extract_sample(sm_words, sample_size=sample_size)
+        sm_words.extend(quality_words)
+
+    # Already sorted by quality and sampled
+    return sm_words[:sample_size] if sample_size else sm_words
 
 
 def similar_meaning_word(input_word: str, datamuse_api_max: Optional[int] = 10) -> Optional[str]:
@@ -214,17 +304,18 @@ def contextually_linked_words(
     input_val: str_or_list_of_str,
     sample_size: Optional[int] = 6,
     datamuse_api_max: Optional[int] = 20,
+    min_quality: float = 0.5,
+    context: Optional['GenerationContext'] = None,
 ) -> list:
-    """Return a list of words that frequently appear within the same document as a given word, in randomized order,
-    if at least one can be found using the Datamuse API.
+    """Return quality-filtered contextually linked words (collocations).
+
+    Uses comprehensive quality scoring to avoid clichéd collocations.
 
     :param input_val: the word or words in relation to which this function is looking up contextually linked words
-    :param sample_size: If provided, return a random sample of this many elements. If this number is greater than the
-                        length of the API results, then just return a shuffled copy of the filtered API results.
-    :param datamuse_api_max: specifies the maximum number of results returned by the API. The API client's results
-                             are always sorted from most to least frequently coappearing (according to a numeric score
-                             provided by Datamuse), hence by using both parameters, one can control the size of both
-                             the sample pool and the sample size.
+    :param sample_size: If provided, return top N quality-ranked results
+    :param datamuse_api_max: specifies the maximum number of results returned by the API
+    :param min_quality: minimum quality threshold (0-1, default 0.5)
+    :param context: optional GenerationContext for tone/formality filtering
     """
     input_words = validate_str_or_list_of_str(input_val)
     cl_words: List[str] = []
@@ -232,11 +323,20 @@ def contextually_linked_words(
         validate_word(input_word)
         # Use cached wrapper for Datamuse API
         response = _cached_datamuse_contextually_linked(input_word, datamuse_api_max or 20)
-        exclude_words = cl_words.copy()
-        cl_words.extend(
-            clean_api_results([obj["word"] for obj in response], exclude_words=exclude_words)
+        exclude_words = input_words + cl_words
+        # Use quality-aware filtering with cliché detection
+        quality_words = score_and_filter_results(
+            response,
+            exclude_words=exclude_words,
+            min_quality=min_quality,
+            context=context,
+            use_datamuse_score=True,
+            sample_size=sample_size
         )
-    return extract_sample(cl_words, sample_size=sample_size)
+        cl_words.extend(quality_words)
+
+    # Already sorted by quality and sampled
+    return cl_words[:sample_size] if sample_size else cl_words
 
 
 def contextually_linked_word(
@@ -262,42 +362,53 @@ def frequently_following_words(
     input_val: str_or_list_of_str,
     sample_size: Optional[int] = 8,
     datamuse_api_max: Optional[int] = None,
+    min_quality: float = 0.5,
+    context: Optional['GenerationContext'] = None,
 ) -> list:
-    """Return a list of words that frequently follow the given word, in randomized order, if at least one can be found
-    using the Datamuse API.
+    """Return quality-filtered words that frequently follow the given word.
+
+    Combines quality scoring with rarity logic for diverse results.
 
     :param input_val: the word or words in relation to which this function is looking up frequently following words
-    :param sample_size: If provided, return a random sample of this many elements. If this number is greater than
-                             the length of the API results, then just return a shuffled copy of the filtered API
-                             results.
-    :param datamuse_api_max: specifies the maximum number of results returned by the API. The API client's
-                                  results are always sorted from most to least frequently coappearing (according to a
-                                  numeric score provided by Datamuse), hence by using both parameters, one can control
-                                  the size of both the sample pool and the sample size.
+    :param sample_size: If provided, return top N results (mix of quality + rare)
+    :param datamuse_api_max: specifies the maximum number of results returned by the API
+    :param min_quality: minimum quality threshold (0-1, default 0.5)
+    :param context: optional GenerationContext for tone/formality filtering
     """
     input_words = validate_str_or_list_of_str(input_val)
     ff_words: List[str] = []
     for input_word in input_words:
         # Use cached wrapper for Datamuse API
         response = _cached_datamuse_frequently_following(input_word, datamuse_api_max)
-        exclude_words = ff_words.copy()
-        ff_words.extend(
-            clean_api_results([obj["word"] for obj in response], exclude_words=exclude_words)
+        exclude_words = input_words + ff_words
+        # Use quality-aware filtering
+        quality_words = score_and_filter_results(
+            response,
+            exclude_words=exclude_words,
+            min_quality=min_quality,
+            context=context,
+            use_datamuse_score=True,
+            sample_size=None  # Get all quality words for rarity mixing
         )
-        random.shuffle(ff_words)
-    if sample_size and sample_size > 4:
-        # Pick 3 at random from the top X rarest and the rest from the whole
-        # Slice one list of api results using the default order and another using a rarity baeed order
-        if not datamuse_api_max:
-            ending_index = 20
-        elif datamuse_api_max % 2 == 1:
-            ending_index = datamuse_api_max + 1
-        else:
-            ending_index = datamuse_api_max
-        return extract_sample(
-            ff_words[:ending_index], sample_size=sample_size - 3
-        ) + extract_sample(sort_by_rarity(ff_words)[:ending_index], sample_size=3)
-    return extract_sample(ff_words, sample_size=sample_size)  # Standard sampling
+        ff_words.extend(quality_words)
+
+    # Mix quality with rarity for diversity
+    if sample_size and sample_size > 4 and len(ff_words) > sample_size:
+        # Take top quality words + some rare words for variety
+        quality_count = sample_size - 3
+        rare_count = 3
+
+        # Top quality words (already sorted)
+        quality_sample = ff_words[:quality_count]
+
+        # Rare words from the quality-filtered set
+        rare_candidates = sort_by_rarity(ff_words)[:20]
+        rare_sample = extract_sample(rare_candidates, sample_size=rare_count)
+
+        return quality_sample + rare_sample
+
+    # Standard: return top quality words
+    return ff_words[:sample_size] if sample_size else ff_words
 
 
 def frequently_following_word(input_word, datamuse_api_max=10) -> Optional[str]:
@@ -322,80 +433,147 @@ def phonetically_related_words(
     sample_size=None,
     datamuse_api_max=50,
     max_results_per_input_word: Optional[int] = None,
+    min_quality: float = 0.5,
+    context: Optional['GenerationContext'] = None,
 ) -> list:
-    """Returns a list of rhymes and similar sounding words to a word or list of words.
+    """Returns quality-filtered rhymes and similar sounding words.
+
+    Uses comprehensive quality scoring to prefer high-quality phonetic matches.
 
     :param input_val: the word or words in relation to which this function is looking up phonetically related words
-    :param sample_size: If provided, pass this argument to the functions rhymes and similar_sounding_words so that
-                         twice this number of elements are returned by this function. If not provided, the function
-                         will return all rhymes plus however many API results similar_sounding_words.
-    :param datamuse_api_max: specifies how many API results can be returned by the API client when fetching similar
-                        meaning words.
-    :Param max_results-per_input_word: limit the number of output words per input word. Useful for ensuring balance
+    :param sample_size: If provided, return top N quality-ranked results
+    :param datamuse_api_max: specifies how many API results can be returned by the API client
+    :param max_results_per_input_word: limit the number of output words per input word
+    :param min_quality: minimum quality threshold (0-1, default 0.5)
+    :param context: optional GenerationContext for tone/formality filtering
     """
+    from .quality_scorer import get_quality_scorer
+
     input_words = validate_str_or_list_of_str(input_val)
+    scorer = get_quality_scorer()
     results: List[str] = []
+
     for word in input_words:
-        results.extend(rhymes(word, sample_size=max_results_per_input_word))
-        exclude_words = results.copy()
+        # Get rhymes and similar sounding words
+        rhyme_words = rhymes(word, sample_size=max_results_per_input_word)
+        exclude_words = input_words + results + rhyme_words
         similar_words = similar_sounding_words(
             word, sample_size=sample_size, datamuse_api_max=datamuse_api_max
         )
-        # Apply enhanced filtering with exclusions
-        nonrhymes = word_validator.clean_word_list(similar_words, allow_rare=False, exclude_words=exclude_words)
-        results.extend(nonrhymes[:max_results_per_input_word])
-    results = extract_sample(results, sample_size=sample_size)
-    return results
+
+        # Combine and filter
+        all_phonetic = rhyme_words + [w for w in similar_words if w not in exclude_words]
+
+        # Apply quality scoring to phonetic matches
+        scored_phonetic = []
+        for phonetic_word in all_phonetic:
+            if word_validator.is_valid_english_word(phonetic_word, allow_rare=False):
+                quality_score = scorer.score_word(phonetic_word, context=context)
+                if quality_score.overall >= min_quality:
+                    scored_phonetic.append((phonetic_word, quality_score.overall))
+
+        # Sort by quality
+        scored_phonetic.sort(key=lambda x: x[1], reverse=True)
+
+        # Take top results per input word
+        if max_results_per_input_word:
+            results.extend([w for w, _ in scored_phonetic[:max_results_per_input_word]])
+        else:
+            results.extend([w for w, _ in scored_phonetic])
+
+    # Return top quality results
+    return results[:sample_size] if sample_size else results
 
 
 def related_rare_words(
     input_val: str_or_list_of_str,
     sample_size: Optional[int] = 8,
     rare_word_population_max: int = 20,
+    min_quality: float = 0.5,
+    context: Optional['GenerationContext'] = None,
 ) -> list:
-    """Return a random sample of rare related words to a given word. The words can be related phonetically,
-    contextually, or by meaning).
+    """Return quality-filtered rare related words (phonetic, contextual, or semantic).
+
+    Combines rarity with quality scoring to ensure rare words are also poetically valuable.
+    Words must pass quality thresholds while being sorted by rarity.
 
     :param input_val: the word or words in relation to which this function is looking up related rare words
     :param sample_size: If provided, return a random sample of this many elements. If this number is greater than
                         the length of rare word population size, then just return a shuffled copy of that.
     :param rare_word_population_max: specifies the maximum number of related words to subsample from per word.
-    `                                The rare word population is sorted from rarest to most common. If sample_size is
+                                     The rare word population is sorted from rarest to most common. If sample_size is
                                      null, the max results returned by this function is 2 times this number.
+    :param min_quality: minimum quality score (0-1) for words to be included (default 0.5)
+    :param context: optional GenerationContext for tone/formality filtering
     """
     input_words = validate_str_or_list_of_str(input_val)
     results: List[str] = []
     for input_word in input_words:
-        related_words = phonetically_related_words(input_word)
+        # Get quality-filtered phonetically related words
+        related_words = phonetically_related_words(
+            input_word,
+            sample_size=None,
+            min_quality=min_quality,
+            context=context
+        )
+
+        # Add quality-filtered contextually linked words
         related_words.extend(
             word
             for word in contextually_linked_words(
-                input_word, sample_size=None, datamuse_api_max=100
+                input_word,
+                sample_size=None,
+                datamuse_api_max=100,
+                min_quality=min_quality,
+                context=context
             )
             if word not in related_words
         )
+
+        # Add quality-filtered similar meaning words
         related_words.extend(
             word
-            for word in similar_meaning_words(input_word, sample_size=None, datamuse_api_max=100)
+            for word in similar_meaning_words(
+                input_word,
+                sample_size=None,
+                datamuse_api_max=100,
+                min_quality=min_quality,
+                context=context
+            )
             if word not in related_words
         )
+
+        # Filter out words too similar to input
         related_words = [word for word in related_words if not too_similar(input_word, word)]
+
+        # Sort by rarity and take the rarest words (already quality-filtered)
         results.extend(sort_by_rarity(related_words)[:rare_word_population_max])
+
     return extract_sample(results, sample_size=sample_size)
 
 
-def related_rare_word(input_word: str, rare_word_population_max: int = 10) -> Optional[str]:
-    """Return a random rare related word to a given word. The word can be related phonetically, contextually, or by
-    meaning).
+def related_rare_word(
+    input_word: str,
+    rare_word_population_max: int = 10,
+    min_quality: float = 0.5,
+    context: Optional['GenerationContext'] = None,
+) -> Optional[str]:
+    """Return a quality-filtered random rare related word (phonetic, contextual, or semantic).
 
     :param input_word: the word which this function is looking up related rare words to
     :param rare_word_population_max: specifies the maximum number of related words to subsample from. The rare word
                                     population is sorted from rarest to most common.
+    :param min_quality: minimum quality score (0-1) for words to be included (default 0.5)
+    :param context: optional GenerationContext for tone/formality filtering
     """
     return next(
         iter(
             related_rare_words(
-                input_word, sample_size=1, rare_word_population_max=rare_word_population_max
+                input_word,
+                sample_size=1,
+                rare_word_population_max=rare_word_population_max,
+                min_quality=min_quality,
+                context=context
             )
         ),
         None,

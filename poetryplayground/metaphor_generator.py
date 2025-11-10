@@ -144,14 +144,29 @@ class MetaphorGenerator:
                 if len(all_metaphors) >= min_target:
                     break
 
-        # Remove duplicates and store for later use
+        # Remove duplicates, apply quality filtering, and store for later use
+        from .quality_scorer import get_quality_scorer
+        scorer = get_quality_scorer()
+
         unique_metaphors = []
         seen_pairs = set()
+        quality_filtered = 0
+
         for metaphor in all_metaphors:
-            pair = (metaphor[0].lower(), metaphor[1].lower())
-            if pair not in seen_pairs and len(metaphor[0]) > 2 and len(metaphor[1]) > 2:
-                seen_pairs.add(pair)
-                unique_metaphors.append(metaphor)
+            source, target = metaphor[0], metaphor[1]
+            pair = (source.lower(), target.lower())
+
+            if pair not in seen_pairs and len(source) > 2 and len(target) > 2:
+                # Apply quality filter - only keep high-quality metaphors
+                quality = self._score_metaphor(source, target, [])
+                if quality >= 0.5:  # Quality threshold for final selection
+                    seen_pairs.add(pair)
+                    unique_metaphors.append(metaphor)
+                else:
+                    quality_filtered += 1
+
+        if quality_filtered > 0:
+            print(f"  🎯 Filtered out {quality_filtered} low-quality metaphors")
 
         print(
             f"🎉 Extracted {len(unique_metaphors)} unique metaphor patterns from {documents_processed} diverse texts!"
@@ -166,8 +181,17 @@ class MetaphorGenerator:
         clean_text = re.sub(r"\s+", " ", text[:500]).strip()
         return clean_text[:200]
 
-    def _is_valid_metaphor_pair(self, source: str, target: str) -> bool:
-        """Check if a source-target pair makes a valid metaphor."""
+    def _is_valid_metaphor_pair(self, source: str, target: str, check_quality: bool = True) -> bool:
+        """Check if a source-target pair makes a valid metaphor.
+
+        Args:
+            source: The tenor (what's being described)
+            target: The vehicle (what it's compared to)
+            check_quality: Whether to apply quality filtering (default: True)
+
+        Returns:
+            True if pair is valid and high-quality enough
+        """
         # Filter out common non-metaphorical phrases
         invalid_pairs = {
             ("it", "that"),
@@ -185,10 +209,32 @@ class MetaphorGenerator:
         if len(source) < 3 or len(target) < 3:
             return False
 
-        # Use word validator
-        return word_validator.is_valid_english_word(
-            source
-        ) and word_validator.is_valid_english_word(target)
+        # Use word validator for basic checks
+        if not (word_validator.is_valid_english_word(source) and
+                word_validator.is_valid_english_word(target)):
+            return False
+
+        # Apply quality filtering if requested
+        if check_quality:
+            from .quality_scorer import get_quality_scorer
+            scorer = get_quality_scorer()
+
+            # Reject if the phrase itself is a cliché
+            metaphor_phrase = f"{source} is {target}"
+            if scorer.is_cliche(metaphor_phrase, threshold=0.6):
+                return False
+
+            # Reject if both words are individually clichéd
+            if scorer.is_cliche(source, threshold=0.5) and scorer.is_cliche(target, threshold=0.5):
+                return False
+
+            # Require minimum word quality
+            source_quality = scorer.score_word(source).overall
+            target_quality = scorer.score_word(target).overall
+            avg_quality = (source_quality + target_quality) / 2
+
+            if avg_quality < 0.4:  # Quality threshold
+                return False
 
         return True
 
@@ -232,13 +278,35 @@ class MetaphorGenerator:
                             if self._is_valid_metaphor_pair(source, target):
                                 found_metaphors.append((source, target, sentence))
 
-            # Sort by quality (prefer shorter, cleaner matches)
+            # Sort by quality using comprehensive quality scoring
             if found_metaphors:
-                found_metaphors.sort(key=lambda x: len(x[2]))
+                from .quality_scorer import get_quality_scorer
+                scorer = get_quality_scorer()
+
+                # Score each metaphor and sort by quality
+                scored_metaphors = []
+                for source, target, sentence in found_metaphors:
+                    # Calculate quality score for this metaphor
+                    quality = self._score_metaphor(source, target, [])
+
+                    # Also consider sentence clarity (shorter is often clearer)
+                    clarity_bonus = max(0, 1.0 - (len(sentence) / 200))  # Bonus for concise context
+
+                    # Combined score: 80% metaphor quality, 20% clarity
+                    combined_score = (quality * 0.8) + (clarity_bonus * 0.2)
+
+                    scored_metaphors.append((source, target, sentence, combined_score))
+
+                # Sort by combined score (descending)
+                scored_metaphors.sort(key=lambda x: x[3], reverse=True)
+
+                # Convert back to original format (drop the score)
+                found_metaphors = [(s, t, sent) for s, t, sent, _ in scored_metaphors]
+
                 if is_additional:
-                    print(f"    ✓ Found {len(found_metaphors)} additional metaphor patterns")
+                    print(f"    ✓ Found {len(found_metaphors)} additional metaphor patterns (quality-sorted)")
                 else:
-                    print(f"    ✓ Found {len(found_metaphors)} metaphor patterns")
+                    print(f"    ✓ Found {len(found_metaphors)} metaphor patterns (quality-sorted)")
             else:
                 print("    ✓ Found 0 metaphor patterns")
 
@@ -524,8 +592,14 @@ class MetaphorGenerator:
         return found_metaphors
 
     def _find_connecting_attributes(self, source: str, target: str) -> List[str]:
-        """Find attributes that connect source and target."""
+        """Find attributes that connect source and target.
+
+        Enhanced to use word embeddings for semantic similarity when available.
+        """
+        from .quality_scorer import get_quality_scorer
+
         attributes = []
+        scorer = get_quality_scorer()
 
         # Try multiple approaches to find connections
 
@@ -537,7 +611,17 @@ class MetaphorGenerator:
             # Find overlaps
             if source_context and target_context:
                 overlap = set(source_context) & set(target_context)
-                attributes.extend(list(overlap))
+                # Filter by quality - only keep good connecting words
+                quality_attributes = []
+                for attr in overlap:
+                    if not scorer.is_cliche(attr):  # Avoid clichéd connections
+                        quality_score = scorer.score_word(attr).overall
+                        if quality_score > 0.5:  # Quality threshold
+                            quality_attributes.append((attr, quality_score))
+
+                # Sort by quality
+                quality_attributes.sort(key=lambda x: x[1], reverse=True)
+                attributes.extend([attr for attr, _ in quality_attributes[:5]])
         except Exception:
             pass
 
@@ -550,19 +634,54 @@ class MetaphorGenerator:
                 # Check if any similar words overlap
                 if source_similar and target_similar:
                     overlap = set(source_similar) & set(target_similar)
-                    attributes.extend(list(overlap))
+                    # Filter by quality
+                    quality_overlap = [w for w in overlap if not scorer.is_cliche(w)]
+                    attributes.extend(quality_overlap)
             except Exception:
                 pass
 
-        # 3. Generate thematic attributes based on word characteristics
+        # 3. Try semantic bridge words using concreteness preference
+        if len(attributes) < 2:
+            try:
+                # Generate candidate attributes from context
+                candidates = []
+                for word in [source, target]:
+                    try:
+                        context = contextually_linked_words(word, sample_size=10)
+                        candidates.extend(context)
+                    except Exception:
+                        pass
+
+                # Score candidates by how well they bridge the gap
+                if candidates:
+                    bridge_candidates = []
+                    for candidate in set(candidates):
+                        if not scorer.is_cliche(candidate):
+                            # Prefer concrete connecting words for vivid imagery
+                            concreteness = scorer.get_concreteness(candidate)
+                            quality = scorer.score_word(candidate).overall
+                            # Combined score: prefer concrete + high quality
+                            bridge_score = (concreteness * 0.6) + (quality * 0.4)
+                            bridge_candidates.append((candidate, bridge_score))
+
+                    # Take top candidates
+                    bridge_candidates.sort(key=lambda x: x[1], reverse=True)
+                    attributes.extend([c for c, _ in bridge_candidates[:3]])
+            except Exception:
+                pass
+
+        # 4. Generate thematic attributes based on word characteristics
         if not attributes:
             attributes = self._generate_thematic_attributes(source, target)
 
-        # 4. Last resort: use shared vocabulary for diverse poetic attributes
+        # 5. Last resort: use shared vocabulary for diverse poetic attributes
+        # But filter for quality
         if not attributes:
-            attributes = vocabulary.get_random_attributes(count=3)
+            candidates = vocabulary.get_random_attributes(count=10)
+            quality_candidates = [c for c in candidates if not scorer.is_cliche(c)]
+            attributes = quality_candidates[:3] if quality_candidates else candidates[:3]
 
-        return attributes[:3]  # Limit to 3
+        return attributes[:3]  # Limit to 3 best
 
     def _generate_thematic_attributes(self, source: str, target: str) -> List[str]:
         """Generate attributes based on the thematic nature of the words."""
@@ -589,39 +708,64 @@ class MetaphorGenerator:
         return attributes
 
     def _score_metaphor(self, source: str, target: str, grounds: List[str]) -> float:
-        """Score a metaphor for quality."""
+        """Score a metaphor for quality using comprehensive quality system."""
+        from .quality_scorer import get_quality_scorer
+
+        scorer = get_quality_scorer()
         score = 0.5  # Base score
 
-        # Novelty: Penalize very common pairings
-        common_pairs = {
-            ("life", "journey"),
-            ("love", "fire"),
-            ("time", "river"),
-            ("mind", "ocean"),
-            ("death", "sleep"),
-            ("heart", "stone"),
-        }
-        if (source, target) not in common_pairs:
-            score += 0.2
+        # 1. Novelty: Check against comprehensive cliché database
+        metaphor_phrase = f"{source} is {target}"
+        if scorer.is_cliche(metaphor_phrase, threshold=0.6):
+            score -= 0.3  # Heavy penalty for clichéd metaphors
+        else:
+            score += 0.2  # Bonus for fresh pairing
 
-        # Coherence: Bonus for having connecting grounds
+        # Also check individual words for overuse
+        if scorer.is_cliche(source) or scorer.is_cliche(target):
+            score -= 0.1  # Moderate penalty for clichéd words
+
+        # 2. Coherence: Bonus for having connecting grounds
         if grounds:
+            # More grounds = stronger connection
             score += 0.1 * min(len(grounds), 3)
 
-        # Vividness: Bonus for concrete imagery
-        concrete_words = set()
-        for domain_words in self.domains.values():
-            concrete_words.update(domain_words)
+            # Quality of grounds matters
+            ground_qualities = [scorer.score_word(g).overall for g in grounds[:3]]
+            if ground_qualities:
+                avg_ground_quality = sum(ground_qualities) / len(ground_qualities)
+                score += 0.1 * avg_ground_quality
 
-        if target in concrete_words:
-            score += 0.1
+        # 3. Concreteness balance: Prefer concrete target for vivid imagery
+        target_concreteness = scorer.get_concreteness(target)
+        source_concreteness = scorer.get_concreteness(source)
 
-        # Semantic distance: Reward unexpected connections
-        source_meaning = similar_meaning_words(source, sample_size=5)
-        if source_meaning and target not in source_meaning:
-            score += 0.1
+        # Ideal: abstract source, concrete target (e.g., "love is a rose")
+        if source_concreteness < 0.6 and target_concreteness > 0.7:
+            score += 0.15  # Bonus for good imagery
+        # Penalize abstract-to-abstract (weak imagery)
+        elif source_concreteness < 0.5 and target_concreteness < 0.5:
+            score -= 0.1
+        # Also good: concrete-to-concrete (clear comparison)
+        elif source_concreteness > 0.7 and target_concreteness > 0.7:
+            score += 0.05
 
-        return min(1.0, score)
+        # 4. Word quality: High-quality words make better metaphors
+        source_quality = scorer.score_word(source).overall
+        target_quality = scorer.score_word(target).overall
+        avg_word_quality = (source_quality + target_quality) / 2
+        score += 0.1 * avg_word_quality
+
+        # 5. Semantic distance: Reward unexpected but coherent connections
+        # (Keep existing logic but adjust weight)
+        try:
+            source_meaning = similar_meaning_words(source, sample_size=5)
+            if source_meaning and target not in source_meaning:
+                score += 0.1  # Bonus for non-obvious connection
+        except Exception:
+            pass
+
+        return max(0.0, min(1.0, score))
 
     def generate_synesthetic_metaphor(self, source: str) -> Optional[Metaphor]:
         """Generate a cross-sensory (synesthetic) metaphor."""

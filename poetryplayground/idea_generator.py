@@ -40,6 +40,7 @@ class PoetryIdea:
     source_preview: str  # Brief preview of source text
     creative_prompt: str  # Suggested way to use this idea
     keywords: List[str] = field(default_factory=list)
+    quality_score: float = 0.5  # Overall quality score (0-1)
 
 
 @dataclass
@@ -93,8 +94,16 @@ class IdeaCollection:
         """Get total number of ideas collected"""
         return sum(len(self.get_ideas_by_type(idea_type)) for idea_type in IdeaType)
 
-    def get_random_mixed_selection(self, count: int) -> List[PoetryIdea]:
-        """Get a random mix of ideas across all types"""
+    def get_random_mixed_selection(self, count: int, prefer_quality: bool = True) -> List[PoetryIdea]:
+        """Get a random mix of ideas across all types.
+
+        Args:
+            count: Number of ideas to return
+            prefer_quality: If True, weight selection toward higher quality ideas
+
+        Returns:
+            List of PoetryIdeas
+        """
         all_ideas = []
         for idea_type in IdeaType:
             all_ideas.extend(self.get_ideas_by_type(idea_type))
@@ -102,7 +111,15 @@ class IdeaCollection:
         if not all_ideas:
             return []
 
-        return random.sample(all_ideas, min(count, len(all_ideas)))
+        if prefer_quality:
+            # Sort by quality and take from top, but with some randomness
+            all_ideas.sort(key=lambda x: x.quality_score, reverse=True)
+            # Take from top 60% to maintain variety while favoring quality
+            selection_pool_size = max(count, int(len(all_ideas) * 0.6))
+            selection_pool = all_ideas[:selection_pool_size]
+            return random.sample(selection_pool, min(count, len(selection_pool)))
+        else:
+            return random.sample(all_ideas, min(count, len(all_ideas)))
 
 
 class PoetryIdeaGenerator:
@@ -346,13 +363,17 @@ class PoetryIdeaGenerator:
                     if not self._is_good_idea(idea_text, idea_type):
                         continue
 
-                    # Create the idea
+                    # Calculate quality score for this idea
+                    quality = self._evaluate_idea_quality(idea_text, idea_type)
+
+                    # Create the idea with quality score
                     idea = PoetryIdea(
                         text=idea_text,
                         idea_type=idea_type,
                         source_preview=source_preview,
                         creative_prompt=random.choice(self.creative_prompts[idea_type]),
                         keywords=self._extract_keywords(idea_text),
+                        quality_score=quality,
                     )
 
                     ideas.append(idea)
@@ -366,7 +387,15 @@ class PoetryIdeaGenerator:
         return ideas
 
     def _is_good_idea(self, text: str, idea_type: IdeaType) -> bool:
-        """Check if extracted text makes a good creative seed"""
+        """Check if extracted text makes a good creative seed using comprehensive quality scoring.
+
+        Args:
+            text: The extracted text to evaluate
+            idea_type: The type of idea being evaluated
+
+        Returns:
+            True if the idea meets quality thresholds
+        """
         # Basic length check
         if len(text) < 20 or len(text) > 300:
             return False
@@ -401,14 +430,126 @@ class PoetryIdeaGenerator:
         if idea_type == IdeaType.DIALOGUE_SPARK and text.count('"') < 2:
             return False  # Should be actual quoted speech
 
-        # Must have some interesting words
-        interesting_word_count = 0
-        words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
-        for word in words:
-            if len(word) > 4 and self.word_validator.is_valid_english_word(word):
-                interesting_word_count += 1
+        # Apply comprehensive quality filtering
+        quality_score = self._evaluate_idea_quality(text, idea_type)
 
-        return not interesting_word_count < 3
+        # Quality threshold varies by type
+        # Imagery and sensory details need higher quality (more vivid)
+        if idea_type in [IdeaType.VIVID_IMAGERY, IdeaType.SENSORY_DETAIL]:
+            return quality_score >= 0.6
+        # Philosophical and metaphysical can be more abstract
+        elif idea_type in [IdeaType.PHILOSOPHICAL_FRAGMENT, IdeaType.METAPHYSICAL_CONCEPT]:
+            return quality_score >= 0.5
+        # Everything else uses moderate threshold
+        else:
+            return quality_score >= 0.55
+
+    def _evaluate_idea_quality(self, text: str, idea_type: IdeaType) -> float:
+        """Evaluate the quality of a poetry idea using comprehensive quality scoring.
+
+        Args:
+            text: The idea text to evaluate
+            idea_type: The type of idea
+
+        Returns:
+            Quality score from 0 to 1
+        """
+        from .quality_scorer import get_quality_scorer
+
+        scorer = get_quality_scorer()
+        score = 0.0
+
+        # Extract meaningful words
+        words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
+        stop_words = {"a", "an", "the", "of", "in", "on", "at", "to", "for", "is", "was", "are", "were", "and", "but", "or", "with"}
+        meaningful_words = [w for w in words if w not in stop_words and len(w) > 2]
+
+        if not meaningful_words:
+            return 0.3
+
+        # 1. Word Quality (35% weight)
+        word_qualities = []
+        cliche_count = 0
+        for word in meaningful_words[:15]:  # Limit for performance
+            if self.word_validator.is_valid_english_word(word, allow_rare=True):
+                word_score = scorer.score_word(word)
+                word_qualities.append(word_score.overall)
+                if scorer.is_cliche(word, threshold=0.5):
+                    cliche_count += 1
+
+        if word_qualities:
+            avg_word_quality = sum(word_qualities) / len(word_qualities)
+            score += avg_word_quality * 0.35
+
+        # 2. Novelty: Penalize clichés (25% weight)
+        cliche_ratio = cliche_count / len(meaningful_words) if meaningful_words else 0
+        novelty = 1.0 - (cliche_ratio * 0.7)  # Moderate penalty
+
+        # Check phrase-level clichés
+        phrase_score = scorer.score_phrase(text[:150])  # Limit length for performance
+        novelty = min(novelty, phrase_score.novelty)
+
+        score += novelty * 0.25
+
+        # 3. Type-specific quality (40% weight)
+        # Different idea types have different quality criteria
+        type_score = 0.5  # Base
+
+        if idea_type in [IdeaType.VIVID_IMAGERY, IdeaType.SENSORY_DETAIL]:
+            # Prefer concrete, vivid imagery
+            concreteness_scores = [scorer.get_concreteness(w) for w in meaningful_words[:10]]
+            if concreteness_scores:
+                avg_concrete = sum(concreteness_scores) / len(concreteness_scores)
+                # Ideal: 0.7-0.95 (very concrete)
+                if 0.7 <= avg_concrete <= 0.95:
+                    type_score = 1.0
+                elif 0.6 <= avg_concrete < 0.7:
+                    type_score = 0.8
+                elif avg_concrete > 0.5:
+                    type_score = 0.6
+
+        elif idea_type in [IdeaType.PHILOSOPHICAL_FRAGMENT, IdeaType.METAPHYSICAL_CONCEPT]:
+            # Can be more abstract, but should have some concrete grounding
+            concreteness_scores = [scorer.get_concreteness(w) for w in meaningful_words[:10]]
+            if concreteness_scores:
+                avg_concrete = sum(concreteness_scores) / len(concreteness_scores)
+                # Ideal: 0.3-0.6 (moderately abstract with some concrete)
+                if 0.3 <= avg_concrete <= 0.6:
+                    type_score = 1.0
+                elif avg_concrete < 0.3:
+                    type_score = 0.7  # Too abstract
+                else:
+                    type_score = 0.8  # Concrete is okay
+
+        elif idea_type == IdeaType.OPENING_LINE:
+            # Should have good momentum and not be clichéd
+            if novelty > 0.7:
+                type_score = 0.9
+            elif novelty > 0.5:
+                type_score = 0.7
+            else:
+                type_score = 0.5
+
+        elif idea_type == IdeaType.EMOTIONAL_MOMENT:
+            # Balance of concrete and abstract, avoid cliché emotions
+            concreteness_scores = [scorer.get_concreteness(w) for w in meaningful_words[:10]]
+            if concreteness_scores:
+                avg_concrete = sum(concreteness_scores) / len(concreteness_scores)
+                # Ideal: 0.5-0.8 (balanced)
+                if 0.5 <= avg_concrete <= 0.8 and novelty > 0.6:
+                    type_score = 1.0
+                elif novelty > 0.5:
+                    type_score = 0.7
+                else:
+                    type_score = 0.5
+
+        else:
+            # Default: balanced scoring
+            type_score = 0.7
+
+        score += type_score * 0.4
+
+        return min(1.0, max(0.0, score))
 
     def _extract_keywords(self, text: str) -> List[str]:
         """Extract key words from the idea text"""

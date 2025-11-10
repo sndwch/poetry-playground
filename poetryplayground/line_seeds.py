@@ -15,6 +15,7 @@ from .lexigen import (
     phonetically_related_words,
     similar_meaning_words,
 )
+from .semantic_geodesic import get_semantic_space
 from .vocabulary import vocabulary
 from .word_validator import word_validator
 
@@ -297,11 +298,15 @@ class LineSeedGenerator:
                     )
 
         # Fall back to pattern-based generation
-        # Get related words for variety
+        # Get related words for variety - use ALL seed words with larger samples
         expanded_words = []
-        for word in seed_words[:2]:  # Limit for performance
-            expanded_words.extend(similar_meaning_words(word, sample_size=3))
-            expanded_words.extend(phonetically_related_words(word, sample_size=2))
+        for word in seed_words:  # Use all seed words for maximum diversity
+            expanded_words.extend(
+                similar_meaning_words(word, sample_size=8, min_quality=0.6)
+            )
+            expanded_words.extend(
+                phonetically_related_words(word, sample_size=6, min_quality=0.6)
+            )
 
         expanded_words = word_validator.clean_word_list(expanded_words)
 
@@ -360,10 +365,12 @@ class LineSeedGenerator:
         sense = random.choice(list(self.sensory_map.keys()))
         sensory_words = self.sensory_map[sense]
 
-        # Get contextual words
+        # Get contextual words - use ALL seed words with larger samples
         context_words = []
-        for word in seed_words[:2]:
-            context_words.extend(contextually_linked_words(word, sample_size=3))
+        for word in seed_words:  # Use all seed words for maximum diversity
+            context_words.extend(
+                contextually_linked_words(word, sample_size=15, min_quality=0.6)
+            )
 
         context_words = word_validator.clean_word_list(context_words)
 
@@ -442,10 +449,14 @@ class LineSeedGenerator:
             # Create alliteration or assonance
             pattern = f"{sound_words[0]}, {sound_words[1]}, {sound_words[2]}"
         else:
-            # Fallback to rhythm pattern
-            pattern = (
-                f"{seed_words[0]}-{random.choice(['pause', 'beat', 'breath'])}-{seed_words[-1]}"
-            )
+            # Fallback to rhythm pattern - use atmospheric nouns for rhythm words
+            rhythm_words = ['pause', 'beat', 'breath', 'silence', 'moment', 'stillness']
+            try:
+                # Sample from atmospheric nouns related to rhythm/time
+                rhythm_word = random.choice(rhythm_words)
+            except (AttributeError, IndexError):
+                rhythm_word = 'pause'  # Fallback
+            pattern = f"{seed_words[0]}-{rhythm_word}-{seed_words[-1]}"
 
         quality = self._evaluate_quality(pattern)
 
@@ -488,9 +499,13 @@ class LineSeedGenerator:
             else:
                 ending = f"Just {seed_words[0]}."
         elif approach == "open_question":
-            ending = (
-                f"What {random.choice(['remains', 'persists', 'echoes'])} when {seed_words[0]}...?"
-            )
+            # Use evocative verbs for question endings
+            try:
+                question_verbs = [v for v in vocabulary.evocative_verbs if len(v) <= 10]
+                question_verb = random.choice(question_verbs) if question_verbs else "remains"
+            except (AttributeError, IndexError):
+                question_verb = random.choice(['remains', 'persists', 'echoes'])
+            ending = f"What {question_verb} when {seed_words[0]}...?"
         else:
             # Emotional truth or paradox
             ending = f"All {seed_words[0]}, no {seed_words[-1]}"
@@ -507,26 +522,116 @@ class LineSeedGenerator:
             notes=f"Closing approach: {approach}",
         )
 
+    def _is_semantically_similar(
+        self, text: str, existing_texts: List[str], threshold: float = 0.90
+    ) -> bool:
+        """Check if text is semantically similar to any existing texts.
+
+        Args:
+            text: New text to check
+            existing_texts: List of previously generated texts
+            threshold: Similarity threshold (0.90 = very similar, 0.95 = nearly identical)
+
+        Returns:
+            True if text is too similar to any existing text
+        """
+        if not existing_texts:
+            return False
+
+        try:
+            # Get semantic space (cached singleton)
+            semantic_space = get_semantic_space()
+
+            # Get embedding for new text by averaging word vectors
+            new_words = text.lower().split()
+            new_vectors = []
+            for word in new_words:
+                if word in semantic_space.space:
+                    new_vectors.append(semantic_space.space[word])
+
+            if not new_vectors:
+                return False  # No vectors available, assume not similar
+
+            # Average the word vectors for the new text
+            import numpy as np
+            new_vec = np.mean(new_vectors, axis=0)
+
+            # Check similarity against each existing text
+            for existing_text in existing_texts:
+                existing_words = existing_text.lower().split()
+                existing_vectors = []
+                for word in existing_words:
+                    if word in semantic_space.space:
+                        existing_vectors.append(semantic_space.space[word])
+
+                if not existing_vectors:
+                    continue  # Skip if no vectors available
+
+                # Average the word vectors for existing text
+                existing_vec = np.mean(existing_vectors, axis=0)
+
+                # Compute cosine similarity
+                similarity = np.dot(new_vec, existing_vec) / (
+                    np.linalg.norm(new_vec) * np.linalg.norm(existing_vec)
+                )
+
+                if similarity >= threshold:
+                    return True  # Too similar!
+
+            return False  # Not similar to any existing text
+
+        except Exception:
+            # If semantic comparison fails, assume not similar
+            return False
+
     def generate_seed_collection(
         self, seed_words: List[str], num_seeds: int = 10
     ) -> List[LineSeed]:
-        """Generate a collection of varied line seeds.
+        """Generate a collection of varied line seeds with deduplication.
 
         Args:
             seed_words: Words to base generation on
             num_seeds: Number of seeds to generate
 
         Returns:
-            List of LineSeeds of various types
+            List of LineSeeds of various types (guaranteed unique)
         """
         seeds = []
+        seen_texts = set()  # Track exact text
+        seen_normalized = set()  # Track normalized text (lowercase, stripped)
+        generated_texts = []  # Track all generated texts for semantic comparison
+
+        def add_unique_seed(generator_func, max_attempts=5):
+            """Try to generate a unique seed, retry if duplicate or semantically similar."""
+            for attempt in range(max_attempts):
+                candidate = generator_func(seed_words)
+                text = candidate.text
+                normalized = text.lower().strip()
+
+                # Check for exact/normalized duplicates
+                if text in seen_texts or normalized in seen_normalized:
+                    continue  # Try again
+
+                # Check for semantic similarity (using 0.90 threshold)
+                if self._is_semantically_similar(text, generated_texts, threshold=0.90):
+                    continue  # Too similar, try again
+
+                # Passed all checks - add the seed!
+                seeds.append(candidate)
+                seen_texts.add(text)
+                seen_normalized.add(normalized)
+                generated_texts.append(text)
+                return True
+
+            # Failed to generate unique seed after max attempts
+            return False
 
         # Ensure variety by generating different types
-        seeds.append(self.generate_opening_line(seed_words))
-        seeds.append(self.generate_pivot_line(seed_words))
-        seeds.append(self.generate_image_seed(seed_words))
-        seeds.append(self.generate_sonic_pattern(seed_words))
-        seeds.append(self.generate_ending_approach(seed_words))
+        add_unique_seed(self.generate_opening_line)
+        add_unique_seed(self.generate_pivot_line)
+        add_unique_seed(self.generate_image_seed)
+        add_unique_seed(self.generate_sonic_pattern)
+        add_unique_seed(self.generate_ending_approach)
 
         # Fill remaining with fragments and varied types
         remaining = num_seeds - len(seeds)
@@ -534,7 +639,7 @@ class LineSeedGenerator:
             seed_type = random.choice(
                 [self.generate_fragment, self.generate_image_seed, self.generate_pivot_line]
             )
-            seeds.append(seed_type(seed_words))
+            add_unique_seed(seed_type)
 
         # Sort by quality score
         seeds.sort(key=lambda s: s.quality_score, reverse=True)
@@ -551,7 +656,13 @@ class LineSeedGenerator:
             if related:
                 contrast = related[-1]  # Often least similar is interesting
                 return f"Between {seed_words[0]} and {contrast}, the {seed_words[1]}..."
-        return f"The {seed_words[0]}'s {random.choice(['shadow', 'echo', 'ghost'])}..."
+        # Use atmospheric nouns for evocative possessives
+        try:
+            possessive_nouns = [n for n in vocabulary.atmospheric_nouns if len(n) <= 8]
+            possessive_noun = random.choice(possessive_nouns) if possessive_nouns else "shadow"
+        except (AttributeError, IndexError):
+            possessive_noun = random.choice(['shadow', 'echo', 'ghost'])
+        return f"The {seed_words[0]}'s {possessive_noun}..."
 
     def _generate_temporal_opening(self, seed_words: List[str]) -> str:
         """Generate opening using temporal shift."""
@@ -573,24 +684,73 @@ class LineSeedGenerator:
         return self._fill_pattern(pattern, seed_words)
 
     def _fill_pattern(self, pattern: str, words: List[str]) -> str:
-        """Fill a pattern with appropriate words."""
+        """Fill a pattern with appropriate words using near-infinite vocabulary pools."""
         filled = pattern
 
         # Ensure we have words to work with
         if not words:
             words = ["word"]  # Fallback word
 
-        # Simple replacement logic (can be enhanced)
+        # Dynamic replacement logic using large vocabulary collections (~300-500 words each)
+        # Falls back to static lists only if vocabulary access fails
+
+        def get_verb():
+            """Get random verb from vocabulary (~298 options)."""
+            try:
+                return random.choice(list(vocabulary.evocative_verbs))
+            except (AttributeError, IndexError):
+                # Fallback to static list
+                return random.choice([
+                    "carries", "holds", "breaks", "turns", "waits", "drifts", "fades",
+                    "whispers", "trembles", "shifts", "lingers", "dissolves"
+                ])
+
+        def get_adjective():
+            """Get random adjective from vocabulary (~hundreds of options)."""
+            try:
+                # Collect all adjectives from poetic_attributes dictionary
+                all_adjectives = []
+                for category_attrs in vocabulary.poetic_attributes.values():
+                    all_adjectives.extend(category_attrs)
+                return random.choice(all_adjectives)
+            except (AttributeError, IndexError, ValueError):
+                # Fallback to static list
+                return random.choice([
+                    "distant", "quiet", "sharp", "soft", "strange", "hollow", "bright",
+                    "faint", "worn", "ancient", "still", "fleeting", "hidden"
+                ])
+
+        def get_abstract():
+            """Get random abstract noun from vocabulary (~498 options)."""
+            try:
+                return random.choice(list(vocabulary.atmospheric_nouns))
+            except (AttributeError, IndexError):
+                # Fallback to static list
+                return random.choice([
+                    "memory", "time", "silence", "distance", "shadow", "light", "absence",
+                    "presence", "longing", "stillness", "movement", "echo"
+                ])
+
         replacements = {
             "{noun}": lambda: random.choice(words) if words else "word",
-            "{verb}": lambda: random.choice(["carries", "holds", "breaks", "turns", "waits"]),
-            "{adjective}": lambda: random.choice(["distant", "quiet", "sharp", "soft", "strange"]),
-            "{pronoun}": lambda: random.choice(["we", "they", "it", "you"]),
-            "{Pronoun}": lambda: random.choice(["We", "They", "It", "You"]),
+            "{verb}": get_verb,
+            "{adjective}": get_adjective,
+            "{pronoun}": lambda: random.choice([
+                "we", "they", "it", "you", "she", "he", "one", "someone",
+                "something", "everything", "nothing", "anyone", "anything"
+            ]),
+            "{Pronoun}": lambda: random.choice([
+                "We", "They", "It", "You", "She", "He", "One", "Someone",
+                "Something", "Everything", "Nothing", "Anyone", "Anything"
+            ]),
             "{Temporal}": lambda: random.choice(self.temporal_markers),
             "{preposition}": lambda: random.choice(self.spatial_prepositions),
-            "{abstract}": lambda: random.choice(["memory", "time", "silence", "distance"]),
-            "{comparative}": lambda: random.choice(["more", "less", "almost", "nearly"]),
+            "{abstract}": get_abstract,
+            "{comparative}": lambda: random.choice([
+                "more", "less", "almost", "nearly", "barely", "scarcely", "hardly",
+                "quite", "rather", "somewhat", "partly", "fully", "half", "mostly",
+                "entirely", "completely", "utterly", "slightly", "deeply"
+            ]),
         }
 
         for placeholder, func in replacements.items():
@@ -605,7 +765,7 @@ class LineSeedGenerator:
         return self._fill_pattern(pattern, words)
 
     def _evaluate_quality(self, text: str) -> float:
-        """Evaluate the quality of a generated seed.
+        """Evaluate the quality of a generated seed using comprehensive quality scoring.
 
         Args:
             text: The generated text
@@ -613,27 +773,76 @@ class LineSeedGenerator:
         Returns:
             Quality score from 0 to 1
         """
-        score = 0.5  # Base score
+        from .quality_scorer import get_quality_scorer
 
-        # Check for variety in word length
+        scorer = get_quality_scorer()
+        score = 0.0  # Start from zero - must earn points
+
+        # Extract meaningful words (filter out punctuation and common articles)
         words = text.split()
-        if words:
-            lengths = [len(w.strip(".,!?")) for w in words]
-            if len(set(lengths)) > len(lengths) * 0.6:
-                score += 0.1
+        stop_words = {"a", "an", "the", "of", "in", "on", "at", "to", "for", "is", "was", "are", "were", "and", "but"}
+        meaningful_words = [
+            w.strip(".,!?;:").lower() for w in words if w.strip(".,!?;:").lower() not in stop_words
+        ]
 
-        # Check for avoiding clichés
-        cliches = ["heart", "soul", "love", "dream", "tears", "broken"]
-        if not any(cliche in text.lower() for cliche in cliches):
-            score += 0.2
+        if not meaningful_words:
+            return 0.3  # Low score for no meaningful content
 
-        # Check for interesting word combinations
-        if "..." in text:
-            score += 0.1  # Suggests openness
+        # 1. Word Quality: Evaluate individual word quality (40% weight)
+        word_qualities = []
+        cliche_count = 0
+        for word in meaningful_words:
+            if word_validator.is_valid_english_word(word, allow_rare=True):
+                word_score = scorer.score_word(word)
+                word_qualities.append(word_score.overall)
+                # Track clichéd words
+                if scorer.is_cliche(word, threshold=0.5):
+                    cliche_count += 1
 
-        # Check for concrete imagery
-        concrete_indicators = ["the", "through", "between", "of"]
-        if any(word in text.lower() for word in concrete_indicators):
-            score += 0.1
+        if word_qualities:
+            avg_word_quality = sum(word_qualities) / len(word_qualities)
+            score += avg_word_quality * 0.4
+        else:
+            score += 0.2  # Partial credit if words exist but aren't validated
 
-        return min(1.0, score)
+        # 2. Novelty: Penalize clichés heavily (30% weight)
+        cliche_ratio = cliche_count / len(meaningful_words) if meaningful_words else 0
+        novelty = 1.0 - (cliche_ratio * 0.8)  # Heavy penalty for clichés
+
+        # Also check phrase-level clichés
+        if " " in text.strip():
+            phrase_score = scorer.score_phrase(text)
+            novelty = min(novelty, phrase_score.novelty)
+
+        score += novelty * 0.3
+
+        # 3. Imagery: Prefer concrete, vivid words (20% weight)
+        if meaningful_words:
+            concreteness_scores = [scorer.get_concreteness(w) for w in meaningful_words]
+            avg_concreteness = sum(concreteness_scores) / len(concreteness_scores)
+            # Prefer moderately concrete to very concrete (0.6-0.9 ideal for imagery)
+            if 0.6 <= avg_concreteness <= 0.9:
+                score += 0.2
+            elif 0.5 <= avg_concreteness < 0.6:
+                score += 0.15
+            elif avg_concreteness > 0.9:
+                score += 0.15  # Very concrete is good but not ideal
+            elif avg_concreteness >= 0.4:
+                score += 0.1  # Some concreteness
+
+        # 4. Structural Quality: Variety and openness (10% weight)
+        # Check for word length variety
+        if len(meaningful_words) > 1:
+            lengths = [len(w) for w in meaningful_words]
+            variety_ratio = len(set(lengths)) / len(lengths)
+            score += variety_ratio * 0.05
+
+        # Bonus for openness markers (..., ?, incomplete structure)
+        if "..." in text or text.endswith("..."):
+            score += 0.03
+
+        # Bonus for evocative punctuation (comma, dash, question)
+        if any(p in text for p in [",", "—", "?", ";"]):
+            score += 0.02
+
+        return min(1.0, max(0.0, score))

@@ -273,9 +273,17 @@ class ConfigFormScreen(Screen):
             count = int(config.get("count", 10))
 
             generator = LineSeedGenerator()
-            seeds = generator.generate_line_seeds(seed_words=seed_words, count=count)
+            seeds = generator.generate_seed_collection(seed_words=seed_words, num_seeds=count)
 
-            return "\n\n".join(f"{i + 1}. {seed}" for i, seed in enumerate(seeds))
+            # Format the line seeds for display
+            result = []
+            for i, seed in enumerate(seeds, 1):
+                result.append(f"{i}. [{seed.seed_type.value}] {seed.text}")
+                result.append(f"   Quality: {seed.quality_score:.2f}, Momentum: {seed.momentum:.2f}")
+                if seed.notes:
+                    result.append(f"   Note: {seed.notes}")
+
+            return "\n".join(result)
 
         elif procedure_id == "ideas":
             from poetryplayground.idea_generator import IdeaGenerator

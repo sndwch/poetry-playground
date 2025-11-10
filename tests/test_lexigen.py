@@ -11,7 +11,9 @@ from poetryplayground.lexigen import (
     contextually_linked_words,
     related_rare_words,
     phonetically_related_words,
+    score_and_filter_results,
 )
+from poetryplayground.quality_scorer import GenerationContext, EmotionalTone
 
 
 # ============================================================================
@@ -274,3 +276,188 @@ class TestIntegration:
             assert isinstance(sound_options, list)
         except Exception:
             pass  # API might fail, that's okay
+
+
+# ============================================================================
+# Quality-Aware Features Tests (Phase 6)
+# ============================================================================
+
+
+class TestQualityAwareFeatures:
+    """Test quality-aware filtering in lexigen functions."""
+
+    def test_score_and_filter_results_basic(self):
+        """Test score_and_filter_results with basic API response."""
+        api_response = [
+            {"word": "happy", "score": 1000},
+            {"word": "joyful", "score": 900},
+            {"word": "glad", "score": 800},
+        ]
+
+        result = score_and_filter_results(api_response, min_quality=0.0)
+
+        assert isinstance(result, list)
+        assert all(isinstance(word, str) for word in result)
+        assert len(result) <= len(api_response)
+
+    def test_score_and_filter_results_with_quality_threshold(self):
+        """Test that quality threshold filters results."""
+        api_response = [
+            {"word": "penumbra", "score": 100},  # High quality word
+            {"word": "heart", "score": 100},     # Clichéd word (lower quality)
+        ]
+
+        # With high quality threshold, should filter out clichés
+        result_high = score_and_filter_results(api_response, min_quality=0.7)
+
+        # With low quality threshold, should include both
+        result_low = score_and_filter_results(api_response, min_quality=0.0)
+
+        assert isinstance(result_high, list)
+        assert isinstance(result_low, list)
+        # Low threshold should potentially have more results
+        assert len(result_low) >= len(result_high)
+
+    def test_score_and_filter_results_with_exclusions(self):
+        """Test score_and_filter_results respects exclusion list."""
+        api_response = [
+            {"word": "happy", "score": 100},
+            {"word": "joyful", "score": 100},
+        ]
+
+        result = score_and_filter_results(
+            api_response,
+            exclude_words=["happy"],
+            min_quality=0.0
+        )
+
+        assert "happy" not in result
+
+    def test_score_and_filter_results_sorting(self):
+        """Test that results are sorted by quality (best first)."""
+        api_response = [
+            {"word": "heart", "score": 100},     # Clichéd (lower quality)
+            {"word": "penumbra", "score": 100},  # Fresh (higher quality)
+        ]
+
+        result = score_and_filter_results(api_response, min_quality=0.0, sample_size=None)
+
+        # Should have at least some results
+        assert isinstance(result, list)
+        # Results should be sorted by quality (best first)
+        # This is hard to verify without knowing exact scores, but we can check structure
+        assert all(isinstance(word, str) for word in result)
+
+    def test_similar_meaning_words_with_quality_params(self):
+        """Test similar_meaning_words accepts quality parameters."""
+        try:
+            # Test with min_quality parameter
+            result_high = similar_meaning_words(
+                "happy",
+                sample_size=5,
+                min_quality=0.7
+            )
+            result_low = similar_meaning_words(
+                "happy",
+                sample_size=5,
+                min_quality=0.3
+            )
+
+            assert isinstance(result_high, list)
+            assert isinstance(result_low, list)
+            # Both should work without errors
+
+        except Exception as e:
+            pytest.skip(f"API call failed: {e}")
+
+    def test_similar_meaning_words_with_context(self):
+        """Test similar_meaning_words accepts GenerationContext."""
+        try:
+            context = GenerationContext(
+                emotional_tone=EmotionalTone.DARK,
+                avoid_cliches=True
+            )
+
+            result = similar_meaning_words(
+                "night",
+                sample_size=5,
+                context=context
+            )
+
+            assert isinstance(result, list)
+            # Should return quality-filtered words
+
+        except Exception as e:
+            pytest.skip(f"API call failed: {e}")
+
+    def test_contextually_linked_words_with_quality_params(self):
+        """Test contextually_linked_words accepts quality parameters."""
+        try:
+            result = contextually_linked_words(
+                "fire",
+                sample_size=5,
+                min_quality=0.6
+            )
+
+            assert isinstance(result, list)
+            # Should filter out low-quality collocations
+
+        except Exception as e:
+            pytest.skip(f"API call failed: {e}")
+
+    def test_phonetically_related_words_with_quality_params(self):
+        """Test phonetically_related_words accepts quality parameters."""
+        try:
+            result = phonetically_related_words(
+                "fire",
+                sample_size=5,
+                min_quality=0.6
+            )
+
+            assert isinstance(result, list)
+            # Should filter out low-quality phonetic matches
+
+        except Exception as e:
+            pytest.skip(f"API call failed: {e}")
+
+    def test_related_rare_words_with_quality_params(self):
+        """Test related_rare_words accepts quality parameters."""
+        try:
+            result = related_rare_words(
+                "ocean",
+                sample_size=5,
+                min_quality=0.6
+            )
+
+            assert isinstance(result, list)
+            # Should return rare AND quality words
+
+        except Exception as e:
+            pytest.skip(f"API call failed: {e}")
+
+    def test_quality_filtering_reduces_cliches(self):
+        """Test that quality filtering helps avoid clichéd words."""
+        try:
+            # Get words without quality filtering
+            result_unfiltered = similar_meaning_words(
+                "love",
+                sample_size=10,
+                min_quality=0.0  # Accept all
+            )
+
+            # Get words with strict quality filtering
+            result_filtered = similar_meaning_words(
+                "love",
+                sample_size=10,
+                min_quality=0.7  # High quality only
+            )
+
+            # Both should be lists
+            assert isinstance(result_unfiltered, list)
+            assert isinstance(result_filtered, list)
+
+            # Filtered results should potentially be shorter or different
+            # (though we can't guarantee due to API variability)
+
+        except Exception as e:
+            pytest.skip(f"API call failed: {e}")

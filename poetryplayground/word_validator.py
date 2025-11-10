@@ -20,6 +20,17 @@ except ImportError:
 
 from .logger import logger
 
+# Lazy import to avoid circular dependencies
+_quality_scorer = None
+
+def _get_quality_scorer():
+    """Lazy import and cache quality scorer."""
+    global _quality_scorer
+    if _quality_scorer is None:
+        from .quality_scorer import get_quality_scorer
+        _quality_scorer = get_quality_scorer()
+    return _quality_scorer
+
 # Try to ensure NLTK data is available
 try:
     nltk.data.find("corpora/words")
@@ -265,15 +276,32 @@ class WordValidator:
                     cleaned.append(word_lower)
         return cleaned
 
-    def get_word_quality_score(self, word: str) -> float:
+    def get_word_quality_score(self, word: str, use_quality_scorer: bool = True) -> float:
         """
         Get a quality score for a word (0-1).
         Higher scores mean better/more common words.
+
+        Args:
+            word: Word to score
+            use_quality_scorer: Whether to use comprehensive QualityScorer (recommended)
+
+        Returns:
+            Quality score 0-1 where 1.0 is highest quality
         """
         if not self.is_valid_english_word(word, allow_rare=True):
             return 0.0
 
-        # Base score on frequency
+        # Use comprehensive QualityScorer if requested
+        if use_quality_scorer:
+            try:
+                scorer = _get_quality_scorer()
+                quality_score = scorer.score_word(word)
+                return quality_score.overall
+            except Exception as e:
+                logger.debug(f"QualityScorer failed for '{word}', using fallback: {e}")
+                # Fall through to simple scoring
+
+        # Simple fallback scoring based on frequency
         freq = word_frequency(word.lower(), "en")
 
         # Convert frequency to 0-1 scale (log scale)

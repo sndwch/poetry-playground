@@ -183,10 +183,18 @@ def get_antonyms(word: str, k: int = 10) -> List[Tuple[str, float]]:
         k: Number of antonyms to return
 
     Returns:
-        List of (antonym, score) tuples
+        List of (antonym, score) tuples with scores normalized to 0-1
     """
     try:
         results = _cached_datamuse_antonyms(word, max_results=k * 2)
+
+        if not results:
+            return []
+
+        # Find max score for normalization
+        max_score = max(item.get('score', 0) for item in results)
+        if max_score == 0:
+            max_score = 1.0  # Avoid division by zero
 
         # Validate results
         validator = WordValidator()
@@ -194,7 +202,9 @@ def get_antonyms(word: str, k: int = 10) -> List[Tuple[str, float]]:
 
         for item in results:
             ant_word = item.get('word', '')
-            score = item.get('score', 0) / 100.0  # Normalize to 0-1
+            raw_score = item.get('score', 0)
+            # Normalize to 0-1 based on max score in this result set
+            score = raw_score / max_score if max_score > 0 else 0.0
 
             if validator.is_valid_english_word(ant_word):
                 valid_results.append((ant_word, score))
@@ -264,16 +274,19 @@ def get_frequency_bucket(word: str) -> str:
 def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
     """Generate semantic/near-meaning cluster.
 
-    Uses spaCy embeddings + Datamuse means-like endpoint.
+    Uses spaCy embeddings + Datamuse means-like endpoint with quality scoring.
 
     Args:
         word: Center word
         k: Number of terms to generate
 
     Returns:
-        List of CloudTerms
+        List of CloudTerms with real quality scores
     """
+    from poetryplayground.quality_scorer import get_quality_scorer
+
     terms = []
+    scorer = get_quality_scorer()
 
     try:
         # Get similar words using existing function
@@ -293,12 +306,21 @@ def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
         except Exception as e:
             logger.debug(f"Semantic space not available: {e}")
 
+        # Score each word and sort by quality
+        scored_words = []
+        for w in similar_words[:k * 2]:  # Get extras for filtering
+            quality_score = scorer.score_word(w)
+            scored_words.append((w, quality_score.overall))
+
+        # Sort by quality and take top k
+        scored_words.sort(key=lambda x: x[1], reverse=True)
+
         # Convert to CloudTerms
-        for w in similar_words[:k]:
+        for w, quality in scored_words[:k]:
             terms.append(CloudTerm(
                 term=w,
                 cluster_type=ClusterType.SEMANTIC,
-                score=0.8,  # Placeholder; actual scoring varies
+                score=quality,  # Real quality score
                 freq_bucket=get_frequency_bucket(w)
             ))
 
@@ -311,33 +333,50 @@ def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
 def _generate_contextual_cluster(word: str, k: int) -> List[CloudTerm]:
     """Generate contextual/collocation cluster.
 
-    Uses Datamuse rel_trg + lc (left context) endpoints.
+    Uses Datamuse rel_trg + lc (left context) endpoints with quality scoring.
 
     Args:
         word: Center word
         k: Number of terms to generate
 
     Returns:
-        List of CloudTerms
+        List of CloudTerms with real quality scores
     """
+    from poetryplayground.quality_scorer import get_quality_scorer
+
     terms = []
+    scorer = get_quality_scorer()
 
     try:
         # Get contextually linked words
-        ctx_words = contextually_linked_words(word, sample_size=k // 2)
+        ctx_words = contextually_linked_words(word, sample_size=k)
 
         # Get frequently following words
-        follow_words = frequently_following_words(word, sample_size=k // 2)
+        follow_words = frequently_following_words(word, sample_size=k)
 
         # Combine and deduplicate
         all_words = list(set(ctx_words + follow_words))
 
+        # Score each word and sort by quality
+        scored_words = []
+        for w in all_words[:k * 2]:  # Get extras for filtering
+            quality_score = scorer.score_word(w)
+            # Also check if this creates a clichéd phrase with the center word
+            phrase_penalty = 0.0
+            test_phrase = f"{word} {w}"
+            if scorer.is_cliche(test_phrase, threshold=0.6):
+                phrase_penalty = 0.2
+            scored_words.append((w, quality_score.overall - phrase_penalty))
+
+        # Sort by quality and take top k
+        scored_words.sort(key=lambda x: x[1], reverse=True)
+
         # Convert to CloudTerms
-        for w in all_words[:k]:
+        for w, quality in scored_words[:k]:
             terms.append(CloudTerm(
                 term=w,
                 cluster_type=ClusterType.CONTEXTUAL,
-                score=0.7,
+                score=max(0.0, quality),  # Real quality score (clamped to 0)
                 freq_bucket=get_frequency_bucket(w)
             ))
 
@@ -350,25 +389,41 @@ def _generate_contextual_cluster(word: str, k: int) -> List[CloudTerm]:
 def _generate_opposite_cluster(word: str, k: int) -> List[CloudTerm]:
     """Generate opposite/antonym cluster.
 
-    Uses Datamuse rel_ant endpoint.
+    Uses Datamuse rel_ant endpoint with quality scoring.
 
     Args:
         word: Center word
         k: Number of terms to generate
 
     Returns:
-        List of CloudTerms
+        List of CloudTerms with real quality scores
     """
+    from poetryplayground.quality_scorer import get_quality_scorer
+
     terms = []
+    scorer = get_quality_scorer()
 
     try:
-        antonyms = get_antonyms(word, k=k)
+        antonyms = get_antonyms(word, k=k * 2)
 
-        for ant_word, score in antonyms:
+        # Score each antonym for quality
+        scored_words = []
+        for ant_word, datamuse_score in antonyms:
+            quality_score = scorer.score_word(ant_word)
+            # Combine Datamuse relevance (normalized) with quality
+            # Datamuse scores are already 0-1 normalized in get_antonyms()
+            combined = (quality_score.overall * 0.7) + (datamuse_score * 0.3)
+            scored_words.append((ant_word, combined))
+
+        # Sort by combined score
+        scored_words.sort(key=lambda x: x[1], reverse=True)
+
+        # Convert to CloudTerms
+        for ant_word, quality in scored_words[:k]:
             terms.append(CloudTerm(
                 term=ant_word,
                 cluster_type=ClusterType.OPPOSITE,
-                score=score,
+                score=quality,  # Combined quality + Datamuse relevance
                 freq_bucket=get_frequency_bucket(ant_word)
             ))
 
@@ -381,27 +436,39 @@ def _generate_opposite_cluster(word: str, k: int) -> List[CloudTerm]:
 def _generate_phonetic_cluster(word: str, k: int) -> List[CloudTerm]:
     """Generate phonetic/rhyme cluster.
 
-    Uses CMU Pronouncing Dict + Datamuse sounds-like endpoint.
+    Uses CMU Pronouncing Dict + Datamuse sounds-like endpoint with quality scoring.
 
     Args:
         word: Center word
         k: Number of terms to generate
 
     Returns:
-        List of CloudTerms
+        List of CloudTerms with real quality scores
     """
+    from poetryplayground.quality_scorer import get_quality_scorer
+
     terms = []
+    scorer = get_quality_scorer()
 
     try:
         # Get phonetically related words (rhymes + sounds-like)
-        phon_words = phonetically_related_words(word, sample_size=k)
+        phon_words = phonetically_related_words(word, sample_size=k * 2)
+
+        # Score and sort by quality
+        scored_words = []
+        for w in phon_words:
+            quality_score = scorer.score_word(w)
+            scored_words.append((w, quality_score.overall))
+
+        # Sort by quality
+        scored_words.sort(key=lambda x: x[1], reverse=True)
 
         # Convert to CloudTerms
-        for w in phon_words:
+        for w, quality in scored_words[:k]:
             terms.append(CloudTerm(
                 term=w,
                 cluster_type=ClusterType.PHONETIC,
-                score=0.75,
+                score=quality,  # Real quality score
                 freq_bucket=get_frequency_bucket(w)
             ))
 
@@ -414,32 +481,47 @@ def _generate_phonetic_cluster(word: str, k: int) -> List[CloudTerm]:
 def _generate_imagery_cluster(word: str, k: int) -> List[CloudTerm]:
     """Generate imagery/concrete noun cluster.
 
-    Gets semantic neighbors, then filters for concrete nouns.
+    Gets semantic neighbors, then filters for concrete nouns with quality scoring.
 
     Args:
         word: Center word
         k: Number of terms to generate
 
     Returns:
-        List of CloudTerms
+        List of CloudTerms with real quality scores
     """
+    from poetryplayground.quality_scorer import get_quality_scorer
+
     terms = []
+    scorer = get_quality_scorer()
 
     try:
         # Start with semantic neighbors
         semantic_words = similar_meaning_words(word, sample_size=k * 3)
 
         # Filter for concrete nouns
-        concrete = get_concrete_nouns(semantic_words, k=k)
+        concrete = get_concrete_nouns(semantic_words, k=k * 2)
+
+        # Score by quality, prioritizing high concreteness
+        scored_words = []
+        for w in concrete:
+            quality_score = scorer.score_word(w)
+            concreteness = scorer.get_concreteness(w)
+            # Combined score: favor both quality and concreteness
+            combined = (quality_score.overall * 0.5) + (concreteness * 0.5)
+            scored_words.append((w, combined, concreteness))
+
+        # Sort by combined score
+        scored_words.sort(key=lambda x: x[1], reverse=True)
 
         # Convert to CloudTerms
-        for w in concrete:
+        for w, combined, concreteness in scored_words[:k]:
             terms.append(CloudTerm(
                 term=w,
                 cluster_type=ClusterType.IMAGERY,
-                score=0.65,
+                score=combined,  # Combined quality + concreteness score
                 freq_bucket=get_frequency_bucket(w),
-                metadata={"pos": "NOUN"}
+                metadata={"pos": "NOUN", "concreteness": concreteness}
             ))
 
     except Exception as e:
@@ -451,28 +533,45 @@ def _generate_imagery_cluster(word: str, k: int) -> List[CloudTerm]:
 def _generate_rare_cluster(word: str, k: int) -> List[CloudTerm]:
     """Generate rare but related cluster ("strange orbit").
 
-    Uses existing related_rare_words function.
+    Uses existing related_rare_words function with quality scoring.
 
     Args:
         word: Center word
         k: Number of terms to generate
 
     Returns:
-        List of CloudTerms
+        List of CloudTerms with real quality scores
     """
+    from poetryplayground.quality_scorer import get_quality_scorer
+
     terms = []
+    scorer = get_quality_scorer()
 
     try:
         # Get rare but related words
-        rare_words = related_rare_words(word, sample_size=k)
+        rare_words = related_rare_words(word, sample_size=k * 2)
+
+        # Score each rare word for quality
+        # For rare words, we want high quality but also true rarity
+        scored_words = []
+        for w in rare_words:
+            quality_score = scorer.score_word(w)
+            # Bonus for being genuinely rare (not just low quality)
+            freq_bucket = get_frequency_bucket(w)
+            rarity_bonus = 0.1 if freq_bucket == "rare" else 0.0
+            combined = quality_score.overall + rarity_bonus
+            scored_words.append((w, combined))
+
+        # Sort by combined score
+        scored_words.sort(key=lambda x: x[1], reverse=True)
 
         # Convert to CloudTerms
-        for w in rare_words:
+        for w, quality in scored_words[:k]:
             terms.append(CloudTerm(
                 term=w,
                 cluster_type=ClusterType.RARE,
-                score=0.6,
-                freq_bucket="rare"
+                score=min(1.0, quality),  # Real quality score with rarity bonus
+                freq_bucket=get_frequency_bucket(w)
             ))
 
     except Exception as e:
