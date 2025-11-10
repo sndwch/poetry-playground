@@ -129,22 +129,48 @@ class PersonalizedLineSeedGenerator:
         # Generate larger set of candidates (3x desired count) using PERSONALIZED methods
         candidate_count = count * 3
         candidates = []
+        seen_texts = set()  # Deduplication
+        last_generators = []  # Track last N generator types for variety
+
+        # Generator types with weights (reduce sonic_pattern frequency)
+        generator_types = [
+            (self.generate_fragment, 3),  # Weight 3
+            (self.generate_image_seed, 3),  # Weight 3
+            (self.generate_opening_line, 2),  # Weight 2
+            (self.generate_pivot_line, 2),  # Weight 2
+            (self.generate_sonic_pattern, 1),  # Weight 1 (reduce repetition)
+            (self.generate_ending_approach, 2),  # Weight 2
+        ]
 
         # Generate using overridden personalized methods (NOT base_generator!)
-        for _ in range(candidate_count):
-            seed_type = random.choice(
-                [
-                    self.generate_fragment,
-                    self.generate_image_seed,
-                    self.generate_opening_line,
-                    self.generate_pivot_line,
-                    self.generate_sonic_pattern,
-                    self.generate_ending_approach,
-                ]
-            )
+        attempts = 0
+        max_attempts = candidate_count * 2  # Allow retries for deduplication
+        while len(candidates) < candidate_count and attempts < max_attempts:
+            attempts += 1
+
+            # Weighted random choice
+            generators, weights = zip(*generator_types)
+            seed_type = random.choices(generators, weights=weights, k=1)[0]
+
+            # Avoid using same generator 3 times in a row
+            if len(last_generators) >= 3 and all(g == seed_type for g in last_generators[-3:]):
+                continue
+
             try:
                 candidate = seed_type(seed_words)
+
+                # Deduplication: skip if we've seen this text
+                if candidate.text.lower().strip() in seen_texts:
+                    continue
+
                 candidates.append(candidate)
+                seen_texts.add(candidate.text.lower().strip())
+                last_generators.append(seed_type)
+
+                # Keep last_generators list bounded
+                if len(last_generators) > 5:
+                    last_generators.pop(0)
+
             except Exception:
                 # Skip if generation fails
                 continue
@@ -443,14 +469,16 @@ class PersonalizedLineSeedGenerator:
     # -------------------------------------------------------------------------
 
     def generate_fragment(self, seed_words: List[str], position: str = "any") -> LineSeed:
-        """Generate fragment using fingerprint POS patterns and personalized vocabulary.
+        """Generate fragment using semantic clusters and fingerprint POS patterns.
+
+        Builds from semantically related words instead of random POS matches.
 
         Args:
             seed_words: Words to base generation on
             position: Where in poem (unused currently)
 
         Returns:
-            LineSeed with style-matched fragment
+            LineSeed with semantically coherent, style-matched fragment
         """
         # Use fingerprint's actual POS patterns (syntactic structure)
         if not self.fingerprint.vocabulary.dominant_pos_3grams:
@@ -460,17 +488,31 @@ class PersonalizedLineSeedGenerator:
         # Pick a random dominant POS pattern from fingerprint
         pos_pattern, _ = random.choice(self.fingerprint.vocabulary.dominant_pos_3grams)
 
-        # Build fragment slot-by-slot using the fingerprint's syntax
+        # Pick a base word from fingerprint to build semantic cluster around
+        if not self.fingerprint_vocab:
+            return self.base_generator.generate_fragment(seed_words, position)
+
+        base_word = random.choice(list(self.fingerprint_vocab.keys()))
+
+        # Get semantically related words (this creates coherence!)
+        related_words = self._get_personalized_similar_words(base_word, sample_size=15)
+        related_words.append(base_word)  # Include base word itself
+
+        if not related_words:
+            return self.base_generator.generate_fragment(seed_words, position)
+
+        # Build fragment using ONLY semantically related words that match POS pattern
+        lexicon = get_lexicon_data()
         fragment_words = []
+
         for pos_tag in pos_pattern:
-            # Get all words from hybrid_vocab that match this POS
-            candidates = self._get_personalized_words_by_pos(pos_tag, sample_size=50)
-
-            if not candidates:
-                continue
-
-            # Use biased selector to prefer fingerprint words
-            selected_word = self._select_biased_word(candidates)
+            # Find a related word that matches the required POS tag
+            selected_word = None
+            for word in related_words:
+                if lexicon.pos_cache.get(word) == pos_tag:
+                    selected_word = word
+                    related_words.remove(word)  # Don't reuse same word
+                    break
 
             if selected_word:
                 fragment_words.append(selected_word)
@@ -492,52 +534,67 @@ class PersonalizedLineSeedGenerator:
         )
 
     def generate_image_seed(self, seed_words: List[str]) -> LineSeed:
-        """Generate image using fingerprint patterns and targeting concreteness.
+        """Generate image using semantic clusters and fingerprint patterns.
+
+        Builds from semantically related concrete words for coherent imagery.
 
         Args:
             seed_words: Words to base generation on
 
         Returns:
-            LineSeed with style-matched image (concrete, vivid)
+            LineSeed with semantically coherent, concrete image
         """
-        # Use fingerprint POS patterns if available, fallback to image-friendly patterns
+        # Pick a concrete base word from fingerprint to build semantic cluster around
+        concrete_base_words = [
+            w for w in self.fingerprint_vocab if self.quality_scorer.get_concreteness(w) > 0.6
+        ]
+
+        if not concrete_base_words:
+            concrete_base_words = list(self.fingerprint_vocab.keys())[:20]
+
+        if not concrete_base_words:
+            return self.base_generator.generate_image_seed(seed_words)
+
+        base_word = random.choice(concrete_base_words)
+
+        # Get semantically related concrete words
+        related_words = self._get_personalized_contextual_words(base_word, sample_size=15)
+        related_words.append(base_word)
+
+        # Filter to concrete words only
+        related_words = [w for w in related_words if self.quality_scorer.get_concreteness(w) > 0.5]
+
+        if not related_words:
+            return self.base_generator.generate_image_seed(seed_words)
+
+        # Use fingerprint POS pattern if available
         if self.fingerprint.vocabulary.dominant_pos_3grams:
-            # Filter for patterns with NOUN or ADJ (typical of images)
             image_patterns = [
                 p
                 for p, _ in self.fingerprint.vocabulary.dominant_pos_3grams
                 if "NOUN" in p or "ADJ" in p
             ]
-
-            # Use image patterns if available, otherwise use fallback
             pos_pattern = random.choice(image_patterns) if image_patterns else ("DET", "NOUN")
         else:
-            # Fallback pattern
             pos_pattern = ("DET", "ADJ", "NOUN")
 
-        # Build image slot-by-slot
+        # Build image using ONLY semantically related concrete words
+        lexicon = get_lexicon_data()
         image_words = []
+
         for pos_tag in pos_pattern:
-            candidates = self._get_personalized_words_by_pos(pos_tag, sample_size=50)
-
-            if not candidates:
-                continue
-
-            # For images, prefer concrete words (concreteness > 0.6)
-            if pos_tag in ("NOUN", "ADJ"):
-                concrete_candidates = [
-                    w for w in candidates if self.quality_scorer.get_concreteness(w) > 0.6
-                ]
-                if concrete_candidates:
-                    candidates = concrete_candidates
-
-            selected_word = self._select_biased_word(candidates)
+            # Find a related word that matches the required POS tag
+            selected_word = None
+            for word in related_words:
+                if lexicon.pos_cache.get(word) == pos_tag:
+                    selected_word = word
+                    related_words.remove(word)  # Don't reuse
+                    break
 
             if selected_word:
                 image_words.append(selected_word)
 
         if not image_words:
-            # Fallback
             return self.base_generator.generate_image_seed(seed_words)
 
         image = " ".join(image_words)
@@ -632,43 +689,50 @@ class PersonalizedLineSeedGenerator:
         return self.base_generator.generate_opening_line(seed_words, mood)
 
     def generate_pivot_line(self, seed_words: List[str]) -> LineSeed:
-        """Generate pivot using fingerprint patterns and pivot words.
+        """Generate pivot using semantic clusters and fingerprint patterns.
 
         Args:
             seed_words: Words to base generation on
 
         Returns:
-            LineSeed with style-matched pivot
+            LineSeed with semantically coherent pivot
         """
         # Choose a pivot word
         pivot_words = ["But", "Or", "Until", "When", "If", "Though"]
         pivot_word = random.choice(pivot_words)
 
-        # Use fingerprint POS pattern for the rest
-        if self.fingerprint.vocabulary.dominant_pos_3grams:
+        # Pick a base word and get semantic cluster
+        if not self.fingerprint_vocab:
+            fingerprint_words = ["threshold", "silence"]
+        else:
+            fingerprint_words = list(self.fingerprint_vocab.keys())[:20]
+
+        base_word = random.choice(fingerprint_words)
+        related_words = self._get_personalized_similar_words(base_word, sample_size=10)
+        related_words.append(base_word)
+
+        if not related_words:
+            line = f"{pivot_word} {base_word}"
+        elif self.fingerprint.vocabulary.dominant_pos_3grams:
+            # Build pivot using semantic cluster
             pos_pattern, _ = random.choice(self.fingerprint.vocabulary.dominant_pos_3grams)
-
-            # Build line slot-by-slot
+            lexicon = get_lexicon_data()
             line_words = [pivot_word]
-            for pos_tag in pos_pattern:
-                candidates = self._get_personalized_words_by_pos(pos_tag, sample_size=50)
-                if not candidates:
-                    continue
 
-                selected_word = self._select_biased_word(candidates)
+            for pos_tag in pos_pattern:
+                selected_word = None
+                for word in related_words:
+                    if lexicon.pos_cache.get(word) == pos_tag:
+                        selected_word = word
+                        related_words.remove(word)
+                        break
+
                 if selected_word:
                     line_words.append(selected_word)
 
-            if len(line_words) > 1:
-                line = " ".join(line_words)
-            else:
-                # Fallback: pivot + fingerprint word
-                fingerprint_words = list(self.fingerprint_vocab.keys())[:20]
-                line = f"{pivot_word} {random.choice(fingerprint_words)}"
+            line = " ".join(line_words) if len(line_words) > 1 else f"{pivot_word} {base_word}"
         else:
-            # Fallback
-            fingerprint_words = list(self.fingerprint_vocab.keys())[:20]
-            line = f"{pivot_word} {random.choice(fingerprint_words)}"
+            line = f"{pivot_word} {random.choice(related_words)}"
 
         quality = self.base_generator._evaluate_quality(line)
 

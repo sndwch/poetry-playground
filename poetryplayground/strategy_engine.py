@@ -25,7 +25,7 @@ Example:
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Type
+from typing import Any, Dict, List, Optional, Type
 
 
 @dataclass
@@ -202,7 +202,9 @@ class BaseStrategy(ABC):
 
         return blocks
 
-    def _normalize_single_item(self, item: Any, generator_name: str) -> PoeticBuildingBlock | None:
+    def _normalize_single_item(
+        self, item: Any, generator_name: str
+    ) -> Optional[PoeticBuildingBlock]:
         """Normalize a single item to PoeticBuildingBlock.
 
         Args:
@@ -423,7 +425,7 @@ class StrategyEngine:
 
 
 # Global singleton instance
-_engine_instance: StrategyEngine | None = None
+_engine_instance: Optional[StrategyEngine] = None
 
 
 def get_strategy_engine() -> StrategyEngine:

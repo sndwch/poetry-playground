@@ -213,10 +213,11 @@ class WordValidator:
         ):
             return False
 
-        # Check word frequency
-        freq = word_frequency(word_lower, "en")
-        if freq < self.min_frequency and not allow_rare:
-            return False
+        # NOTE: Frequency check REMOVED to allow creative/poetic words
+        # The QualityScorer handles frequency evaluation - the validator's job
+        # is only to filter out junk (non-words, proper nouns, etc.)
+        # Previously: freq = word_frequency(word_lower, "en")
+        #             if freq < self.min_frequency and not allow_rare: return False
 
         # Additional check: must start with a common letter pattern
         return word_lower[:2] not in ["xz", "qx", "qz", "zx", "vx"]

@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional, Tuple
 
+import spacy
+
 from .config import DocumentConfig, QualityConfig
 from .decomposer import ParsedText
 from .document_library import get_diverse_gutenberg_documents
@@ -17,10 +19,33 @@ from .lexigen import (
     related_rare_words,
     similar_meaning_words,
 )
+from .quality_scorer import get_quality_scorer
+from .setup_models import lazy_ensure_spacy_model
 from .vocabulary import vocabulary
 from .word_validator import word_validator
 
 logger = logging.getLogger(__name__)
+
+
+# Lazy-load spaCy model for POS tagging
+def _get_spacy_nlp():
+    """Get spaCy NLP model for POS tagging, downloading if needed."""
+    lazy_ensure_spacy_model("en_core_web_sm", "English language model (small)")
+    # Keep POS tagger, disable unnecessary components for performance
+    nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
+    return nlp
+
+
+# Initialize on first use
+_spacy_nlp = None
+
+
+def get_spacy_nlp():
+    """Get cached spaCy NLP model."""
+    global _spacy_nlp
+    if _spacy_nlp is None:
+        _spacy_nlp = _get_spacy_nlp()
+    return _spacy_nlp
 
 
 class MetaphorType(Enum):
@@ -81,12 +106,164 @@ class MetaphorGenerator:
         """Initialize verb associations using shared vocabulary."""
         self.verb_associations = vocabulary.domain_verb_associations
 
-    def extract_metaphor_patterns(self, num_texts: int = 3, verbose: bool = True) -> List[Metaphor]:
+    def _get_concreteness(self, word: str) -> float:
+        """Get concreteness score for a word (0=abstract, 1=concrete).
+
+        Args:
+            word: Word to check
+
+        Returns:
+            Concreteness score from 0 (abstract) to 1 (concrete), defaults to 0.5 if unknown
+        """
+        scorer = get_quality_scorer()
+        return scorer.concreteness_cache.get(word.lower(), 0.5)
+
+    def _is_abstract_noun(self, word: str, threshold: float = 0.5) -> bool:
+        """Check if a word is an abstract noun.
+
+        Args:
+            word: Word to check
+            threshold: Concreteness threshold below which word is considered abstract
+
+        Returns:
+            True if word is likely an abstract noun
+        """
+        return self._get_concreteness(word) < threshold
+
+    def _is_concrete_noun(self, word: str, threshold: float = 0.8) -> bool:
+        """Check if a word is a concrete noun.
+
+        Args:
+            word: Word to check
+            threshold: Concreteness threshold above which word is considered concrete
+
+        Returns:
+            True if word is likely a concrete noun
+        """
+        return self._get_concreteness(word) > threshold
+
+    def _is_poetic_possessive(self, source: str, target: str) -> bool:
+        """Check if a possessive construction (X of Y) is poetic.
+
+        Poetic possessives mix different types of imagery AND avoid literal relationships.
+
+        Poetic examples:
+        - "silence of stone" ✓ (mix + not semantically related)
+        - "shadow of desire" ✓ (mix + not literal)
+
+        Non-poetic examples:
+        - "door of house" ✗ (both concrete + too similar)
+        - "strength of muscles" ✗ (literal/semantic relationship)
+        - "truth of reason" ✗ (both abstract)
+
+        Args:
+            source: The first noun
+            target: The second noun
+
+        Returns:
+            True if this is likely a poetic possessive
+        """
+        # Get concreteness scores
+        source_score = self._get_concreteness(source)
+        target_score = self._get_concreteness(target)
+
+        # 1. REJECT if both are high-confidence CONCRETE
+        # Simple rule: concrete + concrete = literal, not poetic
+        if source_score > 0.6 and target_score > 0.6:
+            return False  # e.g., "trunk of tree", "door of house" - LITERAL
+
+        # 2. REJECT if both are high-confidence ABSTRACT
+        # Simple rule: abstract + abstract = vague, not poetic
+        if source_score < 0.4 and target_score < 0.4:
+            return False  # e.g., "truth of reason" - VAGUE
+
+        # 3. REJECT if either word is in the "dead zone" (0.4-0.6)
+        # Words in this range are neither clearly concrete nor abstract
+        # This includes unknown words (default 0.5) which lack clear imagery
+        if 0.4 <= source_score <= 0.6 or 0.4 <= target_score <= 0.6:
+            return False  # e.g., "chapter of nine", "unknownword123 of stone" - NEUTRAL
+
+        # 4. REJECT if they are TOO LITERAL (semantically similar)
+        try:
+            similar_words = similar_meaning_words(source, sample_size=10)
+            if target in similar_words:
+                return False  # e.g., "strength of muscles" - LITERAL
+        except Exception:
+            pass  # Continue if API fails
+
+        # 5. Otherwise, it passes all checks - likely poetic
+        # Good metaphors mix concrete + abstract or are semantically distant
+        return True
+
+    def _is_poetic_simile(self, source: str, target: str, sentence: str) -> bool:
+        """Check if a simile construction (X as Y) is poetic.
+
+        Poetic similes typically have:
+        - Adjective/noun as noun (e.g., "swift as wind", "cold as ice")
+
+        Non-poetic similes:
+        - Verb patterns (e.g., "regarded as different")
+        - Numeric patterns (e.g., "one as ten")
+
+        Args:
+            source: The first word
+            target: The second word
+            sentence: Full sentence for context
+
+        Returns:
+            True if this is likely a poetic simile
+        """
+        # 1. REJECT if they are TOO LITERAL (semantically similar)
+        try:
+            similar_words = similar_meaning_words(source, sample_size=10)
+            if target in similar_words:
+                return False  # e.g., "strong as strength" - LITERAL
+        except Exception:
+            pass  # Continue if API fails
+
+        # 2. Use spaCy to check POS tags
+        try:
+            nlp = get_spacy_nlp()
+            doc = nlp(sentence.lower())
+
+            # Find the tokens
+            source_token = None
+            target_token = None
+
+            for token in doc:
+                if token.text == source.lower() and source_token is None:
+                    source_token = token
+                if token.text == target.lower():
+                    target_token = token
+
+            if not source_token or not target_token:
+                return False  # Fail-closed: if we can't analyze it, reject it
+
+            # Check POS tags - we want adjective/noun patterns
+            # Reject if source is a verb or number
+            if source_token.pos_ in ["VERB", "NUM", "AUX"]:
+                return False
+
+            # Reject if target is a verb or number
+            if target_token.pos_ in ["VERB", "NUM", "AUX", "ADJ"]:
+                return False
+
+            # Accept if source is ADJ/NOUN and target is NOUN, otherwise reject
+            return source_token.pos_ in ["ADJ", "NOUN"] and target_token.pos_ == "NOUN"
+
+        except Exception:
+            # If spaCy fails, fail-closed and reject
+            return False
+
+    def extract_metaphor_patterns(
+        self, num_texts: int = 3, verbose: bool = True, target_count: int = 15
+    ) -> List[Metaphor]:
         """Extract metaphorical patterns from multiple Gutenberg texts.
 
         Args:
             num_texts: Number of different texts to sample from (default: 3)
             verbose: Whether to print progress messages (default: True for CLI, False for TUI)
+            target_count: Target number of metaphors to extract (default: 15)
 
         Returns:
             List of Metaphor objects with quality scores, types, and context
@@ -94,10 +271,15 @@ class MetaphorGenerator:
         all_metaphors = []
 
         # Get diverse documents using centralized system
+        # Filter by literary LoCC codes: PZ (Fiction), PR (English Lit), PS (American Lit)
         if verbose:
-            print(f"📚 Retrieving {num_texts} diverse documents for metaphor extraction...")
+            print(
+                f"📚 Retrieving {num_texts} diverse literary documents for metaphor extraction..."
+            )
         documents = get_diverse_gutenberg_documents(
-            count=num_texts, min_length=DocumentConfig.MIN_LENGTH_METAPHORS
+            count=num_texts,
+            min_length=DocumentConfig.MIN_LENGTH_METAPHORS,
+            locc_codes=["PZ", "PR", "PS"],  # Fiction and literature only
         )
 
         if not documents:
@@ -117,7 +299,7 @@ class MetaphorGenerator:
                 all_metaphors.extend(found_metaphors[: QualityConfig.MAX_METAPHORS_PER_TEXT])
 
         # Apply adaptive scaling: get more documents if yield is low
-        min_target = max(15, num_texts * 5)  # Higher expectations for metaphors
+        min_target = target_count  # Use user's requested count
         documents_processed = len(documents)
 
         while len(all_metaphors) < min_target:
@@ -133,7 +315,9 @@ class MetaphorGenerator:
                 )
 
             additional_docs = get_diverse_gutenberg_documents(
-                count=additional_batch, min_length=DocumentConfig.MIN_LENGTH_METAPHORS
+                count=additional_batch,
+                min_length=DocumentConfig.MIN_LENGTH_METAPHORS,
+                locc_codes=["PZ", "PR", "PS"],  # Fiction and literature only
             )
 
             if not additional_docs:
@@ -205,6 +389,24 @@ class MetaphorGenerator:
             ("one", "another"),
             ("some", "other"),
             ("man", "woman"),
+            # Common literal possessive constructions
+            ("university", "paris"),
+            ("university", "oxford"),
+            ("university", "cambridge"),
+            ("institute", "france"),
+            ("member", "parliament"),
+            ("officer", "legion"),
+            ("professor", "law"),
+            ("end", "november"),
+            ("end", "december"),
+            ("end", "january"),
+            ("end", "year"),
+            ("end", "month"),
+            ("door", "house"),
+            ("roof", "house"),
+            ("floor", "house"),
+            ("wall", "house"),
+            ("sir", "word"),
         }
 
         if (source, target) in invalid_pairs:
@@ -254,26 +456,14 @@ class MetaphorGenerator:
         is_additional: bool = False,
         verbose: bool = True,
     ) -> List[Metaphor]:
-        """Extract metaphors from a single text using defined patterns.
+        """Extract metaphors from a single text using POS-first pattern matching.
+
+        This uses spaCy to POS-tag sentences first, then looks for specific
+        grammatical patterns that indicate metaphorical language.
 
         Returns:
             List of Metaphor objects with quality scores and type classification
         """
-        # Patterns with their corresponding MetaphorType
-        patterns = [
-            (
-                r"(\w+)\s+(?:is|was|are|were)\s+like\s+(?:a\s+|an\s+|the\s+)?(\w+)",
-                MetaphorType.SIMILE,
-            ),
-            (r"(\w+)\s+as\s+(?:a\s+|an\s+|the\s+)?(\w+)", MetaphorType.SIMILE),
-            (r"(\w+),\s+(?:a\s+|an\s+|that\s+|this\s+)(\w+)", MetaphorType.APPOSITIVE),
-            (r"the\s+(\w+)\s+of\s+(\w+)", MetaphorType.POSSESSIVE),
-            (
-                r"(\w+)\s+(?:resembles|mirrors|echoes)\s+(?:a\s+|an\s+|the\s+)?(\w+)",
-                MetaphorType.DIRECT,
-            ),
-        ]
-
         try:
             if verbose:
                 if is_additional:
@@ -291,14 +481,65 @@ class MetaphorGenerator:
             )
 
             for sentence in sentences_to_check:
-                for pattern, metaphor_type in patterns:
-                    matches = re.findall(pattern, sentence.lower())
-                    for match in matches:
-                        if len(match) == 2:
-                            source, target = match
-                            if self._is_valid_metaphor_pair(source, target):
-                                # Store with type information
-                                found_metaphors.append((source, target, sentence, metaphor_type))
+                # HYBRID APPROACH: Use regex to find CANDIDATES, then apply SMART FILTERS
+
+                # Pattern 1: Possessives (X of Y)
+                possessive_pattern = r"\b(\w+)\s+of\s+(\w+)\b"
+                for match in re.finditer(possessive_pattern, sentence.lower()):
+                    source, target = match.groups()
+
+                    # Filter 0: Skip function words (articles, pronouns, etc.)
+                    function_words = {
+                        "the",
+                        "a",
+                        "an",
+                        "this",
+                        "that",
+                        "these",
+                        "those",
+                        "my",
+                        "your",
+                        "his",
+                        "her",
+                        "its",
+                        "our",
+                        "their",
+                    }
+                    if source in function_words or target in function_words:
+                        continue
+
+                    # Filter 1: NER - Skip proper nouns
+                    if word_validator.is_proper_noun(source) or word_validator.is_proper_noun(
+                        target
+                    ):
+                        continue
+
+                    # Filter 2: Concreteness - Require poetic abstract+concrete mix
+                    if not self._is_poetic_possessive(source, target):
+                        continue
+
+                    # Filter 3: Final validation
+                    if self._is_valid_metaphor_pair(source, target):
+                        found_metaphors.append((source, target, sentence, MetaphorType.POSSESSIVE))
+
+                # Pattern 2: Similes (X as Y)
+                simile_pattern = r"\b(\w+)\s+as\s+(\w+)\b"
+                for match in re.finditer(simile_pattern, sentence.lower()):
+                    source, target = match.groups()
+
+                    # Filter 1: NER - Skip proper nouns
+                    if word_validator.is_proper_noun(source) or word_validator.is_proper_noun(
+                        target
+                    ):
+                        continue
+
+                    # Filter 2: POS - Check if it's a poetic simile (ADJ/NOUN as NOUN, not VERB/NUM)
+                    if not self._is_poetic_simile(source, target, sentence):
+                        continue
+
+                    # Filter 3: Final validation
+                    if self._is_valid_metaphor_pair(source, target):
+                        found_metaphors.append((source, target, sentence, MetaphorType.SIMILE))
 
             # Sort by quality using comprehensive quality scoring
             if found_metaphors:

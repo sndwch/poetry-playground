@@ -1,57 +1,43 @@
-"""Unified 3-column TUI screen for generative poetry."""
+"""Unified 2-panel TUI screen for generative poetry with modal output."""
 
 from typing import ClassVar
 
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Vertical
-from textual.screen import Screen
-from textual.widgets import Button, Input, Label, ListItem, ListView, Static, TextArea
+from textual.containers import Horizontal, ScrollableContainer, Vertical, VerticalScroll
+from textual.screen import ModalScreen, Screen
+from textual.widgets import Button, Input, Label, ListItem, ListView, Markdown, Static
 
 from .config_form import ConfigFormScreen
 
 
 class UnifiedTUIScreen(Screen):
-    """Main TUI screen with 3-column layout: List | Config | Output."""
+    """Main TUI screen with 2-panel layout: Left (Procedures + Config) | Right (Output Preview)."""
 
     CSS = """
     UnifiedTUIScreen {
-        layout: grid;
-        grid-size: 3 1;
-        grid-columns: 1fr 1fr 2fr;
+        layout: horizontal;
     }
 
-    #procedure-column {
-        width: 100%;
+    #left-panel {
+        width: 30%;
         height: 100%;
         border-right: solid $primary;
         padding: 0 1;
     }
 
-    #procedure-column:focus-within {
+    #left-panel:focus-within {
         border-right: thick $accent;
         background: $surface-darken-1;
     }
 
-    #config-column {
-        width: 100%;
-        height: 100%;
-        border-right: solid $primary;
-        padding: 0 1;
-    }
-
-    #config-column:focus-within {
-        border-right: thick $accent;
-        background: $surface-darken-1;
-    }
-
-    #output-column {
-        width: 100%;
+    #right-panel {
+        width: 70%;
         height: 100%;
         padding: 0 1;
     }
 
-    #output-column:focus-within {
+    #right-panel:focus-within {
         background: $surface-darken-1;
     }
 
@@ -77,7 +63,7 @@ class UnifiedTUIScreen(Screen):
     }
 
     #procedure-list {
-        height: 100%;
+        height: 40%;
         border: solid $primary;
     }
 
@@ -117,6 +103,17 @@ class UnifiedTUIScreen(Screen):
         background: $accent;
     }
 
+    #view-output-btn {
+        margin: 1 0;
+        width: 100%;
+    }
+
+    #view-output-btn:focus {
+        border: thick $accent;
+        text-style: bold;
+        background: $accent;
+    }
+
     #status {
         text-align: center;
         color: $accent;
@@ -124,26 +121,20 @@ class UnifiedTUIScreen(Screen):
         height: 3;
     }
 
-    #output-display {
+    #output-preview {
         height: 100%;
         border: solid $primary;
+        padding: 1;
     }
 
-    #output-display:focus {
+    #output-preview:focus {
         border: thick $accent;
-    }
-
-    #save-btn {
-        margin: 1 0;
-        width: 100%;
-    }
-
-    #save-btn:focus {
-        border: thick $accent;
-        text-style: bold;
-        background: $accent;
     }
     """
+
+    # Reference to ConfigFormScreen's procedure configuration for backward compatibility
+    # Note: This must be set after ConfigFormScreen is imported
+    PROCEDURE_CONFIG = ConfigFormScreen.PROCEDURE_CONFIG
 
     # Procedure metadata
     PROCEDURES: ClassVar[list] = [
@@ -226,27 +217,26 @@ class UnifiedTUIScreen(Screen):
         self.current_output = ""
 
     def compose(self) -> ComposeResult:
-        """Create 3-column layout."""
-        # Column 1: Procedure List
-        with Vertical(id="procedure-column"):
+        """Create 2-panel layout."""
+        # Left Panel: Procedures + Config
+        with VerticalScroll(id="left-panel"):
             yield Label("✨ Procedures ✨", id="procedure-title")
             yield self._create_procedure_list()
-
-        # Column 2: Config Form
-        with Vertical(id="config-column"):
             yield Label("⚙️ Configuration ⚙️", id="config-title")
             yield Vertical(id="config-form")
             yield Static("", id="status")
 
-        # Column 3: Output Display
-        with Vertical(id="output-column"):
-            yield Label("📜 Output 📜", id="output-title")
-            yield TextArea(
-                "Select a procedure and click Generate to begin.",
-                read_only=True,
-                id="output-display",
-            )
-            yield Button("Save to File", variant="primary", id="save-btn", disabled=True)
+        # Right Panel: Output Preview
+        with Vertical(id="right-panel"):
+            yield Label("📜 Output Preview 📜", id="output-title")
+            with ScrollableContainer(id="output-preview"):
+                yield Static(
+                    "Select a procedure and click Generate to begin.\n\n"
+                    "Output will appear here, and you can click 'View Full Output' "
+                    "for a larger modal view.",
+                    id="preview-text",
+                )
+            yield Button("View Full Output", variant="primary", id="view-output-btn", disabled=True)
 
     def _create_procedure_list(self) -> ListView:
         """Create the procedure list with category grouping."""
@@ -305,8 +295,8 @@ class UnifiedTUIScreen(Screen):
         """Handle button clicks."""
         if event.button.id == "generate-btn":
             await self._handle_generate()
-        elif event.button.id == "save-btn":
-            await self._handle_save()
+        elif event.button.id == "view-output-btn":
+            await self._handle_view_output()
 
     async def _handle_generate(self) -> None:
         """Handle generate button click."""
@@ -358,37 +348,132 @@ class UnifiedTUIScreen(Screen):
         status_widget = self.query_one("#status", Static)
         status_widget.update("✓ Generation complete!")
 
-        # Update output display
-        output_display = self.query_one("#output-display", TextArea)
-        output_display.load_text(result)
+        # Update output preview (show full output)
+        preview_widget = self.query_one("#preview-text", Static)
+        preview_widget.update(result)
 
-        # Enable save button
-        save_btn = self.query_one("#save-btn", Button)
-        save_btn.disabled = False
+        # Enable view button
+        view_btn = self.query_one("#view-output-btn", Button)
+        view_btn.disabled = False
 
     def _on_generation_error(self, error_msg: str) -> None:
         """Handle generation error."""
         status_widget = self.query_one("#status", Static)
         status_widget.update(f"❌ Error: {error_msg}")
 
-        # Show error in output
-        output_display = self.query_one("#output-display", TextArea)
-        output_display.load_text(f"Error during generation:\n\n{error_msg}")
+        # Show error in preview
+        preview_widget = self.query_one("#preview-text", Static)
+        preview_widget.update(f"Error during generation:\n\n{error_msg}")
 
-    async def _handle_save(self) -> None:
-        """Handle save button click."""
+    async def _handle_view_output(self) -> None:
+        """Handle view full output button click - open modal."""
         if not self.current_output:
             return
 
+        # Push the output modal screen
+        await self.app.push_screen(
+            OutputModal(
+                output_content=self.current_output,
+                procedure_name=self.selected_procedure or "output",
+            )
+        )
+
+
+class OutputModal(ModalScreen[None]):
+    """Modal screen for displaying full output with actions."""
+
+    CSS = """
+    OutputModal {
+        align: center middle;
+    }
+
+    #modal-container {
+        width: 90%;
+        height: 90%;
+        background: $surface;
+        border: thick $primary;
+        padding: 0;
+    }
+
+    #modal-header {
+        height: 3;
+        background: $primary;
+        color: $text;
+        text-style: bold;
+        content-align: center middle;
+        padding: 0 2;
+    }
+
+    #modal-content {
+        height: 1fr;
+        padding: 1 2;
+        background: $surface;
+    }
+
+    #modal-footer {
+        height: 5;
+        background: $panel;
+        padding: 1;
+        layout: horizontal;
+        align: center middle;
+    }
+
+    .modal-button {
+        margin: 0 1;
+        min-width: 16;
+    }
+    """
+
+    def __init__(self, output_content: str, procedure_name: str):
+        """Initialize the modal with content."""
+        super().__init__()
+        self.output_content = output_content
+        self.procedure_name = procedure_name
+
+    def compose(self) -> ComposeResult:
+        """Create modal layout."""
+        with Vertical(id="modal-container"):
+            yield Static(f"📜 Output: {self.procedure_name}", id="modal-header")
+            with ScrollableContainer(id="modal-content"):
+                # Try to render as Markdown, fall back to plain text if it fails
+                try:
+                    yield Markdown(self.output_content)
+                except Exception:
+                    yield Static(self.output_content)
+            with Horizontal(id="modal-footer"):
+                yield Button(
+                    "Copy to Clipboard", variant="default", classes="modal-button", id="copy-btn"
+                )
+                yield Button(
+                    "Save to File", variant="primary", classes="modal-button", id="save-btn"
+                )
+                yield Button("Close (ESC)", variant="error", classes="modal-button", id="close-btn")
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle modal button clicks."""
+        if event.button.id == "close-btn":
+            self.dismiss()
+        elif event.button.id == "save-btn":
+            await self._save_to_file()
+        elif event.button.id == "copy-btn":
+            await self._copy_to_clipboard()
+
+    def on_key(self, event) -> None:
+        """Handle keyboard shortcuts."""
+        if event.key == "escape":
+            self.dismiss()
+
+    async def _save_to_file(self) -> None:
+        """Save output to file."""
         try:
             from datetime import datetime
             from pathlib import Path
 
             # Generate filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            procedure_name = self.selected_procedure or "output"
             safe_name = "".join(
-                c if c.isalnum() or c in (" ", "-", "_") else "_" for c in procedure_name.lower()
+                c if c.isalnum() or c in (" ", "-", "_") else "_"
+                for c in self.procedure_name.lower()
             ).replace(" ", "_")
             filename = f"{safe_name}_{timestamp}.txt"
 
@@ -398,12 +483,30 @@ class UnifiedTUIScreen(Screen):
 
             # Save file
             file_path = output_dir / filename
-            file_path.write_text(self.current_output, encoding="utf-8")
+            file_path.write_text(self.output_content, encoding="utf-8")
 
-            # Update status
-            status_widget = self.query_one("#status", Static)
-            status_widget.update(f"✓ Saved to {file_path}")
+            # Update header to show success
+            header = self.query_one("#modal-header", Static)
+            header.update(f"✓ Saved to {file_path}")
 
         except Exception as e:
-            status_widget = self.query_one("#status", Static)
-            status_widget.update(f"❌ Error saving: {e}")
+            header = self.query_one("#modal-header", Static)
+            header.update(f"❌ Error saving: {e}")
+
+    async def _copy_to_clipboard(self) -> None:
+        """Copy output to clipboard."""
+        try:
+            import pyperclip
+
+            pyperclip.copy(self.output_content)
+
+            # Update header to show success
+            header = self.query_one("#modal-header", Static)
+            header.update("✓ Copied to clipboard!")
+        except ImportError:
+            # pyperclip not available
+            header = self.query_one("#modal-header", Static)
+            header.update("❌ pyperclip not installed (pip install pyperclip)")
+        except Exception as e:
+            header = self.query_one("#modal-header", Static)
+            header.update(f"❌ Error copying: {e}")

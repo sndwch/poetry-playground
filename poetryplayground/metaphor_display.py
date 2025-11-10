@@ -19,10 +19,8 @@ def _strip_ansi_codes(text: str) -> str:
 
 
 def _truncate_context(context: str, max_length: int = 40) -> str:
-    """Truncate context sentence to max length with ellipsis."""
-    if len(context) <= max_length:
-        return context
-    return context[:max_length] + "..."
+    """Return context sentence without truncation (max_length kept for API compatibility)."""
+    return context
 
 
 def _quality_bar(score: float, length: int = 10) -> str:
@@ -56,16 +54,16 @@ def _quality_stars(score: float) -> str:
 def format_metaphors(
     metaphors: List[Metaphor],
     mode: str = "compact",
-    max_per_category: int = 5,
+    max_per_category: int = 999,
     show_context: bool = False,
 ) -> str:
     """Format metaphors for display.
 
     Args:
         metaphors: List of Metaphor objects to format
-        mode: Output mode - "compact", "detailed", "json", "markdown", "simple"
-        max_per_category: Maximum metaphors to show per type (for compact/detailed)
-        show_context: Whether to show context sentences (for detailed mode)
+        mode: Output mode - "compact", "spacious", "detailed", "json", "markdown", "simple"
+        max_per_category: Maximum metaphors to show per type (default 999 shows all)
+        show_context: Whether to show context sentences (for detailed/spacious mode)
 
     Returns:
         Formatted string ready for display
@@ -75,6 +73,8 @@ def format_metaphors(
 
     if mode == "compact":
         return _format_compact(metaphors, max_per_category)
+    elif mode == "spacious":
+        return _format_spacious(metaphors, max_per_category, show_context)
     elif mode == "detailed":
         return _format_detailed(metaphors, max_per_category, show_context)
     elif mode == "json":
@@ -84,7 +84,9 @@ def format_metaphors(
     elif mode == "simple":
         return _export_simple(metaphors)
     else:
-        raise ValueError(f"Unknown mode: {mode}. Use compact, detailed, json, markdown, or simple")
+        raise ValueError(
+            f"Unknown mode: {mode}. Use compact, spacious, detailed, json, markdown, or simple"
+        )
 
 
 def _format_compact(metaphors: List[Metaphor], max_per_category: int) -> str:
@@ -143,18 +145,92 @@ def _format_compact_section(title: str, items: List[Metaphor]) -> List[str]:
         # Create quality bar
         bar = _quality_bar(metaphor.quality_score, length=10)
 
-        # Format metaphor line (source → target)
+        # Format metaphor line (source → target) - no truncation
         metaphor_text = f"{metaphor.source} → {metaphor.target}"
-        # Truncate if too long
-        if len(metaphor_text) > 30:
-            metaphor_text = metaphor_text[:27] + "..."
 
-        lines.append(f"│ {metaphor_text:<35} {metaphor.quality_score:.2f} {bar}│")
+        lines.append(f"│ {metaphor_text} {metaphor.quality_score:.2f} {bar}│")
 
-        # Add truncated context
+        # Add full context without truncation
         context = _truncate_context(metaphor.source_text or "", 40)
-        lines.append(f'│   "{context}"                  │'[:54])  # Ensure fits
+        lines.append(f'│   "{context}"│')
         lines.append("│                                                    │")
+
+    return lines
+
+
+def _format_spacious(
+    metaphors: List[Metaphor], max_per_category: int, show_context: bool = True
+) -> str:
+    """Format metaphors in spacious TUI mode - uses full width, no boxes, star ratings.
+
+    Optimized for 70%+ width panels (100+ chars).
+    """
+    # Group by type
+    by_type: Dict[MetaphorType, List[Metaphor]] = {}
+    for m in metaphors:
+        if m.metaphor_type not in by_type:
+            by_type[m.metaphor_type] = []
+        by_type[m.metaphor_type].append(m)
+
+    # Sort each group by quality
+    for type_list in by_type.values():
+        type_list.sort(key=lambda m: m.quality_score, reverse=True)
+
+    # Build output
+    lines = []
+    lines.append("═" * 100)
+    lines.append("METAPHORS FROM LITERATURE")
+    lines.append("═" * 100)
+    lines.append("")
+
+    # Define display order and labels
+    type_labels = {
+        MetaphorType.SIMILE: "SIMILES (like/as)",
+        MetaphorType.DIRECT: "DIRECT (is/are)",
+        MetaphorType.POSSESSIVE: "POSSESSIVE (of)",
+        MetaphorType.APPOSITIVE: "APPOSITIVE",
+        MetaphorType.IMPLIED: "IMPLIED",
+    }
+
+    # Display each type that has metaphors
+    for metaphor_type, label in type_labels.items():
+        if metaphor_type in by_type:
+            items = by_type[metaphor_type][:max_per_category]
+            lines.extend(_format_spacious_section(label, items, show_context))
+
+    # Add summary
+    total = len(metaphors)
+    avg_quality = sum(m.quality_score for m in metaphors) / total if total > 0 else 0
+    lines.append("═" * 100)
+    lines.append(f"Summary: {total} metaphors | Average quality: {avg_quality:.2f}")
+    lines.append("═" * 100)
+
+    return "\n".join(lines)
+
+
+def _format_spacious_section(title: str, items: List[Metaphor], show_context: bool) -> List[str]:
+    """Format a section of metaphors for spacious mode."""
+    lines = []
+    lines.append(f"{title}")
+    lines.append("─" * 100)
+    lines.append("")
+
+    for metaphor in items:
+        # Use star rating instead of solid bars
+        stars = _quality_stars(metaphor.quality_score)
+
+        # Format metaphor line (source → target) with full text
+        metaphor_text = f"{metaphor.source} → {metaphor.target}"
+
+        lines.append(f"  • {metaphor_text} {stars} {metaphor.quality_score:.2f}")
+
+        # Add context if available and requested
+        if show_context and metaphor.source_text:
+            # Show full context without truncation
+            context = metaphor.source_text
+            lines.append(f'    "{context}"')
+
+        lines.append("")
 
     return lines
 

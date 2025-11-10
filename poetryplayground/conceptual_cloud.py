@@ -752,7 +752,8 @@ def format_as_rich(cloud: ConceptualCloud, show_scores: bool = True) -> str:
     from io import StringIO
 
     string_io = StringIO()
-    temp_console = Console(file=string_io, force_terminal=True, width=120)
+    # Use wider width for TUI panels (was 120, now 160 to use full space)
+    temp_console = Console(file=string_io, force_terminal=True, width=160)
     temp_console.print(table)
 
     # Add metadata panel

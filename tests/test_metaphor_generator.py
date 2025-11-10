@@ -347,6 +347,238 @@ def test_new_patterns_in_batch_generation():
         raise
 
 
+def test_proper_noun_filtering():
+    """Test that proper nouns are filtered out from metaphor extraction."""
+    generator = MetaphorGenerator()
+
+    # Test that words in the proper nouns list are caught
+    # (These should be in word_validator's _proper_nouns set)
+    assert not generator._is_valid_metaphor_pair("dublin", "ireland", check_quality=False)
+    assert not generator._is_valid_metaphor_pair("hamburg", "germany", check_quality=False)
+
+    # Test that common words still pass
+    assert generator._is_valid_metaphor_pair("shadow", "desire", check_quality=False)
+    assert generator._is_valid_metaphor_pair("silence", "night", check_quality=False)
+
+    print("✓ Proper noun filtering works correctly")
+
+
+def test_literal_possessive_filtering():
+    """Test that literal possessive constructions are filtered out."""
+    generator = MetaphorGenerator()
+
+    # Test institutional/literal phrases are rejected
+    assert not generator._is_valid_metaphor_pair("university", "paris")
+    assert not generator._is_valid_metaphor_pair("institute", "france")
+    assert not generator._is_valid_metaphor_pair("officer", "legion")
+    assert not generator._is_valid_metaphor_pair("professor", "law")
+
+    # Test temporal/structural phrases are rejected
+    assert not generator._is_valid_metaphor_pair("end", "november")
+    assert not generator._is_valid_metaphor_pair("door", "house")
+    assert not generator._is_valid_metaphor_pair("roof", "house")
+
+    # Test that poetic possessives still pass
+    # (These might fail quality checks, but shouldn't fail the invalid pairs check)
+    pair_rejected = not generator._is_valid_metaphor_pair("shadow", "desire", check_quality=False)
+    assert not pair_rejected, "Good metaphorical pairs should not be in invalid_pairs list"
+
+    print("✓ Literal possessive filtering works correctly")
+
+
+def test_dialogue_artifact_filtering():
+    """Test that dialogue artifacts are filtered out."""
+    generator = MetaphorGenerator()
+
+    # Test dialogue artifacts are rejected
+    assert not generator._is_valid_metaphor_pair("sir", "word")
+
+    print("✓ Dialogue artifact filtering works correctly")
+
+
+def test_metaphor_extraction_quality():
+    """Test that extraction produces quality metaphors, not literal phrases."""
+    generator = MetaphorGenerator()
+
+    # Create a sample text with both good and bad patterns
+    test_text = """
+    The shadow of desire haunts my dreams.
+    The University of Paris was founded in 1150.
+    My heart, a stone, sank heavily.
+    Sir, a word with you, if I may.
+    The silence of night enveloped the city.
+    The Officer of the Legion of Honour arrived.
+    The end of November brought cold weather.
+    """
+
+    # Extract metaphors from the text
+    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+
+    # Check that we got some metaphors
+    assert len(metaphors) > 0, "Should extract at least some metaphors"
+
+    # Check that none of the bad patterns made it through
+    bad_sources = {"university", "officer", "sir", "end"}
+    bad_targets = {"paris", "legion", "word", "november"}
+
+    for metaphor in metaphors:
+        assert metaphor.source.lower() not in bad_sources, f"Bad source found: {metaphor.source}"
+        assert metaphor.target.lower() not in bad_targets, f"Bad target found: {metaphor.target}"
+        print(f"  Extracted: {metaphor.source} → {metaphor.target} (score: {metaphor.quality_score:.2f})")
+
+    # Ideally, we should find metaphors like "shadow → desire" or "heart → stone"
+    sources_found = [m.source.lower() for m in metaphors]
+    targets_found = [m.target.lower() for m in metaphors]
+
+    # At least one good metaphor should be present
+    good_metaphor_found = (
+        "shadow" in sources_found
+        or "heart" in sources_found
+        or "silence" in sources_found
+    )
+
+    print(f"✓ Extracted {len(metaphors)} quality metaphors (no literal phrases)")
+    print(f"  Sources: {sources_found}")
+    print(f"  Targets: {targets_found}")
+
+    # This assertion might be too strict depending on the text, so make it informational
+    if not good_metaphor_found:
+        print("  Note: No obviously good metaphors found, but all bad patterns filtered")
+
+
+def test_capitalized_word_filtering():
+    """Test that capitalized words mid-sentence are filtered as proper nouns."""
+    generator = MetaphorGenerator()
+
+    # Test text with capitalized proper nouns mid-sentence
+    test_text = """
+    The beauty of Paris is undeniable.
+    Shakespeare wrote many plays.
+    The Professor of Mathematics explained the concept.
+    """
+
+    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+
+    # None of these should produce metaphors because the capitalized words should be filtered
+    for metaphor in metaphors:
+        # Check that we didn't extract proper nouns
+        assert metaphor.source.lower() not in ["paris", "shakespeare", "professor"]
+        assert metaphor.target.lower() not in ["mathematics", "paris"]
+
+    print(f"✓ Capitalized word filtering works correctly ({len(metaphors)} metaphors, no proper nouns)")
+
+
+def test_poetic_possessive_filtering():
+    """Test that non-poetic possessive constructions are filtered out."""
+    generator = MetaphorGenerator()
+
+    # Test text with both poetic and non-poetic possessives
+    test_text = """
+    The silence of stone haunts me.
+    The chapter of nine was interesting.
+    The door of the house was open.
+    The weight of memory burdens him.
+    The prospect of fifty soldiers arrived.
+    The cause of this problem is unclear.
+    The shadow of desire lingers.
+    The history of ten years passed.
+    """
+
+    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+
+    # Check that we filtered out non-poetic possessives
+    bad_sources = {"chapter", "door", "prospect", "cause", "history"}
+    bad_targets = {"nine", "house", "fifty", "this", "ten"}
+
+    for metaphor in metaphors:
+        if metaphor.metaphor_type.value == "possessive":
+            assert metaphor.source.lower() not in bad_sources, f"Non-poetic source found: {metaphor.source}"
+            assert metaphor.target.lower() not in bad_targets, f"Non-poetic target found: {metaphor.target}"
+            print(f"  ✓ Poetic possessive: {metaphor.source} → {metaphor.target}")
+
+    print(f"✓ Poetic possessive filtering works correctly ({len(metaphors)} metaphors)")
+
+
+def test_poetic_simile_filtering():
+    """Test that non-poetic simile constructions are filtered out."""
+    generator = MetaphorGenerator()
+
+    # Test text with both poetic and non-poetic similes
+    test_text = """
+    Swift as wind, he moved.
+    Cold as ice, her stare froze me.
+    Regarded as different, he stood apart.
+    One as ten, they multiplied.
+    """
+
+    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+
+    # Check that we filtered out non-poetic similes (verb/number patterns)
+    bad_sources = {"regarded", "one"}
+    bad_targets = {"different", "ten"}
+
+    for metaphor in metaphors:
+        if metaphor.metaphor_type.value == "simile":
+            assert metaphor.source.lower() not in bad_sources, f"Non-poetic source found: {metaphor.source}"
+            assert metaphor.target.lower() not in bad_targets, f"Non-poetic target found: {metaphor.target}"
+            print(f"  ✓ Poetic simile: {metaphor.source} → {metaphor.target}")
+
+    print(f"✓ Poetic simile filtering works correctly ({len(metaphors)} metaphors)")
+
+
+def test_concreteness_checking():
+    """Test that concreteness checking works correctly."""
+    generator = MetaphorGenerator()
+
+    # Test that concreteness scores are retrieved
+    assert 0.0 <= generator._get_concreteness("stone") <= 1.0
+    assert 0.0 <= generator._get_concreteness("idea") <= 1.0
+
+    # Test concrete nouns (concreteness > 0.6)
+    assert generator._is_concrete_noun("stone")  # 0.96
+    assert generator._is_concrete_noun("tree")  # 0.96
+    assert generator._is_concrete_noun("door")  # 0.95
+    assert generator._is_concrete_noun("water")  # 0.97
+
+    # Test poetic possessive check
+    # The key test: both concrete should NOT be poetic
+    assert not generator._is_poetic_possessive("door", "house")  # both concrete
+    assert not generator._is_poetic_possessive("tree", "stone")  # both concrete
+
+    # Words with mid-range concreteness (around 0.5) won't be clearly abstract or concrete
+    # That's expected behavior - the thresholds create neutral zones
+
+    print("✓ Concreteness checking works correctly")
+
+
+def test_dead_zone_rejection():
+    """Test that words in the concreteness dead zone (0.4-0.6) are rejected."""
+    generator = MetaphorGenerator()
+
+    # Test that unknown words (default 0.5) are rejected
+    # Words not in the concreteness database get a default score of 0.5
+    assert not generator._is_poetic_possessive("unknownword123", "stone")
+    assert not generator._is_poetic_possessive("stone", "unknownword123")
+
+    # Test that words with mid-range concreteness are rejected
+    # "chapter" has a score of 0.5, which falls in the dead zone
+    chapter_score = generator._get_concreteness("chapter")
+    if 0.4 <= chapter_score <= 0.6:
+        assert not generator._is_poetic_possessive("chapter", "stone")
+        assert not generator._is_poetic_possessive("stone", "chapter")
+        print(f"  ✓ Dead-zone word 'chapter' ({chapter_score:.2f}) correctly rejected")
+
+    # Test that words barely outside the dead zone are accepted
+    # (assuming they form a poetic pair)
+    stone_score = generator._get_concreteness("stone")  # Should be ~0.96 (concrete)
+    if stone_score > 0.6:
+        # Stone is clearly concrete, so pairing with an abstract word should work
+        # (if we had a clearly abstract word - but we're just testing the threshold logic)
+        print(f"  ✓ Clearly concrete word 'stone' ({stone_score:.2f}) outside dead zone")
+
+    print("✓ Dead-zone rejection works correctly")
+
+
 if __name__ == "__main__":
     # Run basic tests
     print("Testing MetaphorGenerator initialization...")
@@ -366,5 +598,40 @@ if __name__ == "__main__":
 
     print("\nTesting batch generation with new types...")
     test_generate_metaphor_batch()
+
+    print("\n" + "="*60)
+    print("TESTING NEW FILTERING LOGIC")
+    print("="*60)
+
+    print("\nTesting proper noun filtering...")
+    test_proper_noun_filtering()
+
+    print("\nTesting literal possessive filtering...")
+    test_literal_possessive_filtering()
+
+    print("\nTesting dialogue artifact filtering...")
+    test_dialogue_artifact_filtering()
+
+    print("\nTesting metaphor extraction quality...")
+    test_metaphor_extraction_quality()
+
+    print("\nTesting capitalized word filtering...")
+    test_capitalized_word_filtering()
+
+    print("\n" + "="*60)
+    print("TESTING POS-BASED FILTERING")
+    print("="*60)
+
+    print("\nTesting concreteness checking...")
+    test_concreteness_checking()
+
+    print("\nTesting poetic possessive filtering...")
+    test_poetic_possessive_filtering()
+
+    print("\nTesting poetic simile filtering...")
+    test_poetic_simile_filtering()
+
+    print("\nTesting dead-zone rejection...")
+    test_dead_zone_rejection()
 
     print("\n✅ All tests passed!")

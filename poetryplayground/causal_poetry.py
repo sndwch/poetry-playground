@@ -385,7 +385,7 @@ class ResonantFragmentMiner:
 
         report = []
         report.append("🔍 RESONANT FRAGMENT COLLECTION")
-        report.append("=" * 60)
+        report.append("=" * 100)
         report.append(f"Total fragments discovered: {collection.total_count()}")
         report.append("")
 
@@ -403,7 +403,7 @@ class ResonantFragmentMiner:
                 continue
 
             report.append(f"{category_name} FRAGMENTS:")
-            report.append("-" * 40)
+            report.append("─" * 100)
             report.append(f"{description}")
             report.append("")
 

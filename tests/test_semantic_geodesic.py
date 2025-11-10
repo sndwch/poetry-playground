@@ -26,8 +26,8 @@ def semantic_space_sm():
     """Load small semantic space for fast unit tests."""
     try:
         return SemanticSpace(model_name="en_core_web_sm", vocab_size=10000)
-    except OSError:
-        pytest.skip("en_core_web_sm not installed")
+    except (OSError, RuntimeError) as e:
+        pytest.skip(f"en_core_web_sm not properly installed or insufficient vocabulary: {e}")
 
 
 @pytest.fixture(scope="module")
@@ -35,8 +35,8 @@ def semantic_space_lg():
     """Load large semantic space for integration tests."""
     try:
         return SemanticSpace(model_name="en_core_web_lg", vocab_size=50000)
-    except OSError:
-        pytest.skip("en_core_web_lg not installed")
+    except (OSError, RuntimeError) as e:
+        pytest.skip(f"en_core_web_lg not properly installed or insufficient vocabulary: {e}")
 
 
 # ============================================================================

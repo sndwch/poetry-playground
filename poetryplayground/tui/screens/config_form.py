@@ -362,13 +362,17 @@ class ConfigFormScreen(Screen):
             # Extract metaphor patterns from Project Gutenberg texts
             # (Using extract_metaphor_patterns since no source words provided in TUI config)
             num_texts = max(3, count // 3)  # Use more texts for larger counts
-            metaphors = generator.extract_metaphor_patterns(num_texts=num_texts, verbose=False)
+            metaphors = generator.extract_metaphor_patterns(
+                num_texts=num_texts, verbose=False, target_count=count
+            )
 
-            # Use compact formatter optimized for TUI (60 chars wide, box drawing)
+            # Use spacious formatter optimized for TUI (100+ chars wide, star ratings)
             if metaphors:
-                max_per_cat = max(3, count // 3)  # Show more if they requested more
+                # Show all requested metaphors - set max_per_cat high enough to not limit display
+                # Since we extracted ~count metaphors, display them all
+                max_per_cat = count  # Allow displaying all metaphors up to requested count
                 return format_metaphors(
-                    metaphors, mode="compact", max_per_category=max_per_cat, show_context=False
+                    metaphors, mode="spacious", max_per_category=max_per_cat, show_context=True
                 )
             else:
                 return "No metaphors found. Try again or adjust parameters."

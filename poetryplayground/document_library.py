@@ -57,13 +57,52 @@ class DocumentLibrary:
             (50000, 55000),  # Contemporary
         ]
 
+        # Library of Congress Classification (LoCC) code ranges
+        # Based on Project Gutenberg's subject classification
+        self.locc_ranges = {
+            "PZ": [  # Fiction and Juvenile Belles Lettres
+                (1, 2000),
+                (5000, 8000),
+                (10000, 20000),
+                (25000, 35000),
+                (40000, 50000),
+            ],
+            "PR": [  # English Literature
+                (100, 1500),  # Shakespeare, Austen, Dickens, etc.
+                (2500, 4000),
+                (20000, 25000),
+                (45000, 50000),
+            ],
+            "PS": [  # American Literature
+                (15, 100),  # Early American works
+                (1500, 2500),
+                (8000, 10000),
+                (35000, 40000),
+                (50000, 55000),
+            ],
+        }
+
         self.max_recent = PerformanceConfig.MAX_RECENT_TRACKING
         self.max_cache = PerformanceConfig.MAX_DOCUMENT_CACHE
 
     def get_diverse_documents(
-        self, count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT
+        self,
+        count: int = 5,
+        min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT,
+        locc_codes: Optional[List[str]] = None,
     ) -> List[str]:
-        """Get multiple diverse documents, ensuring variety"""
+        """Get multiple diverse documents, ensuring variety.
+
+        Args:
+            count: Number of documents to retrieve
+            min_length: Minimum document length
+            locc_codes: Optional list of Library of Congress Classification codes
+                       (e.g., ['PZ', 'PR', 'PS'] for fiction/literature).
+                       If None or empty, no filtering is applied.
+
+        Returns:
+            List of document texts
+        """
         documents = []
         attempts = 0
         max_attempts = count * 10  # Allow for failures
@@ -72,7 +111,10 @@ class DocumentLibrary:
             attempts += 1
 
             doc = self.get_single_document(
-                min_length=min_length, avoid_recent=True, force_different=True
+                min_length=min_length,
+                avoid_recent=True,
+                force_different=True,
+                locc_codes=locc_codes,
             )
             if doc and len(doc) >= min_length:
                 documents.append(doc)
@@ -86,13 +128,27 @@ class DocumentLibrary:
         min_length: int = DocumentConfig.MIN_LENGTH_GENERAL,
         avoid_recent: bool = True,
         force_different: bool = False,
+        locc_codes: Optional[List[str]] = None,
     ) -> Optional[str]:
-        """Get a single document with anti-repetition measures"""
+        """Get a single document with anti-repetition measures.
+
+        Args:
+            min_length: Minimum document length
+            avoid_recent: Whether to avoid recently used documents
+            force_different: Whether to force different documents
+            locc_codes: Optional list of LoCC codes to filter by
+
+        Returns:
+            Document text or None if not found
+        """
 
         for _ in range(PerformanceConfig.MAX_PROCESSING_ATTEMPTS):
             try:
-                # Choose from quality ranges for better content
-                range_start, range_end = random.choice(self.quality_ranges)
+                # Get appropriate ranges based on LoCC codes
+                available_ranges = self._get_ranges_for_locc(locc_codes)
+
+                # Choose from available ranges
+                range_start, range_end = random.choice(available_ranges)
                 document_id = random.randint(range_start, range_end)
 
                 # Skip if recently used and we want diversity
@@ -147,8 +203,69 @@ class DocumentLibrary:
                 continue
         return None
 
+    def _get_ranges_for_locc(self, locc_codes: Optional[List[str]]) -> List[tuple]:
+        """Get ID ranges based on LoCC codes.
+
+        Args:
+            locc_codes: Optional list of LoCC codes (e.g., ['PZ', 'PR', 'PS'])
+
+        Returns:
+            List of (start, end) tuples for document ID ranges
+        """
+        # If no codes specified, return all quality ranges
+        if not locc_codes:
+            return self.quality_ranges
+
+        # Collect all ranges for specified codes
+        all_ranges = []
+        for code in locc_codes:
+            if code in self.locc_ranges:
+                all_ranges.extend(self.locc_ranges[code])
+
+        # If no valid codes found, fall back to quality ranges
+        return all_ranges if all_ranges else self.quality_ranges
+
     def _clean_text(self, text: str) -> str:
-        """Clean and normalize text"""
+        """Clean and normalize text, aggressively removing TOC/headings/chapter markers.
+
+        This ensures we extract metaphors from actual prose/poetry, not chapter titles.
+        """
+        cleaned_lines = []
+
+        for line in text.split("\n"):
+            line = line.strip()
+
+            # 1. Skip empty lines
+            if not line:
+                continue
+
+            # 2. Skip ALL-CAPS lines (likely titles/headings)
+            # Allow short emphatic phrases, but reject long title-like lines
+            if line.isupper() and len(line) > 10:
+                continue
+
+            # 3. Skip lines that look like chapter headings
+            if re.match(
+                r"^(CHAPTER|SECTION|PART|BOOK|CANTO|ACT|SCENE)\s+[IVXLCDM\d]+", line, re.IGNORECASE
+            ):
+                continue
+
+            # 4. Skip lines that are just numbers or roman numerals
+            if re.match(r"^[IVXLCDM\d\s\.]+$", line):
+                continue
+
+            # 5. Skip short lines that are likely TOC entries (dots connecting title to page number)
+            if len(line.split()) < 4 and re.search(r"\.{3,}", line):
+                continue
+
+            # 6. Skip lines that look like "Title 123" (title + page number)
+            if re.match(r"^.+\s+\d{1,4}$", line) and len(line.split()) < 5:
+                continue
+
+            cleaned_lines.append(line)
+
+        text = "\n".join(cleaned_lines)
+
         # Remove excessive whitespace
         text = re.sub(r"\n\n+", "\n\n", text)
         text = re.sub(r"[ \t]+", " ", text)
@@ -372,10 +489,25 @@ def random_gutenberg_document(language_filter="en") -> str:
 
 
 def get_diverse_gutenberg_documents(
-    count: int = 5, min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT
+    count: int = 5,
+    min_length: int = DocumentConfig.MIN_LENGTH_LIBRARY_DEFAULT,
+    locc_codes: Optional[List[str]] = None,
 ) -> List[str]:
-    """Get multiple diverse documents - use this instead of calling random_gutenberg_document in loops"""
-    return document_library.get_diverse_documents(count=count, min_length=min_length)
+    """Get multiple diverse documents - use this instead of calling random_gutenberg_document in loops.
+
+    Args:
+        count: Number of documents to retrieve
+        min_length: Minimum document length
+        locc_codes: Optional list of Library of Congress Classification codes
+                   (e.g., ['PZ', 'PR', 'PS'] for fiction/literature).
+                   If None or empty, no filtering is applied.
+
+    Returns:
+        List of document texts
+    """
+    return document_library.get_diverse_documents(
+        count=count, min_length=min_length, locc_codes=locc_codes
+    )
 
 
 def get_gutenberg_document_stats() -> dict:

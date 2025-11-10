@@ -310,7 +310,7 @@ class SixDegrees:
 
         report = []
         report.append("🔗 SIX DEGREES CONVERGENCE FOUND")
-        report.append("=" * 50)
+        report.append("=" * 100)
 
         # Show the complete path
         full_path = convergence.get_full_path()

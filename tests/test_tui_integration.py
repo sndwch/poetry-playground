@@ -128,13 +128,13 @@ class TestUnifiedScreenLayout:
         assert "metaphor" in procedure_ids
         assert "fragments" in procedure_ids
 
-    def test_unified_screen_has_three_column_css(self):
-        """Test that UnifiedTUIScreen has 3-column CSS grid layout."""
-        assert "grid-size: 3 1" in UnifiedTUIScreen.CSS
-        assert "grid-columns: 1fr 1fr 2fr" in UnifiedTUIScreen.CSS
-        assert "#procedure-column" in UnifiedTUIScreen.CSS
-        assert "#config-column" in UnifiedTUIScreen.CSS
-        assert "#output-column" in UnifiedTUIScreen.CSS
+    def test_unified_screen_has_two_panel_layout(self):
+        """Test that UnifiedTUIScreen has 2-panel horizontal layout (30% left, 70% right)."""
+        assert "layout: horizontal" in UnifiedTUIScreen.CSS
+        assert "#left-panel" in UnifiedTUIScreen.CSS
+        assert "#right-panel" in UnifiedTUIScreen.CSS
+        assert "width: 30%" in UnifiedTUIScreen.CSS
+        assert "width: 70%" in UnifiedTUIScreen.CSS
 
 
 @pytest.mark.skipif(not TUI_AVAILABLE, reason="TUI components not available")
