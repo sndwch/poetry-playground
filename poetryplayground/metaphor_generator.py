@@ -1047,20 +1047,22 @@ class MetaphorGenerator:
         """Generate attributes based on the thematic nature of the words."""
         attributes = []
 
-        # Time-related words
-        time_words = {"morning", "evening", "night", "dawn", "dusk", "noon", "midnight", "season"}
-        emotion_words = {"disappointment", "joy", "sorrow", "anger", "fear", "love", "hope"}
-        nature_words = {"ocean", "mountain", "forest", "river", "sky", "earth", "storm", "calm"}
-
-        # Generate contextual attributes
+        # Use vocabulary.concept_domains instead of hardcoded sets
         all_words = {source.lower(), target.lower()}
 
+        # Check if words are in time domain
+        time_words = vocabulary.concept_domains.get("time", set())
         if any(word in time_words for word in all_words):
             attributes.extend(vocabulary.get_thematic_words("temporal", count=2))
-        elif any(word in emotion_words for word in all_words):
-            attributes.extend(vocabulary.get_thematic_words("emotional", count=2))
-        elif any(word in nature_words for word in all_words):
+        # Check if words are in nature domain
+        elif any(word in vocabulary.concept_domains.get("nature", set()) for word in all_words):
             attributes.extend(vocabulary.get_thematic_words("natural", count=2))
+        # Check if words have emotional connotations
+        elif any(
+            any(word in keywords for keywords in vocabulary.emotional_keywords.values())
+            for word in all_words
+        ):
+            attributes.extend(vocabulary.get_thematic_words("emotional", count=2))
         else:
             # Use shared vocabulary for general attributes
             attributes.extend(vocabulary.get_random_attributes(count=2))

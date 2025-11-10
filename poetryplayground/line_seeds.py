@@ -457,13 +457,16 @@ class LineSeedGenerator:
             # Create alliteration or assonance
             pattern = f"{sound_words[0]}, {sound_words[1]}, {sound_words[2]}"
         else:
-            # Fallback to rhythm pattern - use atmospheric nouns for rhythm words
-            rhythm_words = ["pause", "beat", "breath", "silence", "moment", "stillness"]
+            # Fallback to rhythm pattern - sample from atmospheric nouns
             try:
-                # Sample from atmospheric nouns related to rhythm/time
-                rhythm_word = random.choice(rhythm_words)
-            except (AttributeError, IndexError):
-                rhythm_word = "pause"  # Fallback
+                # Use atmospheric_nouns which includes temporal/sonic words
+                atmos_nouns = list(vocabulary.atmospheric_nouns)
+                rhythm_word = random.choice(atmos_nouns) if atmos_nouns else "moment"
+            except (AttributeError, IndexError) as e:
+                import logging
+
+                logging.warning(f"Could not access vocabulary.atmospheric_nouns: {e}")
+                rhythm_word = "moment"  # Emergency fallback
             pattern = f"{seed_words[0]}-{rhythm_word}-{seed_words[-1]}"
 
         quality = self._evaluate_quality(pattern)
@@ -706,25 +709,16 @@ class LineSeedGenerator:
         def get_verb():
             """Get random verb from vocabulary (~298 options)."""
             try:
-                return random.choice(list(vocabulary.evocative_verbs))
-            except (AttributeError, IndexError):
-                # Fallback to static list
-                return random.choice(
-                    [
-                        "carries",
-                        "holds",
-                        "breaks",
-                        "turns",
-                        "waits",
-                        "drifts",
-                        "fades",
-                        "whispers",
-                        "trembles",
-                        "shifts",
-                        "lingers",
-                        "dissolves",
-                    ]
-                )
+                verbs = list(vocabulary.evocative_verbs)
+                if not verbs:
+                    raise ValueError("evocative_verbs is empty")
+                return random.choice(verbs)
+            except (AttributeError, IndexError, ValueError) as e:
+                # Log warning and use generic fallback
+                import logging
+
+                logging.warning(f"Could not access vocabulary.evocative_verbs: {e}")
+                return "exists"  # Minimal generic fallback
 
         def get_adjective():
             """Get random adjective from vocabulary (~hundreds of options)."""
@@ -733,49 +727,29 @@ class LineSeedGenerator:
                 all_adjectives = []
                 for category_attrs in vocabulary.poetic_attributes.values():
                     all_adjectives.extend(category_attrs)
+                if not all_adjectives:
+                    raise ValueError("poetic_attributes is empty")
                 return random.choice(all_adjectives)
-            except (AttributeError, IndexError, ValueError):
-                # Fallback to static list
-                return random.choice(
-                    [
-                        "distant",
-                        "quiet",
-                        "sharp",
-                        "soft",
-                        "strange",
-                        "hollow",
-                        "bright",
-                        "faint",
-                        "worn",
-                        "ancient",
-                        "still",
-                        "fleeting",
-                        "hidden",
-                    ]
-                )
+            except (AttributeError, IndexError, ValueError) as e:
+                # Log warning and use generic fallback
+                import logging
+
+                logging.warning(f"Could not access vocabulary.poetic_attributes: {e}")
+                return "strange"  # Minimal generic fallback
 
         def get_abstract():
             """Get random abstract noun from vocabulary (~498 options)."""
             try:
-                return random.choice(list(vocabulary.atmospheric_nouns))
-            except (AttributeError, IndexError):
-                # Fallback to static list
-                return random.choice(
-                    [
-                        "memory",
-                        "time",
-                        "silence",
-                        "distance",
-                        "shadow",
-                        "light",
-                        "absence",
-                        "presence",
-                        "longing",
-                        "stillness",
-                        "movement",
-                        "echo",
-                    ]
-                )
+                nouns = list(vocabulary.atmospheric_nouns)
+                if not nouns:
+                    raise ValueError("atmospheric_nouns is empty")
+                return random.choice(nouns)
+            except (AttributeError, IndexError, ValueError) as e:
+                # Log warning and use generic fallback
+                import logging
+
+                logging.warning(f"Could not access vocabulary.atmospheric_nouns: {e}")
+                return "something"  # Minimal generic fallback
 
         replacements = {
             "{noun}": lambda: random.choice(words) if words else "word",

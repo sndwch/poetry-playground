@@ -1072,34 +1072,40 @@ class ConfigFormScreen(Screen):
 
                 for i, stanza in enumerate(scaffold.stanzas, 1):
                     output_lines.append(f"\n{'=' * 60}")
-                    output_lines.append(f"Stanza {i}: {stanza.focus_concept}")
+                    output_lines.append(f"Stanza {i}: {stanza.key_theme_word}")
                     output_lines.append(f"{'=' * 60}")
 
-                    # Vocabulary Palette
-                    output_lines.append(
-                        f"\nVocabulary Palette ({len(stanza.vocabulary_palette)} words):"
-                    )
-                    output_lines.append(", ".join(stanza.vocabulary_palette[:20]))
-                    if len(stanza.vocabulary_palette) > 20:
-                        output_lines.append(f"  ... and {len(stanza.vocabulary_palette) - 20} more")
+                    # Vocabulary Palette from conceptual_palette Dict[str, List[CloudTerm]]
+                    all_terms = []
+                    for _cluster_type, terms in stanza.conceptual_palette.items():
+                        all_terms.extend([term.term for term in terms])
 
-                    # Lateral Ideas
+                    if all_terms:
+                        output_lines.append(f"\nVocabulary Palette ({len(all_terms)} words):")
+                        output_lines.append(", ".join(all_terms[:20]))
+                        if len(all_terms) > 20:
+                            output_lines.append(f"  ... and {len(all_terms) - 20} more")
+
+                    # Lateral Ideas - List[DefinitionalResult]
                     if stanza.lateral_ideas:
                         output_lines.append(f"\nLateral Ideas ({len(stanza.lateral_ideas)}):")
-                        for word, definition, score in stanza.lateral_ideas[:5]:
-                            output_lines.append(f"  • {word}: {definition[:60]}... ({score:.2f})")
+                        for result in stanza.lateral_ideas[:5]:
+                            output_lines.append(
+                                f"  • {result.word}: {result.definition[:60]}... ({result.quality_score:.2f})"
+                            )
 
-                    # Metaphors
-                    if stanza.metaphors:
-                        output_lines.append(f"\nCentral Metaphors ({len(stanza.metaphors)}):")
-                        for metaphor_text, metaphor_type in stanza.metaphors[:3]:
-                            output_lines.append(f"  • [{metaphor_type}] {metaphor_text}")
+                    # Key Metaphor - Optional[Metaphor] (singular, not list)
+                    if stanza.key_metaphor:
+                        output_lines.append("\nCentral Metaphor:")
+                        output_lines.append(
+                            f"  • [{stanza.key_metaphor.metaphor_type.value}] {stanza.key_metaphor.text}"
+                        )
 
-                    # Line Seeds
+                    # Line Seeds - List[LineSeed]
                     if stanza.line_seeds:
                         output_lines.append(f"\nStarter Lines ({len(stanza.line_seeds)}):")
-                        for line, line_type in stanza.line_seeds[:5]:
-                            output_lines.append(f"  • [{line_type}] {line}")
+                        for seed in stanza.line_seeds[:5]:
+                            output_lines.append(f"  • [{seed.seed_type.value}] {seed.text}")
 
                     output_lines.append("")
 
