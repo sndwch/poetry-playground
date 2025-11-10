@@ -8,7 +8,7 @@ This is a personal experimental fork exploring various approaches to generative 
 
 ### Attribution
 
-This project began as a fork of [generativepoetry-py](https://github.com/coreybobco/generativepoetry-py) by [@sndwch](https://github.com/coreybobco).
+This project began as a fork of [generativepoetry-py](https://github.com/coreybobco/generativepoetry-py) by [@coreybobco](https://github.com/coreybobco).
 
 **This repo (poetry-playground) diverges from the original project's goals.**
 
