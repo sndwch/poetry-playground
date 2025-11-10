@@ -1,7 +1,8 @@
 """Tests for document_library.py quality scoring and metadata extraction (Phase 7)."""
 
 import pytest
-from poetryplayground.document_library import DocumentLibrary, DocumentInfo
+
+from poetryplayground.document_library import DocumentInfo, DocumentLibrary
 
 
 class TestDocumentQualityScoring:
@@ -148,7 +149,7 @@ class TestMetadataExtraction:
         Call me Ishmael...
         """
 
-        title, author = library._extract_metadata(sample_text, document_id=1)
+        _title, author = library._extract_metadata(sample_text, document_id=1)
 
         assert "Herman Melville" in author or "melville" in author.lower()
 

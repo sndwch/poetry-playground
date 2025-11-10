@@ -175,11 +175,15 @@ class DocumentLibrary:
             # Look for title patterns
             if 'Title:' in line:
                 title = line.split('Title:', 1)[1].strip()
-            elif not title or title == "Unknown":
+            elif (
+                (not title or title == "Unknown")
+                and line
+                and len(line) > 3
+                and i < 5
+                and not any(x in line.lower() for x in ['project gutenberg', 'ebook', 'copyright'])
+            ):
                 # Sometimes title is just on the first non-empty line
-                if line and len(line) > 3 and not any(x in line.lower() for x in ['project gutenberg', 'ebook', 'copyright']):
-                    if i < 5:  # Only consider first 5 lines for implicit title
-                        title = line
+                title = line
 
             # Look for author patterns
             if 'Author:' in line:
@@ -242,9 +246,7 @@ class DocumentLibrary:
             # Ideal range: 10-30 words per sentence
             if 10 <= avg_sentence_length <= 30:
                 sentence_score = 1.0
-            elif 5 <= avg_sentence_length < 10:
-                sentence_score = 0.7
-            elif 30 < avg_sentence_length <= 40:
+            elif 5 <= avg_sentence_length < 10 or 30 < avg_sentence_length <= 40:
                 sentence_score = 0.7
             else:
                 sentence_score = 0.3

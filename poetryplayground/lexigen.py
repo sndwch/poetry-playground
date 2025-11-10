@@ -1,5 +1,5 @@
 import random
-from typing import List, Optional, TypeVar
+from typing import TYPE_CHECKING, List, Optional, TypeVar
 
 import pronouncing
 
@@ -12,6 +12,9 @@ from .utils import (
     validate_word,
 )
 from .word_validator import word_validator
+
+if TYPE_CHECKING:
+    from .quality_scorer import GenerationContext
 
 
 def clean_api_results(word_list, exclude_words=None, use_validator=True):

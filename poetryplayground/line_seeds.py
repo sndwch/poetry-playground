@@ -603,7 +603,7 @@ class LineSeedGenerator:
 
         def add_unique_seed(generator_func, max_attempts=5):
             """Try to generate a unique seed, retry if duplicate or semantically similar."""
-            for attempt in range(max_attempts):
+            for _attempt in range(max_attempts):
                 candidate = generator_func(seed_words)
                 text = candidate.text
                 normalized = text.lower().strip()

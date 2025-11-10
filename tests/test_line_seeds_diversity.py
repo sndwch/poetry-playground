@@ -4,12 +4,14 @@ Tests verify that the generator produces varied, non-repetitive output
 following the improvements from the content repetition fixes.
 """
 
-import pytest
 from collections import Counter
+
+import pytest
+
 from poetryplayground.line_seeds import LineSeedGenerator, SeedType
 
 
-class TestLineSeeds_TextDeduplication:
+class TestLineSeedsTextDeduplication:
     """Test exact text deduplication (Phase 1)."""
 
     @pytest.fixture
@@ -59,7 +61,7 @@ class TestLineSeeds_TextDeduplication:
         assert len(duplicates) == 0, f"Found duplicates in large batch: {duplicates}"
 
 
-class TestLineSeeds_SemanticDiversity:
+class TestLineSeedsSemanticDiversity:
     """Test semantic similarity deduplication (Phase 4)."""
 
     @pytest.fixture
@@ -115,7 +117,7 @@ class TestLineSeeds_SemanticDiversity:
             )
 
 
-class TestLineSeeds_WordPoolExpansion:
+class TestLineSeedsWordPoolExpansion:
     """Test expanded word pools (Phase 2)."""
 
     @pytest.fixture
@@ -141,7 +143,6 @@ class TestLineSeeds_WordPoolExpansion:
         all_text = " ".join(pivot_lines).lower()
 
         # Check that we see MORE than just the original 5 verbs
-        original_verbs = ["carries", "holds", "breaks", "turns", "waits"]
         expanded_verbs = ["drifts", "fades", "whispers", "trembles", "shifts", "lingers"]
 
         # At least some expanded verbs should appear
@@ -178,7 +179,7 @@ class TestLineSeeds_WordPoolExpansion:
         )
 
 
-class TestLineSeeds_VocabularyExpansion:
+class TestLineSeedsVocabularyExpansion:
     """Test increased word expansion sample sizes (Phase 3)."""
 
     @pytest.fixture
@@ -233,7 +234,7 @@ class TestLineSeeds_VocabularyExpansion:
         )
 
 
-class TestLineSeeds_TypeDistribution:
+class TestLineSeedsTypeDistribution:
     """Test that all seed types are represented."""
 
     @pytest.fixture
@@ -278,7 +279,7 @@ class TestLineSeeds_TypeDistribution:
         )
 
 
-class TestLineSeeds_QualityScoring:
+class TestLineSeedsQualityScoring:
     """Test that quality scoring still works correctly."""
 
     @pytest.fixture
@@ -314,7 +315,7 @@ class TestLineSeeds_QualityScoring:
             )
 
 
-class TestLineSeeds_BackwardCompatibility:
+class TestLineSeedsBackwardCompatibility:
     """Test backward compatibility with existing API."""
 
     @pytest.fixture
