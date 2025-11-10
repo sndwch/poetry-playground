@@ -88,7 +88,7 @@ class TestUtils(unittest.TestCase):
     def test_too_similar(self):
         self.assertRaises(ValueError, lambda: too_similar(None, 25.2))
         self.assertRaises(ValueError, lambda: too_similar("string", 25))
-        self.assertRaises(ValueError, lambda: too_similar(list(), "beans"))
+        self.assertRaises(ValueError, lambda: too_similar([], "beans"))
         self.assertFalse(too_similar("self", "other"))
         self.assertTrue(too_similar("dog", "dog"))
         self.assertTrue(too_similar("dog", "dogs"))
@@ -136,13 +136,6 @@ class TestUtils(unittest.TestCase):
             "3",
         ]
         self.assertEqual(correct_a_vs_an(needs_no_correction), needs_no_correction)
-        needs_correction = [
-            "a",
-            "obscureelephantandanwanderingheliotrope",
-            "see",
-            "an",
-            "3",
-        ]
         self.assertEqual(correct_a_vs_an(needs_no_correction), needs_no_correction)
 
 
@@ -184,7 +177,7 @@ class TestLexigen(unittest.TestCase):
         self.assertEqual(sorted(extract_sample(["a", "b", "c"], sample_size=3)), ["a", "b", "c"])
         sample = extract_sample(["a", "b", "c", "d", "e", "f"], sample_size=4)
         self.assertNotEqual(sorted(sample), ["a", "b", "c", "d", "e", "f"])
-        self.assertTrue(set(["a", "b", "c", "d", "e", "f"]).issuperset(set(sample)))
+        self.assertTrue({"a", "b", "c", "d", "e", "f"}.issuperset(set(sample)))
 
     def test_similar_sounding_words(self):
         try:
@@ -646,9 +639,9 @@ class TestLexigen(unittest.TestCase):
             )
             results = phonetically_related_words("poet", sample_size=5)
             self.assertEqual(len(sorted(results)), 5)
-            self.assertTrue(set(sorted(pr_to_poet)).issuperset(set(results)))
+            self.assertTrue(set(pr_to_poet).issuperset(set(results)))
             expected_pr_words = sorted(
-                pr_to_poet + ["eon", "gnawing", "knowing", "kneeing", "naan", "non", "noun"]
+                [*pr_to_poet, "eon", "gnawing", "knowing", "kneeing", "naan", "non", "noun"]
             )
             self.assertEqual(
                 sorted(phonetically_related_words(["poet", "neon"], sample_size=None)),
@@ -878,7 +871,6 @@ class TestPoemGenerator(unittest.TestCase):
                     if indent_length != 0:
                         # Indent length should not repeat... unless there's no indent
                         self.assertNotEqual(indent_length, last_indent_length)
-                    last_indent_length = indent_length
                 last_line_words = [word for word in poem_lines[-1].split(" ") if word != ""]
                 self.assertEqual(len(last_line_words), 2)
                 self.assertIn(last_line_words[0], input_word_list[:-1])

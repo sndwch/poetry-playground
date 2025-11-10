@@ -41,9 +41,8 @@ from poetryplayground.seed_manager import format_seed_message, set_global_seed
 from poetryplayground.setup_models import setup as setup_models
 from poetryplayground.six_degrees import SixDegrees
 from poetryplayground.strategies.bridge_two_concepts import BridgeTwoConceptsStrategy
+from poetryplayground.strategies.generate_poem_scaffold import GeneratePoemScaffoldStrategy
 from poetryplayground.strategy_engine import get_strategy_engine
-from poetryplayground.template_extractor import TemplateExtractor
-from poetryplayground.template_library import get_template_library
 from poetryplayground.utils import get_input_words
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
@@ -958,6 +957,121 @@ def strategy_engine_action():
             )
         elif choice == "2":
             continue  # Regenerate with same words
+        else:
+            exit_loop = True
+
+
+def poem_scaffold_action():
+    """Generate a multi-stanza poem scaffold with thematic structure."""
+    # Initialize engine and register strategy
+    engine = get_strategy_engine()
+    if "generate_poem_scaffold" not in engine.list_strategies():
+        engine.register_strategy("generate_poem_scaffold", GeneratePoemScaffoldStrategy)
+
+    exit_loop = False
+
+    while not exit_loop:
+        print("\n" + "═" * 60)
+        print("POEM SCAFFOLD GENERATOR")
+        print("═" * 60)
+        print("\nGenerate a multi-stanza thematic structure from")
+        print("start concept to end concept.\n")
+
+        # Get inputs
+        start_concept = input("Start concept: ").strip()
+        if not start_concept:
+            print("Start concept is required.")
+            continue
+
+        end_concept = input("End concept: ").strip()
+        if not end_concept:
+            print("End concept is required.")
+            continue
+
+        num_stanzas_input = input("Number of stanzas (default 3): ").strip()
+        try:
+            num_stanzas = int(num_stanzas_input) if num_stanzas_input else 3
+            if num_stanzas < 2:
+                print("Number of stanzas must be at least 2.")
+                continue
+        except ValueError:
+            print("Invalid number. Using default (3).")
+            num_stanzas = 3
+
+        # Optional fingerprint for personalized seeds
+        fingerprint_input = input(
+            "Path to style fingerprint (optional, press Enter to skip): "
+        ).strip()
+        fingerprint_path = fingerprint_input if fingerprint_input else None
+
+        # Execute strategy
+        console.print(
+            f"\n[bold cyan]Generating scaffold: {start_concept} → {end_concept} ({num_stanzas} stanzas)[/bold cyan]\n"
+        )
+
+        try:
+            with console.status("[bold green]Creating poem scaffold...", spinner="dots"):
+                result = engine.execute(
+                    "generate_poem_scaffold",
+                    {
+                        "start_concept": start_concept,
+                        "end_concept": end_concept,
+                        "num_stanzas": num_stanzas,
+                        "fingerprint_path": fingerprint_path,
+                    },
+                )
+
+            # Display the scaffold (extract from StrategyResult metadata)
+            scaffold = result.metadata["scaffold"]
+            console.print(f"\n[bold]Thematic Path:[/bold] {' → '.join(scaffold.thematic_path)}\n")
+
+            for i, stanza in enumerate(scaffold.stanzas, 1):
+                console.print(f"[bold cyan]═══ Stanza {i}: {stanza.focus_concept} ═══[/bold cyan]")
+
+                # Vocabulary Palette
+                console.print(
+                    f"\n[yellow]Vocabulary Palette ({len(stanza.vocabulary_palette)} words):[/yellow]"
+                )
+                console.print(", ".join(stanza.vocabulary_palette[:20]))
+                if len(stanza.vocabulary_palette) > 20:
+                    console.print(f"  ... and {len(stanza.vocabulary_palette) - 20} more")
+
+                # Lateral Ideas
+                if stanza.lateral_ideas:
+                    console.print(
+                        f"\n[yellow]Lateral Ideas ({len(stanza.lateral_ideas)}):[/yellow]"
+                    )
+                    for word, definition, score in stanza.lateral_ideas[:5]:
+                        console.print(f"  • {word}: {definition[:60]}... ({score:.2f})")
+
+                # Metaphors
+                if stanza.metaphors:
+                    console.print(
+                        f"\n[yellow]Central Metaphors ({len(stanza.metaphors)}):[/yellow]"
+                    )
+                    for metaphor_text, metaphor_type in stanza.metaphors[:3]:
+                        console.print(f"  • [{metaphor_type}] {metaphor_text}")
+
+                # Line Seeds
+                if stanza.line_seeds:
+                    console.print(f"\n[yellow]Starter Lines ({len(stanza.line_seeds)}):[/yellow]")
+                    for line, line_type in stanza.line_seeds[:5]:
+                        console.print(f"  • [{line_type}] {line}")
+
+                console.print()
+
+        except Exception as e:
+            console.print(f"\n[bold red]Error:[/bold red] {e}")
+
+        # Menu
+        print("\n" + "─" * 60)
+        print("Options:")
+        print("  [1] Generate another scaffold")
+        print("  [2] Return to main menu")
+        choice = input("\nChoice: ").strip()
+
+        if choice == "1":
+            continue
         else:
             exit_loop = True
 
@@ -1949,71 +2063,6 @@ def definitional_finder_action():
             break
 
 
-def template_extract_action():
-    """Extract a template from a poem."""
-    console.print("\n[bold cyan]📝 Template Extractor - Extract Structure from Poems[/bold cyan]\n")
-    console.print("This tool analyzes a poem and extracts its structural template,")
-    console.print("which you can use to generate similar poems.\n")
-
-    while True:
-        console.print("[yellow]Enter your poem (end with a blank line):[/yellow]")
-        lines = []
-        while True:
-            line = input()
-            if not line:
-                break
-            lines.append(line)
-
-        if not lines:
-            console.print("[red]No poem entered. Returning to menu.[/red]")
-            break
-
-        poem_text = "\n".join(lines)
-
-        # Get metadata
-        title = input("\nTemplate title (optional, press Enter to skip): ").strip()
-        author = input("Author (optional, press Enter to skip): ").strip()
-
-        # Extract template
-        try:
-            extractor = TemplateExtractor()
-            template = extractor.extract_template(
-                poem_text,
-                title=title if title else None,
-                author=author if author else None,
-            )
-
-            # Display extracted template
-            console.print(f"\n[bold green]✓ Template Extracted:[/bold green] {template.title}")
-            console.print(f"Lines: {template.lines}")
-            console.print(f"Syllable pattern: {template.syllable_pattern}")
-            console.print(f"Semantic domains: {', '.join(template.semantic_domains)}")
-            console.print(
-                f"Metaphor types: {', '.join(template.metaphor_types) if template.metaphor_types else 'None'}"
-            )
-            console.print(f"Emotional tone: {template.emotional_tone.value}")
-            console.print(f"Formality: {template.formality_level.value}")
-            console.print(f"Concreteness: {template.concreteness_ratio:.2f}")
-
-            # Save template
-            save = input("\nSave this template to library? (y/n): ").strip().lower()
-            if save == "y":
-                library = get_template_library()
-                save_name = input(f"Template name (default: {template.title}): ").strip()
-                template_name = library.add_template(
-                    template, name=save_name if save_name else None
-                )
-                console.print(f"[green]✓ Saved as '{template_name}'[/green]")
-
-        except Exception as e:
-            console.print(f"[red]Error extracting template: {e}[/red]")
-
-        # Continue?
-        again = input("\nExtract another template? (y/n): ").strip().lower()
-        if again != "y":
-            break
-
-
 def main():
     """Main entry point for the generative poetry CLI.
 
@@ -2348,16 +2397,15 @@ def main():
         "⚙️  Strategy Engine: Bridge Two Concepts (Multi-Generator Orchestration)",
         strategy_engine_action,
     )
+    poem_scaffold_item = FunctionItem(
+        "📐 Poem Scaffold Generator (Multi-Stanza Thematic Structure)",
+        poem_scaffold_action,
+    )
 
     # Syllable-constrained form generators
     haiku_item = FunctionItem("🌸 Generate Haiku (5-7-5 syllables)", haiku_action)
     tanka_item = FunctionItem("🎋 Generate Tanka (5-7-5-7-7 syllables)", tanka_action)
     senryu_item = FunctionItem("🌿 Generate Senryu (5-7-5 syllables)", senryu_action)
-
-    # Template Engine items
-    template_extract_item = FunctionItem(
-        "📝 Template Extractor (Extract Structure from Poems)", template_extract_action
-    )
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -2381,10 +2429,10 @@ def main():
     menu.append_item(semantic_geodesic_item)
     menu.append_item(conceptual_cloud_item)
     menu.append_item(strategy_engine_item)
+    menu.append_item(poem_scaffold_item)
     menu.append_item(haiku_item)
     menu.append_item(tanka_item)
     menu.append_item(senryu_item)
-    menu.append_item(template_extract_item)
     menu.append_item(check_deps_item)
 
     menu.start()

@@ -143,7 +143,7 @@ class TestGeneratorExecution:
 
     def test_all_configured_generators_have_executor_logic(self):
         """Test that all configured generators have execution logic."""
-        screen = ConfigFormScreen("haiku")
+        ConfigFormScreen("haiku")
 
         # Test each configured procedure
         for proc_id in UnifiedTUIScreen.PROCEDURE_CONFIG.keys():
@@ -163,7 +163,6 @@ class TestGeneratorExecution:
         screen = ConfigFormScreen("haiku")
 
         # Test with empty seed words
-        config = {"seed_words": ""}
         # We can't run the full generator without data, but we can verify the pattern
         assert "haiku" in screen.PROCEDURE_CONFIG
         assert screen.procedure_id == "haiku"
@@ -173,7 +172,6 @@ class TestGeneratorExecution:
         screen = ConfigFormScreen("metaphor")
 
         # Test configuration
-        config = {"count": "10"}
         assert "metaphor" in screen.PROCEDURE_CONFIG
         assert screen.procedure_id == "metaphor"
 
@@ -182,7 +180,6 @@ class TestGeneratorExecution:
         screen = ConfigFormScreen("equidistant")
 
         # Test configuration
-        config = {"word_a": "light", "word_b": "dark", "mode": "orth", "window": "0"}
         assert "equidistant" in screen.PROCEDURE_CONFIG
         assert screen.procedure_id == "equidistant"
 

@@ -2,7 +2,6 @@
 """Comprehensive tests for rhyme and syllable functions."""
 
 import unittest
-from unittest.mock import patch
 
 import pronouncing
 

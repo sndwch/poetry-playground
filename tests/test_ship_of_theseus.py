@@ -165,7 +165,7 @@ class TestShipOfTheseusTransformer:
 
         # Replacement ratio should increase with each step
         for i, result in enumerate(results):
-            expected_min_ratio = (i + 1) / steps * 0.5  # Allow some variance
+            (i + 1) / steps * 0.5  # Allow some variance
             # Actual ratio may be less if replacements fail
             assert result.replacement_ratio <= 1.0
 

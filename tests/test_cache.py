@@ -4,13 +4,12 @@
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
 
 from poetryplayground.cache import (
     PersistentAPICache,
     cached_api_call,
-    get_cache_stats,
     clear_cache,
+    get_cache_stats,
 )
 
 

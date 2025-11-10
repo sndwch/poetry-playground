@@ -1,29 +1,29 @@
 """Tests for conceptual cloud generator functionality."""
 
 import json
+
 import pytest
 
 from poetryplayground.conceptual_cloud import (
-    CloudTerm,
-    ConceptualCloud,
     CloudConfig,
+    CloudTerm,
     ClusterType,
-    generate_conceptual_cloud,
-    format_as_rich,
+    ConceptualCloud,
+    _generate_contextual_cluster,
+    _generate_imagery_cluster,
+    _generate_opposite_cluster,
+    _generate_phonetic_cluster,
+    _generate_rare_cluster,
+    _generate_semantic_cluster,
     format_as_json,
     format_as_markdown,
+    format_as_rich,
     format_as_simple,
+    generate_conceptual_cloud,
     get_antonyms,
     get_concrete_nouns,
     get_frequency_bucket,
-    _generate_semantic_cluster,
-    _generate_contextual_cluster,
-    _generate_opposite_cluster,
-    _generate_phonetic_cluster,
-    _generate_imagery_cluster,
-    _generate_rare_cluster,
 )
-
 
 # ============================================================================
 # Unit Tests - Data Structures
@@ -270,7 +270,10 @@ class TestCloudGeneration:
             # Should only have semantic and phonetic clusters
             assert ClusterType.SEMANTIC in cloud.clusters
             assert ClusterType.PHONETIC in cloud.clusters
-            assert ClusterType.CONTEXTUAL not in cloud.clusters or not cloud.clusters[ClusterType.CONTEXTUAL]
+            assert (
+                ClusterType.CONTEXTUAL not in cloud.clusters
+                or not cloud.clusters[ClusterType.CONTEXTUAL]
+            )
 
         except Exception as e:
             pytest.skip(f"Selective cloud generation failed: {e}")
@@ -430,7 +433,7 @@ class TestPerformance:
 
         start = time.time()
         try:
-            cloud = generate_conceptual_cloud("fire", k_per_cluster=5)
+            generate_conceptual_cloud("fire", k_per_cluster=5)
             elapsed = time.time() - start
 
             # Should complete in under 10 seconds (with caching)
@@ -445,12 +448,12 @@ class TestPerformance:
         try:
             # First call (cold)
             start = time.time()
-            cloud1 = generate_conceptual_cloud("fire", k_per_cluster=5)
+            generate_conceptual_cloud("fire", k_per_cluster=5)
             time1 = time.time() - start
 
             # Second call (warm)
             start = time.time()
-            cloud2 = generate_conceptual_cloud("fire", k_per_cluster=5)
+            generate_conceptual_cloud("fire", k_per_cluster=5)
             time2 = time.time() - start
 
             # Second should be faster or same

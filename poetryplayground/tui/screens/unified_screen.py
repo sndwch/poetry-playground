@@ -1,12 +1,12 @@
 """Unified 2-panel TUI screen for generative poetry with modal output."""
 
-from typing import ClassVar
-
 from textual import work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, ScrollableContainer, Vertical, VerticalScroll
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Button, Input, Label, ListItem, ListView, Markdown, Static
+
+from poetryplayground.tui.procedures import PROCEDURES
 
 from .config_form import ConfigFormScreen
 
@@ -136,85 +136,8 @@ class UnifiedTUIScreen(Screen):
     # Note: This must be set after ConfigFormScreen is imported
     PROCEDURE_CONFIG = ConfigFormScreen.PROCEDURE_CONFIG
 
-    # Procedure metadata
-    PROCEDURES: ClassVar[list] = [
-        # Visual/Concrete Poetry
-        (
-            "futurist",
-            "Futurist Poem",
-            "Marinetti-inspired mathematical word connections",
-            "Visual Poetry",
-        ),
-        (
-            "markov",
-            "Stochastic Jolastic (Markov)",
-            "Joyce-like wordplay with rhyme schemes",
-            "Visual Poetry",
-        ),
-        ("chaotic", "Chaotic Concrete Poem", "Abstract spatial arrangements", "Visual Poetry"),
-        ("charsoup", "Character Soup Poem", "Character-level visual chaos", "Visual Poetry"),
-        ("wordsoup", "Stop Word Soup Poem", "Stop words in visual patterns", "Visual Poetry"),
-        ("puzzle", "Visual Puzzle Poem", "Interactive terminal-based puzzles", "Visual Poetry"),
-        # Ideation Tools
-        (
-            "lineseeds",
-            "Line Seeds Generator",
-            "Evocative incomplete phrases and line beginnings",
-            "Ideation",
-        ),
-        (
-            "personalized_lineseeds",
-            "Personalized Line Seeds",
-            "Style-matched seeds from your corpus fingerprint",
-            "Ideation",
-        ),
-        (
-            "metaphor",
-            "Metaphor Generator",
-            "Fresh metaphors from Project Gutenberg texts",
-            "Ideation",
-        ),
-        ("corpus", "Personal Corpus Analyzer", "Analyze your existing poetry", "Ideation"),
-        (
-            "theseus",
-            "Ship of Theseus Transformer",
-            "Gradually transform existing poems",
-            "Ideation",
-        ),
-        ("ideas", "Poetry Idea Generator", "Creative seeds from classic literature", "Ideation"),
-        (
-            "sixdegrees",
-            "Six Degrees Word Convergence",
-            "Explore connections between concepts",
-            "Ideation",
-        ),
-        ("fragments", "Resonant Fragment Miner", "Extract poetic sentence fragments", "Ideation"),
-        ("equidistant", "Equidistant Word Finder", "Find words bridging two anchors", "Ideation"),
-        (
-            "definitional",
-            "Definitional Finder",
-            "Find words by searching dictionary definitions",
-            "Ideation",
-        ),
-        (
-            "semantic_path",
-            "Semantic Geodesic Finder",
-            "Find transitional paths through meaning-space",
-            "Ideation",
-        ),
-        (
-            "conceptual_cloud",
-            "Conceptual Cloud Generator",
-            "Multi-dimensional word associations",
-            "Ideation",
-        ),
-        # Syllabic Forms
-        ("haiku", "Haiku Generator", "5-7-5 syllable haiku with templates", "Forms"),
-        ("tanka", "Tanka Generator", "5-7-5-7-7 syllable tanka", "Forms"),
-        ("senryu", "Senryu Generator", "5-7-5 syllable senryu", "Forms"),
-        # System
-        ("deps", "Check System Dependencies", "Verify installation and dependencies", "System"),
-    ]
+    # Use shared procedures list (imported at module level)
+    PROCEDURES = PROCEDURES
 
     def __init__(self):
         """Initialize the unified screen."""

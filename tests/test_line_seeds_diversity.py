@@ -14,6 +14,7 @@ from poetryplayground.line_seeds import LineSeedGenerator, SeedType
 
 def skip_on_network_disabled(test_func):
     """Decorator to skip tests that require network when network is disabled."""
+
     @wraps(test_func)
     def wrapper(*args, **kwargs):
         try:
@@ -22,6 +23,7 @@ def skip_on_network_disabled(test_func):
             if "Network calls disabled" in str(e):
                 pytest.skip("Network calls disabled in test environment")
             raise
+
     return wrapper
 
 
@@ -160,8 +162,7 @@ class TestLineSeedsWordPoolExpansion:
         # With 30 generations, we should have at least 10 unique lines
         # This tests that there's diversity without requiring specific words
         assert len(unique_lines) >= 10, (
-            f"Only {len(unique_lines)} unique pivot lines out of 30. "
-            "Expected more diversity."
+            f"Only {len(unique_lines)} unique pivot lines out of 30. Expected more diversity."
         )
 
     def test_adjective_diversity(self, generator):
@@ -180,8 +181,7 @@ class TestLineSeedsWordPoolExpansion:
         # With 30 generations, we should have at least 10 unique fragments
         # This tests that there's diversity without requiring specific words
         assert len(unique_fragments) >= 10, (
-            f"Only {len(unique_fragments)} unique fragments out of 30. "
-            "Expected more diversity."
+            f"Only {len(unique_fragments)} unique fragments out of 30. Expected more diversity."
         )
 
 
@@ -269,9 +269,7 @@ class TestLineSeedsTypeDistribution:
         }
 
         for core_type in core_types:
-            assert core_type in type_counts, (
-                f"Core seed type {core_type} missing from collection"
-            )
+            assert core_type in type_counts, f"Core seed type {core_type} missing from collection"
 
     @skip_on_network_disabled
     def test_type_distribution_varied(self, generator):
@@ -304,7 +302,7 @@ class TestLineSeedsQualityScoring:
         collection = generator.generate_seed_collection(seed_words, num_seeds=20)
 
         for seed in collection:
-            assert hasattr(seed, 'quality_score'), "Seed missing quality_score"
+            assert hasattr(seed, "quality_score"), "Seed missing quality_score"
             assert 0.0 <= seed.quality_score <= 1.0, (
                 f"Quality score {seed.quality_score} out of range for: {seed.text}"
             )
@@ -323,7 +321,7 @@ class TestLineSeedsQualityScoring:
             assert quality_scores[i] >= quality_scores[i + 1], (
                 "Seeds not sorted by quality: "
                 f"{quality_scores[i]:.3f} at position {i} < "
-                f"{quality_scores[i+1]:.3f} at position {i+1}"
+                f"{quality_scores[i + 1]:.3f} at position {i + 1}"
             )
 
 
@@ -360,9 +358,9 @@ class TestLineSeedsBackwardCompatibility:
         collection = generator.generate_seed_collection(seed_words, num_seeds=5)
 
         for seed in collection:
-            assert hasattr(seed, 'text')
-            assert hasattr(seed, 'seed_type')
-            assert hasattr(seed, 'quality_score')
+            assert hasattr(seed, "text")
+            assert hasattr(seed, "seed_type")
+            assert hasattr(seed, "quality_score")
 
 
 if __name__ == "__main__":

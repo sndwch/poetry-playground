@@ -1,20 +1,18 @@
 """Tests for semantic geodesic/bridge finder functionality."""
 
-import pytest
 import numpy as np
+import pytest
 
 from poetryplayground.semantic_geodesic import (
     BridgeWord,
     SemanticPath,
     SemanticSpace,
-    find_semantic_path,
-    get_semantic_space,
-    _passes_filters,
-    _calculate_smoothness,
     _calculate_deviation,
     _calculate_diversity,
+    _calculate_smoothness,
+    _passes_filters,
+    find_semantic_path,
 )
-
 
 # ============================================================================
 # Fixtures
@@ -50,12 +48,7 @@ class TestDataClasses:
     def test_bridge_word_creation(self):
         """Test BridgeWord instantiation."""
         bridge = BridgeWord(
-            word="warm",
-            position=0.5,
-            similarity=0.85,
-            deviation=0.15,
-            syllables=1,
-            pos="ADJ"
+            word="warm", position=0.5, similarity=0.85, deviation=0.15, syllables=1, pos="ADJ"
         )
 
         assert bridge.word == "warm"
@@ -201,15 +194,28 @@ class TestHelperFunctions:
     def test_passes_filters_frequency(self):
         """Test frequency filtering."""
         from poetryplayground.core.lexicon import get_lexicon_data
+
         lexicon = get_lexicon_data()
 
         # Common word should pass
-        assert _passes_filters("cat", min_zipf=3.0, pos_filter=None,
-                              syllable_min=None, syllable_max=None, lexicon_data=lexicon)
+        assert _passes_filters(
+            "cat",
+            min_zipf=3.0,
+            pos_filter=None,
+            syllable_min=None,
+            syllable_max=None,
+            lexicon_data=lexicon,
+        )
 
         # Rare word should fail
-        assert not _passes_filters("cat", min_zipf=8.0, pos_filter=None,
-                                   syllable_min=None, syllable_max=None, lexicon_data=lexicon)
+        assert not _passes_filters(
+            "cat",
+            min_zipf=8.0,
+            pos_filter=None,
+            syllable_min=None,
+            syllable_max=None,
+            lexicon_data=lexicon,
+        )
 
     def test_calculate_smoothness(self, semantic_space_sm):
         """Test smoothness calculation."""
@@ -264,12 +270,7 @@ class TestLinearPath:
 
     def test_simple_linear_path(self, semantic_space_sm):
         """Test basic linear path finding."""
-        path = find_semantic_path(
-            "hot", "cold",
-            steps=5,
-            k=1,
-            semantic_space=semantic_space_sm
-        )
+        path = find_semantic_path("hot", "cold", steps=5, k=1, semantic_space=semantic_space_sm)
 
         assert path is not None
         assert path.start == "hot"
@@ -279,12 +280,7 @@ class TestLinearPath:
 
     def test_linear_path_with_alternatives(self, semantic_space_sm):
         """Test linear path with multiple alternatives."""
-        path = find_semantic_path(
-            "hot", "cold",
-            steps=5,
-            k=3,
-            semantic_space=semantic_space_sm
-        )
+        path = find_semantic_path("hot", "cold", steps=5, k=3, semantic_space=semantic_space_sm)
 
         assert len(path.bridges) == 3
         # Each step should have up to 3 alternatives
@@ -293,11 +289,7 @@ class TestLinearPath:
 
     def test_linear_path_quality_metrics(self, semantic_space_sm):
         """Test that quality metrics are calculated."""
-        path = find_semantic_path(
-            "hot", "cold",
-            steps=5,
-            semantic_space=semantic_space_sm
-        )
+        path = find_semantic_path("hot", "cold", steps=5, semantic_space=semantic_space_sm)
 
         assert path.smoothness_score >= 0
         assert path.smoothness_score <= 1
@@ -311,11 +303,7 @@ class TestLinearPath:
     def test_invalid_method_raises_error(self, semantic_space_sm):
         """Test that invalid method raises ValueError."""
         with pytest.raises(ValueError, match="Invalid method"):
-            find_semantic_path(
-                "hot", "cold",
-                method="invalid",
-                semantic_space=semantic_space_sm
-            )
+            find_semantic_path("hot", "cold", method="invalid", semantic_space=semantic_space_sm)
 
 
 # ============================================================================
@@ -329,10 +317,7 @@ class TestAdvancedMethods:
     def test_bezier_path(self, semantic_space_sm):
         """Test Bezier curve path finding."""
         path = find_semantic_path(
-            "hot", "cold",
-            steps=5,
-            method="bezier",
-            semantic_space=semantic_space_sm
+            "hot", "cold", steps=5, method="bezier", semantic_space=semantic_space_sm
         )
 
         assert path.method == "bezier"
@@ -341,11 +326,12 @@ class TestAdvancedMethods:
     def test_bezier_path_with_control_words(self, semantic_space_sm):
         """Test Bezier with explicit control words."""
         path = find_semantic_path(
-            "hot", "cold",
+            "hot",
+            "cold",
             steps=5,
             method="bezier",
             control_words=["warm", "cool"],
-            semantic_space=semantic_space_sm
+            semantic_space=semantic_space_sm,
         )
 
         assert path.method == "bezier"
@@ -353,10 +339,7 @@ class TestAdvancedMethods:
     def test_shortest_path(self, semantic_space_sm):
         """Test shortest-path graph search."""
         path = find_semantic_path(
-            "hot", "cold",
-            steps=5,
-            method="shortest",
-            semantic_space=semantic_space_sm
+            "hot", "cold", steps=5, method="shortest", semantic_space=semantic_space_sm
         )
 
         assert path.method == "shortest"
@@ -373,26 +356,19 @@ class TestGoldenPaths:
 
     def test_hot_cold_path(self, semantic_space_lg):
         """Golden test: hot → cold should include temperature words."""
-        path = find_semantic_path(
-            "hot", "cold",
-            steps=7,
-            semantic_space=semantic_space_lg
-        )
+        path = find_semantic_path("hot", "cold", steps=7, semantic_space=semantic_space_lg)
 
         primary_path = [w.lower() for w in path.get_primary_path()]
 
         # Should include some temperature-related transitions
         temp_words = {"warm", "cool", "tepid", "mild", "heat", "chill", "lukewarm"}
-        assert any(w in temp_words for w in primary_path), \
+        assert any(w in temp_words for w in primary_path), (
             f"Expected temperature words in path: {primary_path}"
+        )
 
     def test_love_hate_path(self, semantic_space_lg):
         """Golden test: love → hate emotional journey."""
-        path = find_semantic_path(
-            "love", "hate",
-            steps=7,
-            semantic_space=semantic_space_lg
-        )
+        path = find_semantic_path("love", "hate", steps=7, semantic_space=semantic_space_lg)
 
         primary_path = path.get_primary_path()
         assert len(primary_path) == 7
@@ -401,11 +377,7 @@ class TestGoldenPaths:
 
     def test_fire_ice_path(self, semantic_space_lg):
         """Golden test: fire → ice should traverse temperature/state."""
-        path = find_semantic_path(
-            "fire", "ice",
-            steps=9,
-            semantic_space=semantic_space_lg
-        )
+        path = find_semantic_path("fire", "ice", steps=9, semantic_space=semantic_space_lg)
 
         primary_path = path.get_primary_path()
         assert len(primary_path) == 9
@@ -413,11 +385,7 @@ class TestGoldenPaths:
 
     def test_joy_grief_path(self, semantic_space_lg):
         """Golden test: joy → grief emotional transition."""
-        path = find_semantic_path(
-            "joy", "grief",
-            steps=7,
-            semantic_space=semantic_space_lg
-        )
+        path = find_semantic_path("joy", "grief", steps=7, semantic_space=semantic_space_lg)
 
         assert path.start == "joy"
         assert path.end == "grief"
@@ -437,11 +405,7 @@ class TestPerformance:
         import time
 
         start = time.time()
-        path = find_semantic_path(
-            "cat", "dog",
-            steps=5,
-            semantic_space=semantic_space_sm
-        )
+        find_semantic_path("cat", "dog", steps=5, semantic_space=semantic_space_sm)
         elapsed = time.time() - start
 
         # Should complete in under 5 seconds with small model
@@ -453,12 +417,12 @@ class TestPerformance:
 
         # First call (cold start)
         start = time.time()
-        path1 = find_semantic_path("hot", "cold", steps=5, semantic_space=semantic_space_sm)
-        time1 = time.time() - start
+        find_semantic_path("hot", "cold", steps=5, semantic_space=semantic_space_sm)
+        time.time() - start
 
         # Second call (warm start)
         start = time.time()
-        path2 = find_semantic_path("love", "hate", steps=5, semantic_space=semantic_space_sm)
+        find_semantic_path("love", "hate", steps=5, semantic_space=semantic_space_sm)
         time2 = time.time() - start
 
         # Second call should be faster (no model loading)
@@ -476,11 +440,7 @@ class TestEdgeCases:
 
     def test_identical_start_end(self, semantic_space_sm):
         """Test path from word to itself."""
-        path = find_semantic_path(
-            "cat", "cat",
-            steps=3,
-            semantic_space=semantic_space_sm
-        )
+        path = find_semantic_path("cat", "cat", steps=3, semantic_space=semantic_space_sm)
 
         # Should still work, just with identity path
         assert path.start == "cat"
@@ -488,11 +448,7 @@ class TestEdgeCases:
 
     def test_very_distant_words(self, semantic_space_sm):
         """Test path between semantically distant words."""
-        path = find_semantic_path(
-            "love", "truck",
-            steps=9,
-            semantic_space=semantic_space_sm
-        )
+        path = find_semantic_path("love", "truck", steps=9, semantic_space=semantic_space_sm)
 
         # Should still find a path, even if quality is low
         assert path is not None
@@ -501,12 +457,13 @@ class TestEdgeCases:
     def test_with_filters(self, semantic_space_sm):
         """Test path finding with POS and syllable filters."""
         path = find_semantic_path(
-            "hot", "cold",
+            "hot",
+            "cold",
             steps=5,
             pos_filter="ADJ",
             syllable_min=1,
             syllable_max=2,
-            semantic_space=semantic_space_sm
+            semantic_space=semantic_space_sm,
         )
 
         # Should find path respecting filters

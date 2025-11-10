@@ -309,20 +309,26 @@ class TestPersonalizedCollectionGeneration(unittest.TestCase):
 
     def test_generate_returns_list(self):
         """Test that generate_personalized_collection returns a list."""
-        seeds = self.gen.generate_personalized_collection(count=5, min_quality=0.3, min_style_fit=0.3)
+        seeds = self.gen.generate_personalized_collection(
+            count=5, min_quality=0.3, min_style_fit=0.3
+        )
 
         self.assertIsInstance(seeds, list)
 
     def test_generate_respects_count(self):
         """Test that generation respects count parameter."""
-        seeds = self.gen.generate_personalized_collection(count=3, min_quality=0.0, min_style_fit=0.0)
+        seeds = self.gen.generate_personalized_collection(
+            count=3, min_quality=0.0, min_style_fit=0.0
+        )
 
         # Should return at most requested count
         self.assertLessEqual(len(seeds), 3)
 
     def test_seeds_have_style_metadata(self):
         """Test that generated seeds have style fit metadata."""
-        seeds = self.gen.generate_personalized_collection(count=5, min_quality=0.0, min_style_fit=0.0)
+        seeds = self.gen.generate_personalized_collection(
+            count=5, min_quality=0.0, min_style_fit=0.0
+        )
 
         if seeds:  # If any seeds were generated
             seed = seeds[0]
@@ -365,7 +371,9 @@ class TestPersonalizedCollectionGeneration(unittest.TestCase):
 
     def test_seeds_sorted_by_combined_score(self):
         """Test that seeds are sorted by combined score (descending)."""
-        seeds = self.gen.generate_personalized_collection(count=10, min_quality=0.0, min_style_fit=0.0)
+        seeds = self.gen.generate_personalized_collection(
+            count=10, min_quality=0.0, min_style_fit=0.0
+        )
 
         if len(seeds) >= 2:
             # Calculate combined scores
@@ -375,7 +383,9 @@ class TestPersonalizedCollectionGeneration(unittest.TestCase):
                 scores.append(combined)
 
             # Should be in descending order
-            self.assertEqual(scores, sorted(scores, reverse=True), "Seeds should be sorted by combined score")
+            self.assertEqual(
+                scores, sorted(scores, reverse=True), "Seeds should be sorted by combined score"
+            )
 
 
 class TestEdgeCases(unittest.TestCase):
@@ -469,7 +479,9 @@ class TestDualScoring(unittest.TestCase):
 
     def test_combined_score_formula(self):
         """Test that combined score uses 70% quality + 30% style fit."""
-        seeds = self.gen.generate_personalized_collection(count=5, min_quality=0.0, min_style_fit=0.0)
+        seeds = self.gen.generate_personalized_collection(
+            count=5, min_quality=0.0, min_style_fit=0.0
+        )
 
         if seeds:
             for seed in seeds:

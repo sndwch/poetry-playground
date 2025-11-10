@@ -2,7 +2,6 @@
 """Comprehensive tests for corpus analyzer."""
 
 import unittest
-from pathlib import Path
 
 from poetryplayground.corpus_analyzer import PersonalCorpusAnalyzer, PoetryMetrics
 

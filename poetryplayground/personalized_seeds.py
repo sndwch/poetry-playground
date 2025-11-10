@@ -30,10 +30,7 @@ Example usage:
 """
 
 import random
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
-
-if TYPE_CHECKING:
-    from .poem_template import LineTemplate
+from typing import Dict, List, Optional, Set, Tuple
 
 import spacy
 
@@ -1167,7 +1164,7 @@ class PersonalizedLineSeedGenerator:
 
     def generate_line_seed_from_template(
         self,
-        line_template: "LineTemplate",  # type: ignore  # Forward reference
+        line_template: "LineTemplate",  # type: ignore  # noqa: F821  # Deprecated method
         count: int = 5,
     ) -> List[LineSeed]:
         """Generate line seeds matching a LineTemplate's constraints.

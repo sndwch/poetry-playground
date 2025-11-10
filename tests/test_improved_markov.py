@@ -6,6 +6,7 @@ import sys
 sys.stderr = open("/dev/null", "w")  # Suppress warnings
 
 import pytest
+
 from poetryplayground.poemgen import PoemGenerator
 
 

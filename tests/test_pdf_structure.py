@@ -6,9 +6,7 @@ not their visual appearance. We test PDF metadata, text content, structure,
 and font/layout parameters - but not exact pixel rendering.
 """
 
-import tempfile
 import unittest
-from pathlib import Path
 
 from poetryplayground.pdf import (
     FuturistPoemPDFGenerator,

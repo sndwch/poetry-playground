@@ -161,9 +161,7 @@ class TestBridgeTwoConceptsStrategy:
         """Test successful parameter validation."""
         strategy = BridgeTwoConceptsStrategy()
 
-        valid, error = strategy.validate_params(
-            {"start_word": "rust", "end_word": "forgiveness"}
-        )
+        valid, error = strategy.validate_params({"start_word": "rust", "end_word": "forgiveness"})
 
         assert valid is True
         assert error == ""
@@ -190,9 +188,7 @@ class TestBridgeTwoConceptsStrategy:
         """Test validation fails with empty start_word."""
         strategy = BridgeTwoConceptsStrategy()
 
-        valid, error = strategy.validate_params(
-            {"start_word": "", "end_word": "forgiveness"}
-        )
+        valid, error = strategy.validate_params({"start_word": "", "end_word": "forgiveness"})
 
         assert valid is False
         assert "non-empty string" in error
@@ -377,9 +373,7 @@ class TestNormalization:
             openness=0.6,
         )
 
-        blocks = strategy.normalize_results(
-            {"cloud": [cloud_term], "lines": [line_seed]}
-        )
+        blocks = strategy.normalize_results({"cloud": [cloud_term], "lines": [line_seed]})
 
         assert len(blocks) == 2
         source_methods = {b.source_method for b in blocks}
@@ -398,9 +392,7 @@ class TestNormalization:
         """Test normalization with empty result lists."""
         strategy = BridgeTwoConceptsStrategy()
 
-        blocks = strategy.normalize_results(
-            {"cloud": [], "lines": [], "metaphors": []}
-        )
+        blocks = strategy.normalize_results({"cloud": [], "lines": [], "metaphors": []})
 
         assert blocks == []
 
@@ -468,9 +460,7 @@ class TestIntegration:
         result = strategy.run({"start_word": "rust", "end_word": "forgiveness"})
 
         # Check for line seed generators (sequential phase)
-        line_seeds = [
-            b for b in result.building_blocks if b.source_method == "LineSeedGenerator"
-        ]
+        line_seeds = [b for b in result.building_blocks if b.source_method == "LineSeedGenerator"]
 
         # Should have at least some line seeds (if sequential phase succeeded)
         # Note: This may be 0 if line generation failed, which is OK for this test

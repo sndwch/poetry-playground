@@ -5,9 +5,7 @@ import pytest
 from poetryplayground.definitional_finder import (
     DefinitionalResult,
     find_words_by_definition,
-    _process_synset,
 )
-
 
 # ============================================================================
 # Unit Tests - DataClass
@@ -112,7 +110,7 @@ class TestMultiwordTerms:
             )
 
             # Check if any results contain spaces (multi-word terms)
-            has_multiword = any(" " in r.word for r in results)
+            any(" " in r.word for r in results)
 
             # With computer-related terms, we might get multi-word results
             # but it's not guaranteed, so we just verify the flag works
@@ -197,7 +195,7 @@ class TestGoldenCases:
             results = find_words_by_definition("rust", limit=20, min_quality=0.5, verbose=False)
 
             # Should find some corrosion/oxidation related terms
-            result_words = [r.word.lower() for r in results]
+            [r.word.lower() for r in results]
 
             # We expect at least some relevant results
             assert len(results) > 0

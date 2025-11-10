@@ -53,12 +53,15 @@ class TestDocumentQualityScoring:
     def test_score_text_quality_penalizes_numeric_content(self, library):
         """Test that heavily numeric content receives lower scores."""
         numeric_text = " ".join([f"number{i}" for i in range(100)])
-        literary_text = """
+        literary_text = (
+            """
         The moonlight danced across the quiet waters, casting silver shadows
         upon the ancient stones. In the distance, a nightingale sang its
         melancholy song, echoing through the forgotten gardens where roses
         once bloomed in wild abandon.
-        """ * 20
+        """
+            * 20
+        )
 
         numeric_score = library._score_text_quality(numeric_text)
         literary_score = library._score_text_quality(literary_text)
@@ -68,7 +71,8 @@ class TestDocumentQualityScoring:
 
     def test_score_text_quality_evaluates_sentence_structure(self, library):
         """Test that sentence structure affects quality score."""
-        good_structure = """
+        good_structure = (
+            """
         The ancient library stood silent in the moonlight. Its weathered
         stones told stories of centuries past. Within its walls, countless
         volumes waited patiently for curious readers.
@@ -76,7 +80,9 @@ class TestDocumentQualityScoring:
         Each book contained worlds of imagination and knowledge. Some were
         bound in leather, others in cloth. All shared the timeless quality
         of written wisdom.
-        """ * 10
+        """
+            * 10
+        )
 
         poor_structure = "a b c d e. " * 100  # Very short sentences
 
@@ -89,7 +95,8 @@ class TestDocumentQualityScoring:
     def test_score_text_quality_uses_vocabulary_scoring(self, library):
         """Test that vocabulary quality affects the score."""
         # Text with richer vocabulary
-        rich_vocab = """
+        rich_vocab = (
+            """
         The penumbra of twilight descended upon the vestige of the ancient
         citadel. Ephemeral shadows danced across weathered ramparts while
         the sibilant wind whispered through desolate corridors.
@@ -97,16 +104,21 @@ class TestDocumentQualityScoring:
         In the gloaming, a solitary raven perched upon the crumbling
         parapet, its obsidian plumage gleaming faintly. The bird's
         melancholy cry echoed through the abandoned halls.
-        """ * 10
+        """
+            * 10
+        )
 
         # Text with common vocabulary
-        common_vocab = """
+        common_vocab = (
+            """
         The dark time came to the old building. Small shadows moved on the
         walls while the wind made sounds in the empty rooms.
 
         In the evening, a black bird sat on the broken wall. The bird made
         a sad sound in the empty halls.
-        """ * 10
+        """
+            * 10
+        )
 
         rich_score = library._score_text_quality(rich_vocab)
         common_score = library._score_text_quality(common_vocab)
@@ -192,7 +204,8 @@ class TestDocumentCachingWithMetadata:
 
     def test_cache_document_stores_metadata(self, library):
         """Test that caching a document also stores its metadata."""
-        sample_text = """
+        sample_text = (
+            """
         Title: Test Document
 
         Author: Test Author
@@ -202,7 +215,9 @@ class TestDocumentCachingWithMetadata:
 
         Second paragraph adds more content.
         Quality should be adequate for testing.
-        """ * 20
+        """
+            * 20
+        )
 
         quality_score = library._score_text_quality(sample_text)
         library._cache_document(1, sample_text, quality_score)
@@ -325,7 +340,7 @@ class TestDocumentInfoDataclass:
             length=1000,
             genre="fiction",
             language="en",
-            quality_score=0.85
+            quality_score=0.85,
         )
 
         assert doc_info.id == 1
@@ -345,7 +360,7 @@ class TestDocumentInfoDataclass:
             length=100,
             genre="poetry",
             language="en",
-            quality_score=0.5
+            quality_score=0.5,
         )
 
         # All required fields should exist

@@ -1,85 +1,22 @@
 """Main menu screen for selecting generation procedures."""
 
-from typing import ClassVar
-
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import Label, ListItem, ListView, Static
 
+from poetryplayground.tui.procedures import PROCEDURES
+
 
 class MainMenuScreen(Screen):
-    """Main procedure selection screen with all available generators."""
+    """Main procedure selection screen with all available generators.
 
-    # Define all available procedures with their metadata
-    # Format: (id, name, description, category)
-    PROCEDURES: ClassVar[list] = [
-        # Visual/Concrete Poetry
-        (
-            "futurist",
-            "Futurist Poem",
-            "Marinetti-inspired mathematical word connections",
-            "Visual Poetry",
-        ),
-        (
-            "markov",
-            "Stochastic Jolastic (Markov)",
-            "Joyce-like wordplay with rhyme schemes",
-            "Visual Poetry",
-        ),
-        ("chaotic", "Chaotic Concrete Poem", "Abstract spatial arrangements", "Visual Poetry"),
-        ("charsoup", "Character Soup Poem", "Character-level visual chaos", "Visual Poetry"),
-        ("wordsoup", "Stop Word Soup Poem", "Stop words in visual patterns", "Visual Poetry"),
-        ("puzzle", "Visual Puzzle Poem", "Interactive terminal-based puzzles", "Visual Poetry"),
-        # Ideation Tools
-        (
-            "lineseeds",
-            "Line Seeds Generator",
-            "Evocative incomplete phrases and line beginnings",
-            "Ideation",
-        ),
-        (
-            "metaphor",
-            "Metaphor Generator",
-            "Fresh metaphors from Project Gutenberg texts",
-            "Ideation",
-        ),
-        ("corpus", "Personal Corpus Analyzer", "Analyze your existing poetry", "Ideation"),
-        (
-            "theseus",
-            "Ship of Theseus Transformer",
-            "Gradually transform existing poems",
-            "Ideation",
-        ),
-        ("ideas", "Poetry Idea Generator", "Creative seeds from classic literature", "Ideation"),
-        (
-            "sixdegrees",
-            "Six Degrees Word Convergence",
-            "Explore connections between concepts",
-            "Ideation",
-        ),
-        ("fragments", "Resonant Fragment Miner", "Extract poetic sentence fragments", "Ideation"),
-        ("equidistant", "Equidistant Word Finder", "Find words bridging two anchors", "Ideation"),
-        (
-            "poem_scaffold",
-            "Poem Scaffold Generator",
-            "Generate multi-stanza thematic structure",
-            "Ideation",
-        ),
-        # Templates
-        (
-            "template_extract",
-            "Template Extractor",
-            "Extract structure from existing poems",
-            "Templates",
-        ),
-        # Syllabic Forms
-        ("haiku", "Haiku Generator", "5-7-5 syllable haiku with templates", "Forms"),
-        ("tanka", "Tanka Generator", "5-7-5-7-7 syllable tanka", "Forms"),
-        ("senryu", "Senryu Generator", "5-7-5 syllable senryu", "Forms"),
-        # System
-        ("deps", "Check System Dependencies", "Verify installation and dependencies", "System"),
-    ]
+    Procedures are imported from poetryplayground.tui.procedures to maintain
+    a single source of truth across all TUI screens.
+    """
+
+    # Use shared procedures list (imported at module level)
+    PROCEDURES = PROCEDURES
 
     CSS = """
     MainMenuScreen {

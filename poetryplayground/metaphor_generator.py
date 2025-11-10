@@ -5,10 +5,7 @@ import random
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional, Tuple
-
-if TYPE_CHECKING:
-    from .poem_template import LineTemplate
+from typing import List, Optional, Tuple
 
 import spacy
 
@@ -428,7 +425,7 @@ class MetaphorGenerator:
 
         # Apply quality filtering if requested
         if check_quality:
-            from .quality_scorer import get_quality_scorer
+            from .core.quality_scorer import get_quality_scorer
 
             scorer = get_quality_scorer()
 
@@ -879,7 +876,9 @@ class MetaphorGenerator:
             0.88
         """
         # Validate inputs - both source and target must be valid words
-        if not word_validator.is_valid_word(source) or not word_validator.is_valid_word(target):
+        if not word_validator.is_valid_english_word(
+            source
+        ) or not word_validator.is_valid_english_word(target):
             logger.debug(f"Invalid source or target word: {source}, {target}")
             return None
 
@@ -1070,8 +1069,6 @@ class MetaphorGenerator:
 
     def _score_metaphor(self, source: str, target: str, grounds: List[str]) -> float:
         """Score a metaphor for quality using comprehensive quality system."""
-        from .quality_scorer import get_quality_scorer
-
         scorer = get_quality_scorer()
         score = 0.5  # Base score
 
@@ -1229,7 +1226,7 @@ class MetaphorGenerator:
 
     def generate_metaphor_from_template(
         self,
-        line_template: "LineTemplate",  # type: ignore  # Forward reference
+        line_template: "LineTemplate",  # type: ignore  # noqa: F821  # Deprecated method
         source_words: Optional[List[str]] = None,
         count: int = 5,
     ) -> List[Metaphor]:

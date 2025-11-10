@@ -1,7 +1,6 @@
 """Tests for profiling and observability functionality."""
 
 import unittest
-from unittest.mock import MagicMock
 
 from poetryplayground.logger import (
     Profiler,

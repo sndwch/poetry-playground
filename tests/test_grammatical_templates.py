@@ -392,7 +392,7 @@ class TestIntegration:
     @pytest.mark.skip(reason="Syllable count inconsistencies in word bank - known NLP limitation")
     def test_end_to_end_senryu_generation(self, generator):
         """Test end-to-end senryu generation (same as haiku structure)."""
-        lines, templates = generator.generate_lines([5, 7, 5])
+        lines, _templates = generator.generate_lines([5, 7, 5])
 
         assert len(lines) == 3
         assert count_syllables(lines[0]) == 5
@@ -402,7 +402,7 @@ class TestIntegration:
     @pytest.mark.skip(reason="Syllable count inconsistencies in word bank - known NLP limitation")
     def test_end_to_end_tanka_generation(self, generator):
         """Test end-to-end tanka generation."""
-        lines, templates = generator.generate_lines([5, 7, 5, 7, 7])
+        lines, _templates = generator.generate_lines([5, 7, 5, 7, 7])
 
         assert len(lines) == 5
 
@@ -453,7 +453,7 @@ class TestEdgeCases:
             generator = TemplateGenerator(pos_vocab)
 
             # 3-syllable lines
-            lines, templates = generator.generate_lines([3, 3])
+            lines, _templates = generator.generate_lines([3, 3])
 
             assert len(lines) == 2
             assert all(count_syllables(line) == 3 for line in lines)

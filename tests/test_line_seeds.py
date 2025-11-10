@@ -7,6 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
+
 from poetryplayground.line_seeds import LineSeed, LineSeedGenerator, SeedType
 
 
@@ -96,7 +97,7 @@ def test_seed_collection():
         assert all(isinstance(s, LineSeed) for s in seeds)
 
         # Check variety of types
-        types = set(s.seed_type for s in seeds)
+        types = {s.seed_type for s in seeds}
         assert len(types) >= 3  # Should have at least 3 different types
 
         print("\nSeed Collection:")

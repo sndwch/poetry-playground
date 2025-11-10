@@ -7,6 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
+
 from poetryplayground.forms import (
     FormConstraint,
     FormGenerator,
@@ -303,7 +304,7 @@ class TestFormGenerator:
             generator = FormGenerator()
             seed_words = ["autumn", "leaves", "wind"]
 
-            lines, validation = generator.generate_haiku(
+            lines, _validation = generator.generate_haiku(
                 seed_words=seed_words, max_attempts=100, strict=False
             )
 
@@ -354,7 +355,7 @@ class TestFormGenerator:
             generator = FormGenerator()
             seed_words = ["moon", "reflection", "water"]
 
-            lines, validation = generator.generate_tanka(
+            lines, _validation = generator.generate_tanka(
                 seed_words=seed_words, max_attempts=100, strict=False
             )
 
@@ -405,7 +406,7 @@ class TestFormGenerator:
             generator = FormGenerator()
             seed_words = ["laughter", "tears", "life"]
 
-            lines, validation = generator.generate_senryu(
+            lines, _validation = generator.generate_senryu(
                 seed_words=seed_words, max_attempts=100, strict=False
             )
 
@@ -533,7 +534,7 @@ class TestEdgeCases:
         try:
             generator = FormGenerator()
 
-            line, syllables = generator.generate_constrained_line(
+            line, _syllables = generator.generate_constrained_line(
                 target_syllables=5, seed_words=[], max_attempts=20
             )
 

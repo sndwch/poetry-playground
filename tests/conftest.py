@@ -78,9 +78,9 @@ def capture_rich_output(rich_console, monkeypatch):
     Returns the captured Console instance.
     """
     # Import modules first so they're loaded
+    import poetryplayground.cli
     import poetryplayground.rich_console
     import poetryplayground.rich_output
-    import poetryplayground.cli
 
     # Temporarily replace the global console in all modules that import it
     monkeypatch.setattr(poetryplayground.rich_console, "console", rich_console)

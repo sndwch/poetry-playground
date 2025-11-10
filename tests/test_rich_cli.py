@@ -1,7 +1,5 @@
 """Tests for Rich CLI enhancements."""
 
-import pytest
-
 
 def test_list_procedures(capture_rich_output):
     """Test that --list-procedures displays a Rich table."""

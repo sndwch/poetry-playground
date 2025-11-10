@@ -1,12 +1,12 @@
 """Comprehensive tests for the quality scoring system."""
 
 import pytest
+
 from poetryplayground.core.quality_scorer import (
-    QualityScorer,
-    QualityScore,
-    GenerationContext,
     EmotionalTone,
     FormalityLevel,
+    GenerationContext,
+    QualityScore,
     get_quality_scorer,
 )
 
@@ -143,15 +143,11 @@ class TestQualityScorer:
 
         # Different contexts
         dark_context = GenerationContext(
-            emotional_tone=EmotionalTone.DARK,
-            concreteness_target=0.7,
-            avoid_cliches=True
+            emotional_tone=EmotionalTone.DARK, concreteness_target=0.7, avoid_cliches=True
         )
 
         light_context = GenerationContext(
-            emotional_tone=EmotionalTone.LIGHT,
-            concreteness_target=0.5,
-            avoid_cliches=False
+            emotional_tone=EmotionalTone.LIGHT, concreteness_target=0.5, avoid_cliches=False
         )
 
         dark_score = scorer.score_word(word, dark_context)
@@ -164,20 +160,17 @@ class TestQualityScorer:
     def test_quality_score_grading(self):
         """Test quality score grading system."""
         score_a_plus = QualityScore(
-            overall=0.95, frequency=0.9, novelty=0.9,
-            coherence=0.9, register=0.9, imagery=0.9
+            overall=0.95, frequency=0.9, novelty=0.9, coherence=0.9, register=0.9, imagery=0.9
         )
         assert score_a_plus.get_grade() == "A+"
 
         score_b = QualityScore(
-            overall=0.75, frequency=0.7, novelty=0.7,
-            coherence=0.7, register=0.7, imagery=0.7
+            overall=0.75, frequency=0.7, novelty=0.7, coherence=0.7, register=0.7, imagery=0.7
         )
         assert score_b.get_grade() == "B"
 
         score_f = QualityScore(
-            overall=0.3, frequency=0.3, novelty=0.3,
-            coherence=0.3, register=0.3, imagery=0.3
+            overall=0.3, frequency=0.3, novelty=0.3, coherence=0.3, register=0.3, imagery=0.3
         )
         assert score_f.get_grade() == "F"
 
@@ -191,10 +184,10 @@ class TestQualityScorer:
         """Test scoring multiple words."""
         test_words = [
             "penumbra",  # High quality
-            "vestige",   # High quality
-            "heart",     # Clichéd
-            "soul",      # Clichéd
-            "stone",     # Good
+            "vestige",  # High quality
+            "heart",  # Clichéd
+            "soul",  # Clichéd
+            "stone",  # Good
         ]
 
         scores = [scorer.score_word(w).overall for w in test_words]
@@ -276,7 +269,7 @@ class TestGenerationContext:
             concreteness_target=0.8,
             formality_level=FormalityLevel.FORMAL,
             avoid_cliches=False,
-            domain="nature"
+            domain="nature",
         )
         assert context.emotional_tone == EmotionalTone.DARK
         assert context.concreteness_target == 0.8

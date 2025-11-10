@@ -863,7 +863,7 @@ class LineSeedGenerator:
         Returns:
             Quality score from 0 to 1
         """
-        from .quality_scorer import get_quality_scorer
+        from .core.quality_scorer import get_quality_scorer
 
         scorer = get_quality_scorer()
         score = 0.0  # Start from zero - must earn points

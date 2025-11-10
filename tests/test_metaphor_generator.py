@@ -412,7 +412,9 @@ def test_metaphor_extraction_quality():
     """
 
     # Extract metaphors from the text
-    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+    metaphors = generator._extract_metaphors_from_text(
+        test_text, doc_index=1, total_docs=1, verbose=False
+    )
 
     # Check that we got some metaphors
     assert len(metaphors) > 0, "Should extract at least some metaphors"
@@ -424,7 +426,9 @@ def test_metaphor_extraction_quality():
     for metaphor in metaphors:
         assert metaphor.source.lower() not in bad_sources, f"Bad source found: {metaphor.source}"
         assert metaphor.target.lower() not in bad_targets, f"Bad target found: {metaphor.target}"
-        print(f"  Extracted: {metaphor.source} → {metaphor.target} (score: {metaphor.quality_score:.2f})")
+        print(
+            f"  Extracted: {metaphor.source} → {metaphor.target} (score: {metaphor.quality_score:.2f})"
+        )
 
     # Ideally, we should find metaphors like "shadow → desire" or "heart → stone"
     sources_found = [m.source.lower() for m in metaphors]
@@ -432,9 +436,7 @@ def test_metaphor_extraction_quality():
 
     # At least one good metaphor should be present
     good_metaphor_found = (
-        "shadow" in sources_found
-        or "heart" in sources_found
-        or "silence" in sources_found
+        "shadow" in sources_found or "heart" in sources_found or "silence" in sources_found
     )
 
     print(f"✓ Extracted {len(metaphors)} quality metaphors (no literal phrases)")
@@ -457,7 +459,9 @@ def test_capitalized_word_filtering():
     The Professor of Mathematics explained the concept.
     """
 
-    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+    metaphors = generator._extract_metaphors_from_text(
+        test_text, doc_index=1, total_docs=1, verbose=False
+    )
 
     # None of these should produce metaphors because the capitalized words should be filtered
     for metaphor in metaphors:
@@ -465,7 +469,9 @@ def test_capitalized_word_filtering():
         assert metaphor.source.lower() not in ["paris", "shakespeare", "professor"]
         assert metaphor.target.lower() not in ["mathematics", "paris"]
 
-    print(f"✓ Capitalized word filtering works correctly ({len(metaphors)} metaphors, no proper nouns)")
+    print(
+        f"✓ Capitalized word filtering works correctly ({len(metaphors)} metaphors, no proper nouns)"
+    )
 
 
 def test_poetic_possessive_filtering():
@@ -484,7 +490,9 @@ def test_poetic_possessive_filtering():
     The history of ten years passed.
     """
 
-    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+    metaphors = generator._extract_metaphors_from_text(
+        test_text, doc_index=1, total_docs=1, verbose=False
+    )
 
     # Check that we filtered out non-poetic possessives
     bad_sources = {"chapter", "door", "prospect", "cause", "history"}
@@ -492,8 +500,12 @@ def test_poetic_possessive_filtering():
 
     for metaphor in metaphors:
         if metaphor.metaphor_type.value == "possessive":
-            assert metaphor.source.lower() not in bad_sources, f"Non-poetic source found: {metaphor.source}"
-            assert metaphor.target.lower() not in bad_targets, f"Non-poetic target found: {metaphor.target}"
+            assert metaphor.source.lower() not in bad_sources, (
+                f"Non-poetic source found: {metaphor.source}"
+            )
+            assert metaphor.target.lower() not in bad_targets, (
+                f"Non-poetic target found: {metaphor.target}"
+            )
             print(f"  ✓ Poetic possessive: {metaphor.source} → {metaphor.target}")
 
     print(f"✓ Poetic possessive filtering works correctly ({len(metaphors)} metaphors)")
@@ -511,7 +523,9 @@ def test_poetic_simile_filtering():
     One as ten, they multiplied.
     """
 
-    metaphors = generator._extract_metaphors_from_text(test_text, doc_index=1, total_docs=1, verbose=False)
+    metaphors = generator._extract_metaphors_from_text(
+        test_text, doc_index=1, total_docs=1, verbose=False
+    )
 
     # Check that we filtered out non-poetic similes (verb/number patterns)
     bad_sources = {"regarded", "one"}
@@ -519,8 +533,12 @@ def test_poetic_simile_filtering():
 
     for metaphor in metaphors:
         if metaphor.metaphor_type.value == "simile":
-            assert metaphor.source.lower() not in bad_sources, f"Non-poetic source found: {metaphor.source}"
-            assert metaphor.target.lower() not in bad_targets, f"Non-poetic target found: {metaphor.target}"
+            assert metaphor.source.lower() not in bad_sources, (
+                f"Non-poetic source found: {metaphor.source}"
+            )
+            assert metaphor.target.lower() not in bad_targets, (
+                f"Non-poetic target found: {metaphor.target}"
+            )
             print(f"  ✓ Poetic simile: {metaphor.source} → {metaphor.target}")
 
     print(f"✓ Poetic simile filtering works correctly ({len(metaphors)} metaphors)")
@@ -599,9 +617,9 @@ if __name__ == "__main__":
     print("\nTesting batch generation with new types...")
     test_generate_metaphor_batch()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TESTING NEW FILTERING LOGIC")
-    print("="*60)
+    print("=" * 60)
 
     print("\nTesting proper noun filtering...")
     test_proper_noun_filtering()
@@ -618,9 +636,9 @@ if __name__ == "__main__":
     print("\nTesting capitalized word filtering...")
     test_capitalized_word_filtering()
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TESTING POS-BASED FILTERING")
-    print("="*60)
+    print("=" * 60)
 
     print("\nTesting concreteness checking...")
     test_concreteness_checking()

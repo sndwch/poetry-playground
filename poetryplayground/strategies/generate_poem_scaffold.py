@@ -18,8 +18,9 @@ Example:
 """
 
 import logging
+import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from poetryplayground.conceptual_cloud import (
     ClusterType,
@@ -33,12 +34,13 @@ from poetryplayground.metaphor_generator import MetaphorGenerator
 from poetryplayground.personalized_seeds import PersonalizedLineSeedGenerator
 from poetryplayground.poem_scaffold import PoemScaffold, StanzaScaffold
 from poetryplayground.semantic_geodesic import find_semantic_path
+from poetryplayground.strategy_engine import BaseStrategy, StrategyResult
 
 # Set up logger for this module
 module_logger = logging.getLogger(__name__)
 
 
-class GeneratePoemScaffoldStrategy:
+class GeneratePoemScaffoldStrategy(BaseStrategy):
     """Orchestrate multiple generators to create a multi-stanza poem scaffold.
 
     This strategy implements the "No-Shortcuts" orchestration philosophy:
@@ -64,47 +66,95 @@ class GeneratePoemScaffoldStrategy:
         self.metaphor_gen: Optional[MetaphorGenerator] = None
         self.seed_generator: Optional[LineSeedGenerator] = None
 
-    def run(
-        self,
-        start_concept: str,
-        end_concept: str,
-        num_stanzas: int = 3,
-        fingerprint_path: Optional[str] = None,
-    ) -> PoemScaffold:
+    def validate_params(self, params: Dict[str, Any]) -> tuple[bool, str]:
+        """Validate parameters for this strategy.
+
+        Required params:
+        - start_concept (str): The thematic starting point
+        - end_concept (str): The thematic destination
+
+        Optional params:
+        - num_stanzas (int): Number of stanzas (minimum 2, default 3)
+        - fingerprint_path (str): Path to saved StyleFingerprint
+
+        Args:
+            params: Dictionary of parameters
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Check required params
+        if "start_concept" not in params:
+            return False, "Missing required parameter: start_concept"
+
+        if "end_concept" not in params:
+            return False, "Missing required parameter: end_concept"
+
+        # Validate types
+        if not isinstance(params["start_concept"], str) or not params["start_concept"].strip():
+            return False, "start_concept must be a non-empty string"
+
+        if not isinstance(params["end_concept"], str) or not params["end_concept"].strip():
+            return False, "end_concept must be a non-empty string"
+
+        # Check that concepts are different
+        if params["start_concept"].strip().lower() == params["end_concept"].strip().lower():
+            return False, "start_concept and end_concept must be different"
+
+        # Validate optional params
+        if "num_stanzas" in params and (
+            not isinstance(params["num_stanzas"], int) or params["num_stanzas"] < 2
+        ):
+            return False, "num_stanzas must be an integer >= 2"
+
+        fingerprint_path = params.get("fingerprint_path")
+        if fingerprint_path:
+            if not isinstance(fingerprint_path, str):
+                return False, "fingerprint_path must be a string"
+            fingerprint_path_obj = Path(fingerprint_path)
+            if not fingerprint_path_obj.exists():
+                return False, f"StyleFingerprint not found at {fingerprint_path}"
+
+        return True, ""
+
+    def run(self, params: Dict[str, Any]) -> StrategyResult:
         """Generate a complete poem scaffold with thematic arc.
 
         This is the main entry point for the strategy. It orchestrates all
         the sub-generators to create a structured, multi-stanza poem framework.
 
         Args:
-            start_concept: The thematic starting point (e.g., "rust")
-            end_concept: The thematic destination (e.g., "forgiveness")
-            num_stanzas: Number of stanzas (minimum 2, default 3)
-            fingerprint_path: Optional path to saved StyleFingerprint for personalized line seeds
+            params: Validated parameters containing:
+                - start_concept (str): The thematic starting point
+                - end_concept (str): The thematic destination
+                - num_stanzas (int, optional): Number of stanzas (default 3)
+                - fingerprint_path (str, optional): Path to StyleFingerprint
 
         Returns:
-            A complete PoemScaffold with all creative materials
-
-        Raises:
-            ValueError: If num_stanzas < 2 or if start_concept == end_concept
-            FileNotFoundError: If fingerprint_path is provided but doesn't exist
+            StrategyResult containing the generated PoemScaffold
 
         Example:
             >>> strategy = GeneratePoemScaffoldStrategy()
-            >>> scaffold = strategy.run("silence", "thunder", num_stanzas=3)
-            >>> print(scaffold.thematic_path)
+            >>> result = strategy.run({
+            ...     'start_concept': 'silence',
+            ...     'end_concept': 'thunder',
+            ...     'num_stanzas': 3
+            ... })
+            >>> print(result.metadata['thematic_path'])
             ['silence', 'resonance', 'thunder']
         """
+        start_time = time.time()
+
+        # Extract params with defaults
+        start_concept = params["start_concept"].strip()
+        end_concept = params["end_concept"].strip()
+        num_stanzas = params.get("num_stanzas", 3)
+        fingerprint_path = params.get("fingerprint_path")
+
         # Phase 1: Validation & Setup
         logger.info(
             f"GeneratePoemScaffold: '{start_concept}' → '{end_concept}' ({num_stanzas} stanzas)"
         )
-
-        if num_stanzas < 2:
-            raise ValueError(f"num_stanzas must be >= 2, got {num_stanzas}")
-
-        if start_concept.lower() == end_concept.lower():
-            raise ValueError("start_concept and end_concept must be different")
 
         # Instantiate generators
         self._setup_generators(fingerprint_path)
@@ -112,14 +162,14 @@ class GeneratePoemScaffoldStrategy:
         # Phase 2: Generate Thematic Backbone
         logger.info("Phase 2: Generating thematic backbone via semantic path...")
         path_obj = find_semantic_path(
-            start_word=start_concept,
-            end_word=end_concept,
+            start=start_concept,
+            end=end_concept,
             steps=num_stanzas,
             method="bezier",  # Bezier method for curved, creative paths
         )
 
-        # Extract the primary word from each step
-        thematic_path = [step.bridges[0].word for step in path_obj.steps]
+        # Extract the primary path (start + bridges + end)
+        thematic_path = path_obj.get_primary_path()
         logger.info(f"Thematic path: {' → '.join(thematic_path)}")
 
         # Phase 3: Iterate and Build Each StanzaScaffold
@@ -139,8 +189,40 @@ class GeneratePoemScaffoldStrategy:
             stanzas=stanzas,
         )
 
-        logger.info(f"GeneratePoemScaffold complete: {len(scaffold.stanzas)} stanzas generated")
-        return scaffold
+        execution_time = time.time() - start_time
+
+        logger.info(
+            f"GeneratePoemScaffold complete: {len(scaffold.stanzas)} stanzas generated "
+            f"in {execution_time:.2f}s"
+        )
+
+        # Track which generators were used
+        generators_used = [
+            "SemanticPath",
+            "ConceptualCloud",
+            "DefinitionalFinder",
+            "MetaphorGenerator",
+        ]
+        if fingerprint_path:
+            generators_used.append("PersonalizedLineSeedGenerator")
+        else:
+            generators_used.append("LineSeedGenerator")
+
+        # Return StrategyResult with the scaffold as custom data
+        return StrategyResult(
+            strategy_name="generate_poem_scaffold",
+            building_blocks=[],  # Scaffolds don't use building blocks
+            execution_time=execution_time,
+            generators_used=generators_used,
+            metadata={
+                "start_concept": start_concept,
+                "end_concept": end_concept,
+                "num_stanzas": num_stanzas,
+                "thematic_path": thematic_path,
+                "scaffold": scaffold,  # Include the actual scaffold
+            },
+            params=params,
+        )
 
     def _setup_generators(self, fingerprint_path: Optional[str]):
         """Initialize all needed generators.
@@ -216,12 +298,12 @@ class GeneratePoemScaffoldStrategy:
         # Step 3d: Generate Starter Lines (LineSeed Generator)
         logger.debug(f"    3d: Generating starter lines for '{theme_word}'...")
         # Build seed words from theme word + palette
-        palette_list = [term.term for term in stanza_palette.get_all_terms()]
+        palette_list = stanza_palette.get_all_terms()  # Already returns List[str]
         seed_words = [theme_word, *palette_list[:10]]  # Limit to avoid overwhelming API
 
         line_seeds = self.seed_generator.generate_seed_collection(
             seed_words=seed_words, num_seeds=3
-        ).seeds
+        )  # Already returns List[LineSeed]
 
         # Assemble the stanza scaffold
         stanza = StanzaScaffold(

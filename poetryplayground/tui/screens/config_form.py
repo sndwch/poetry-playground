@@ -1036,7 +1036,7 @@ class ConfigFormScreen(Screen):
             from poetryplayground.strategies.generate_poem_scaffold import (
                 GeneratePoemScaffoldStrategy,
             )
-            from poetryplayground.tui.screens.scaffold_display import ScaffoldDisplayScreen
+            from poetryplayground.strategy_engine import get_strategy_engine
 
             start_concept = config.get("start_concept", "").strip()
             end_concept = config.get("end_concept", "").strip()
@@ -1047,21 +1047,63 @@ class ConfigFormScreen(Screen):
                 return "Error: Both start_concept and end_concept are required"
 
             try:
-                # Generate the scaffold
-                strategy = GeneratePoemScaffoldStrategy()
-                scaffold = strategy.run(
-                    start_concept=start_concept,
-                    end_concept=end_concept,
-                    num_stanzas=num_stanzas,
-                    fingerprint_path=fingerprint_path,
+                # Use StrategyEngine for clean architecture
+                engine = get_strategy_engine()
+                if "generate_poem_scaffold" not in engine.list_strategies():
+                    engine.register_strategy("generate_poem_scaffold", GeneratePoemScaffoldStrategy)
+
+                # Execute via strategy engine
+                result = engine.execute(
+                    "generate_poem_scaffold",
+                    {
+                        "start_concept": start_concept,
+                        "end_concept": end_concept,
+                        "num_stanzas": num_stanzas,
+                        "fingerprint_path": fingerprint_path,
+                    },
                 )
 
-                # Push the specialized scaffold display screen instead of returning text
-                # Use call_from_thread since we're in a @work(thread=True) method
-                self.app.call_from_thread(self.app.push_screen, ScaffoldDisplayScreen(scaffold))
+                # Extract scaffold from StrategyResult metadata
+                scaffold = result.metadata["scaffold"]
 
-                # Return None to indicate we handled the display ourselves
-                return None
+                # Format output as text (simple display)
+                output_lines = []
+                output_lines.append(f"Thematic Path: {' → '.join(scaffold.thematic_path)}\n")
+
+                for i, stanza in enumerate(scaffold.stanzas, 1):
+                    output_lines.append(f"\n{'=' * 60}")
+                    output_lines.append(f"Stanza {i}: {stanza.focus_concept}")
+                    output_lines.append(f"{'=' * 60}")
+
+                    # Vocabulary Palette
+                    output_lines.append(
+                        f"\nVocabulary Palette ({len(stanza.vocabulary_palette)} words):"
+                    )
+                    output_lines.append(", ".join(stanza.vocabulary_palette[:20]))
+                    if len(stanza.vocabulary_palette) > 20:
+                        output_lines.append(f"  ... and {len(stanza.vocabulary_palette) - 20} more")
+
+                    # Lateral Ideas
+                    if stanza.lateral_ideas:
+                        output_lines.append(f"\nLateral Ideas ({len(stanza.lateral_ideas)}):")
+                        for word, definition, score in stanza.lateral_ideas[:5]:
+                            output_lines.append(f"  • {word}: {definition[:60]}... ({score:.2f})")
+
+                    # Metaphors
+                    if stanza.metaphors:
+                        output_lines.append(f"\nCentral Metaphors ({len(stanza.metaphors)}):")
+                        for metaphor_text, metaphor_type in stanza.metaphors[:3]:
+                            output_lines.append(f"  • [{metaphor_type}] {metaphor_text}")
+
+                    # Line Seeds
+                    if stanza.line_seeds:
+                        output_lines.append(f"\nStarter Lines ({len(stanza.line_seeds)}):")
+                        for line, line_type in stanza.line_seeds[:5]:
+                            output_lines.append(f"  • [{line_type}] {line}")
+
+                    output_lines.append("")
+
+                return "\n".join(output_lines)
 
             except Exception as e:
                 import traceback

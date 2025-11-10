@@ -4,17 +4,16 @@ import pytest
 
 from poetryplayground.core.lexigen import (
     clean_api_results,
-    rhymes,
+    contextually_linked_words,
+    phonetically_related_words,
+    related_rare_words,
     rhyme,
+    rhymes,
+    score_and_filter_results,
     similar_meaning_words,
     similar_sounding_words,
-    contextually_linked_words,
-    related_rare_words,
-    phonetically_related_words,
-    score_and_filter_results,
 )
-from poetryplayground.core.quality_scorer import GenerationContext, EmotionalTone
-
+from poetryplayground.core.quality_scorer import EmotionalTone, GenerationContext
 
 # ============================================================================
 # Unit Tests - Clean API Results
@@ -304,7 +303,7 @@ class TestQualityAwareFeatures:
         """Test that quality threshold filters results."""
         api_response = [
             {"word": "penumbra", "score": 100},  # High quality word
-            {"word": "heart", "score": 100},     # Clichéd word (lower quality)
+            {"word": "heart", "score": 100},  # Clichéd word (lower quality)
         ]
 
         # With high quality threshold, should filter out clichés
@@ -325,18 +324,14 @@ class TestQualityAwareFeatures:
             {"word": "joyful", "score": 100},
         ]
 
-        result = score_and_filter_results(
-            api_response,
-            exclude_words=["happy"],
-            min_quality=0.0
-        )
+        result = score_and_filter_results(api_response, exclude_words=["happy"], min_quality=0.0)
 
         assert "happy" not in result
 
     def test_score_and_filter_results_sorting(self):
         """Test that results are sorted by quality (best first)."""
         api_response = [
-            {"word": "heart", "score": 100},     # Clichéd (lower quality)
+            {"word": "heart", "score": 100},  # Clichéd (lower quality)
             {"word": "penumbra", "score": 100},  # Fresh (higher quality)
         ]
 
@@ -352,16 +347,8 @@ class TestQualityAwareFeatures:
         """Test similar_meaning_words accepts quality parameters."""
         try:
             # Test with min_quality parameter
-            result_high = similar_meaning_words(
-                "happy",
-                sample_size=5,
-                min_quality=0.7
-            )
-            result_low = similar_meaning_words(
-                "happy",
-                sample_size=5,
-                min_quality=0.3
-            )
+            result_high = similar_meaning_words("happy", sample_size=5, min_quality=0.7)
+            result_low = similar_meaning_words("happy", sample_size=5, min_quality=0.3)
 
             assert isinstance(result_high, list)
             assert isinstance(result_low, list)
@@ -373,16 +360,9 @@ class TestQualityAwareFeatures:
     def test_similar_meaning_words_with_context(self):
         """Test similar_meaning_words accepts GenerationContext."""
         try:
-            context = GenerationContext(
-                emotional_tone=EmotionalTone.DARK,
-                avoid_cliches=True
-            )
+            context = GenerationContext(emotional_tone=EmotionalTone.DARK, avoid_cliches=True)
 
-            result = similar_meaning_words(
-                "night",
-                sample_size=5,
-                context=context
-            )
+            result = similar_meaning_words("night", sample_size=5, context=context)
 
             assert isinstance(result, list)
             # Should return quality-filtered words
@@ -393,11 +373,7 @@ class TestQualityAwareFeatures:
     def test_contextually_linked_words_with_quality_params(self):
         """Test contextually_linked_words accepts quality parameters."""
         try:
-            result = contextually_linked_words(
-                "fire",
-                sample_size=5,
-                min_quality=0.6
-            )
+            result = contextually_linked_words("fire", sample_size=5, min_quality=0.6)
 
             assert isinstance(result, list)
             # Should filter out low-quality collocations
@@ -408,11 +384,7 @@ class TestQualityAwareFeatures:
     def test_phonetically_related_words_with_quality_params(self):
         """Test phonetically_related_words accepts quality parameters."""
         try:
-            result = phonetically_related_words(
-                "fire",
-                sample_size=5,
-                min_quality=0.6
-            )
+            result = phonetically_related_words("fire", sample_size=5, min_quality=0.6)
 
             assert isinstance(result, list)
             # Should filter out low-quality phonetic matches
@@ -423,11 +395,7 @@ class TestQualityAwareFeatures:
     def test_related_rare_words_with_quality_params(self):
         """Test related_rare_words accepts quality parameters."""
         try:
-            result = related_rare_words(
-                "ocean",
-                sample_size=5,
-                min_quality=0.6
-            )
+            result = related_rare_words("ocean", sample_size=5, min_quality=0.6)
 
             assert isinstance(result, list)
             # Should return rare AND quality words
@@ -442,14 +410,14 @@ class TestQualityAwareFeatures:
             result_unfiltered = similar_meaning_words(
                 "love",
                 sample_size=10,
-                min_quality=0.0  # Accept all
+                min_quality=0.0,  # Accept all
             )
 
             # Get words with strict quality filtering
             result_filtered = similar_meaning_words(
                 "love",
                 sample_size=10,
-                min_quality=0.7  # High quality only
+                min_quality=0.7,  # High quality only
             )
 
             # Both should be lists

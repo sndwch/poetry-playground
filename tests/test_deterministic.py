@@ -71,7 +71,6 @@ class TestDeterministicPoemGeneration(unittest.TestCase):
 
     def test_poem_generator_determinism(self):
         """Test that PoemGenerator produces identical output with same seed."""
-        input_words = ["ocean", "memory", "light"]
 
         # Generate first poem
         set_global_seed(42)
@@ -127,7 +126,6 @@ class TestDeterministicPDFLayout(unittest.TestCase):
 
     def test_futurist_pdf_layout_determinism(self):
         """Test that Futurist PDF generator has deterministic layout with seed."""
-        input_words = ["code", "poetry", "machine"]
 
         # First generation
         set_global_seed(42)
@@ -245,7 +243,7 @@ class TestSeedPropagation(unittest.TestCase):
         """Test reproducing a sequence from a checkpoint."""
         # Generate first part
         set_global_seed(42)
-        part1a = [random.random() for _ in range(5)]
+        [random.random() for _ in range(5)]
 
         # Get random state
         state = random.getstate()
