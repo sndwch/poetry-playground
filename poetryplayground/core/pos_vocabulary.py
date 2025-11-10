@@ -17,8 +17,8 @@ from typing import Dict, List, Optional, Tuple
 import nltk
 from nltk.corpus import brown
 
-from .forms import count_syllables
-from .logger import logger
+from ..forms import count_syllables
+from ..logger import logger
 from .vocabulary import vocabulary
 
 # Universal POS tag mapping (simplified for poetry generation)

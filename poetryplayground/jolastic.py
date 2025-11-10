@@ -1,7 +1,7 @@
 import random
 from typing import ClassVar, List, Optional
 
-from .lexigen import (
+from .core.lexigen import (
     contextually_linked_word,
     frequently_following_word,
     rhyme,

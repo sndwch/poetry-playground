@@ -2,7 +2,7 @@
 
 import pytest
 
-from poetryplayground.lexigen import (
+from poetryplayground.core.lexigen import (
     clean_api_results,
     rhymes,
     rhyme,
@@ -13,7 +13,7 @@ from poetryplayground.lexigen import (
     phonetically_related_words,
     score_and_filter_results,
 )
-from poetryplayground.quality_scorer import GenerationContext, EmotionalTone
+from poetryplayground.core.quality_scorer import GenerationContext, EmotionalTone
 
 
 # ============================================================================

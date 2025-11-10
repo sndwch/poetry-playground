@@ -2,8 +2,8 @@ import itertools
 import random
 from typing import List, Optional
 
+from .core.lexigen import phonetically_related_words
 from .jolastic import StochasticJolasticWordGenerator
-from .lexigen import phonetically_related_words
 from .logger import timed
 from .utils import correct_a_vs_an, too_similar
 

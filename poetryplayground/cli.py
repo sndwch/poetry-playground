@@ -15,7 +15,9 @@ from rich.table import Table
 import poetryplayground.pronouncing_patch  # noqa: F401
 from poetryplayground.causal_poetry import ResonantFragmentMiner
 from poetryplayground.config import init_config
+from poetryplayground.core.system_utils import check_system_dependencies
 from poetryplayground.corpus_analyzer import PersonalCorpusAnalyzer
+from poetryplayground.definitional_finder import find_words_by_definition
 from poetryplayground.finders import find_equidistant
 from poetryplayground.forms import FormGenerator
 from poetryplayground.idea_generator import IdeaType, PoetryIdeaGenerator
@@ -40,7 +42,8 @@ from poetryplayground.setup_models import setup as setup_models
 from poetryplayground.six_degrees import SixDegrees
 from poetryplayground.strategies.bridge_two_concepts import BridgeTwoConceptsStrategy
 from poetryplayground.strategy_engine import get_strategy_engine
-from poetryplayground.system_utils import check_system_dependencies
+from poetryplayground.template_extractor import TemplateExtractor
+from poetryplayground.template_library import get_template_library
 from poetryplayground.utils import get_input_words
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
@@ -163,6 +166,8 @@ def _list_procedures():
         ("14", "Haiku Generator", "Traditional 5-7-5 syllable form", "Forms"),
         ("15", "Tanka Generator", "Extended 5-7-5-7-7 syllable form", "Forms"),
         ("16", "Senryu Generator", "Human-focused 5-7-5 form", "Forms"),
+        # Template Engine (Poem Imprinter)
+        ("17", "Template Extractor", "Extract structure from existing poems", "Templates"),
     ]
 
     # Add rows with section separators between categories
@@ -1856,6 +1861,159 @@ def equidistant_action():
             break
 
 
+def definitional_finder_action():
+    """Find words by searching dictionary definitions."""
+    print("\n" + "=" * 60)
+    print("DEFINITIONAL FINDER (Lateral Search)")
+    print("=" * 60)
+    print("\nFind words by searching WordNet definitions for a term.")
+    print("Unlike semantic similarity, this finds words whose DEFINITIONS")
+    print("MENTION the search term, revealing associative connections.")
+    print("\nExample: Searching 'rust' finds 'corrosion', 'oxidation', etc.")
+
+    while True:
+        print("\n" + "-" * 40)
+        search_term = input("Enter search term (or 'exit' to return): ").strip()
+        if search_term.lower() == "exit":
+            break
+
+        if not search_term:
+            print("Please enter a search term.")
+            continue
+
+        # Ask for filters
+        print("\nOptional filters (press Enter for defaults):")
+
+        pos_input = (
+            input("Part of speech (n/v/a/r for noun/verb/adj/adv, default any): ").strip().lower()
+        )
+        pos_filter = pos_input if pos_input in ["n", "v", "a", "r"] else None
+
+        limit_input = input("Max results (default 20): ").strip()
+        limit = int(limit_input) if limit_input else 20
+
+        min_quality_input = input("Min quality score (0.0-1.0, default 0.5): ").strip()
+        min_quality = float(min_quality_input) if min_quality_input else 0.5
+
+        multiword_input = input("Allow multi-word terms? (y/n, default y): ").strip().lower()
+        allow_multiword = multiword_input != "n"
+
+        # Perform search
+        try:
+            print(f"\n🔍 Searching WordNet definitions for '{search_term}'...")
+            results = find_words_by_definition(
+                search_term=search_term,
+                pos_filter=pos_filter,
+                limit=limit,
+                min_quality=min_quality,
+                allow_multiword=allow_multiword,
+                verbose=True,
+            )
+
+            if results:
+                print(f"\n✓ Found {len(results)} words:\n")
+
+                # Display results in a formatted table
+                for i, result in enumerate(results, 1):
+                    # Show quality as star rating
+                    filled_stars = int(result.quality_score * 5 + 0.5)
+                    empty_stars = 5 - filled_stars
+                    stars = "★" * filled_stars + "☆" * empty_stars
+
+                    # Show POS
+                    pos_map = {"n": "noun", "v": "verb", "a": "adj", "r": "adv"}
+                    pos_str = pos_map.get(result.pos, result.pos)
+
+                    print(
+                        f"  {i:2d}. {result.word:20s} [{pos_str:5s}] {stars} ({result.quality_score:.2f})"
+                    )
+                    print(f"      → {result.definition}")
+                    print()
+
+                if len(results) == limit:
+                    print(f"(Showing top {limit} results. Use limit parameter for more.)")
+
+            else:
+                print(f"\n❌ No words found in definitions containing '{search_term}'")
+                print("Try a different search term or lower the quality threshold.")
+
+        except ImportError as e:
+            print(f"\n❌ Error: {e}")
+            print("Please run: poetry-playground --setup")
+            break
+        except Exception as e:
+            print(f"\n❌ Error: {e}")
+
+        print("\nSearch for another term? (Enter to continue, 'exit' to return)")
+        if input().lower() == "exit":
+            break
+
+
+def template_extract_action():
+    """Extract a template from a poem."""
+    console.print("\n[bold cyan]📝 Template Extractor - Extract Structure from Poems[/bold cyan]\n")
+    console.print("This tool analyzes a poem and extracts its structural template,")
+    console.print("which you can use to generate similar poems.\n")
+
+    while True:
+        console.print("[yellow]Enter your poem (end with a blank line):[/yellow]")
+        lines = []
+        while True:
+            line = input()
+            if not line:
+                break
+            lines.append(line)
+
+        if not lines:
+            console.print("[red]No poem entered. Returning to menu.[/red]")
+            break
+
+        poem_text = "\n".join(lines)
+
+        # Get metadata
+        title = input("\nTemplate title (optional, press Enter to skip): ").strip()
+        author = input("Author (optional, press Enter to skip): ").strip()
+
+        # Extract template
+        try:
+            extractor = TemplateExtractor()
+            template = extractor.extract_template(
+                poem_text,
+                title=title if title else None,
+                author=author if author else None,
+            )
+
+            # Display extracted template
+            console.print(f"\n[bold green]✓ Template Extracted:[/bold green] {template.title}")
+            console.print(f"Lines: {template.lines}")
+            console.print(f"Syllable pattern: {template.syllable_pattern}")
+            console.print(f"Semantic domains: {', '.join(template.semantic_domains)}")
+            console.print(
+                f"Metaphor types: {', '.join(template.metaphor_types) if template.metaphor_types else 'None'}"
+            )
+            console.print(f"Emotional tone: {template.emotional_tone.value}")
+            console.print(f"Formality: {template.formality_level.value}")
+            console.print(f"Concreteness: {template.concreteness_ratio:.2f}")
+
+            # Save template
+            save = input("\nSave this template to library? (y/n): ").strip().lower()
+            if save == "y":
+                library = get_template_library()
+                save_name = input(f"Template name (default: {template.title}): ").strip()
+                template_name = library.add_template(
+                    template, name=save_name if save_name else None
+                )
+                console.print(f"[green]✓ Saved as '{template_name}'[/green]")
+
+        except Exception as e:
+            console.print(f"[red]Error extracting template: {e}[/red]")
+
+        # Continue?
+        again = input("\nExtract another template? (y/n): ").strip().lower()
+        if again != "y":
+            break
+
+
 def main():
     """Main entry point for the generative poetry CLI.
 
@@ -2177,6 +2335,9 @@ def main():
     equidistant_item = FunctionItem(
         "🎯 Equidistant Word Finder (Bridge Discovery)", equidistant_action
     )
+    definitional_finder_item = FunctionItem(
+        "📖 Definitional Finder (Lateral Dictionary Search)", definitional_finder_action
+    )
     semantic_geodesic_item = FunctionItem(
         "🌉 Semantic Geodesic Finder (Transitional Paths)", semantic_geodesic_action
     )
@@ -2192,6 +2353,11 @@ def main():
     haiku_item = FunctionItem("🌸 Generate Haiku (5-7-5 syllables)", haiku_action)
     tanka_item = FunctionItem("🎋 Generate Tanka (5-7-5-7-7 syllables)", tanka_action)
     senryu_item = FunctionItem("🌿 Generate Senryu (5-7-5 syllables)", senryu_action)
+
+    # Template Engine items
+    template_extract_item = FunctionItem(
+        "📝 Template Extractor (Extract Structure from Poems)", template_extract_action
+    )
 
     # System item
     check_deps_item = FunctionItem("Check System Dependencies", check_dependencies_action)
@@ -2211,12 +2377,14 @@ def main():
     menu.append_item(six_degrees_item)
     menu.append_item(causal_poetry_item)
     menu.append_item(equidistant_item)
+    menu.append_item(definitional_finder_item)
     menu.append_item(semantic_geodesic_item)
     menu.append_item(conceptual_cloud_item)
     menu.append_item(strategy_engine_item)
     menu.append_item(haiku_item)
     menu.append_item(tanka_item)
     menu.append_item(senryu_item)
+    menu.append_item(template_extract_item)
     menu.append_item(check_deps_item)
 
     menu.start()

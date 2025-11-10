@@ -60,6 +60,19 @@ class MainMenuScreen(Screen):
         ),
         ("fragments", "Resonant Fragment Miner", "Extract poetic sentence fragments", "Ideation"),
         ("equidistant", "Equidistant Word Finder", "Find words bridging two anchors", "Ideation"),
+        (
+            "poem_scaffold",
+            "Poem Scaffold Generator",
+            "Generate multi-stanza thematic structure",
+            "Ideation",
+        ),
+        # Templates
+        (
+            "template_extract",
+            "Template Extractor",
+            "Extract structure from existing poems",
+            "Templates",
+        ),
         # Syllabic Forms
         ("haiku", "Haiku Generator", "5-7-5 syllable haiku with templates", "Forms"),
         ("tanka", "Tanka Generator", "5-7-5-7-7 syllable tanka", "Forms"),

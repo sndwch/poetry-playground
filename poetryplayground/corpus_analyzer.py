@@ -18,10 +18,10 @@ import spacy
 from rich.console import Console
 from wordfreq import word_frequency
 
-from .lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
+from .core.lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
+from .core.quality_scorer import get_quality_scorer
+from .core.word_validator import WordValidator
 from .logger import logger
-from .quality_scorer import get_quality_scorer
-from .word_validator import WordValidator
 
 # Initialize Rich console for formatted output
 console = Console()

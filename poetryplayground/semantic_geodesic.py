@@ -25,7 +25,7 @@ import numpy as np
 import spacy
 from sklearn.neighbors import NearestNeighbors
 
-from poetryplayground.lexicon import LexiconData, get_lexicon_data
+from poetryplayground.core.lexicon import LexiconData, get_lexicon_data
 from poetryplayground.logger import logger
 from poetryplayground.setup_models import lazy_ensure_spacy_model
 

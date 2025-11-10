@@ -30,19 +30,22 @@ Example usage:
 """
 
 import random
-from typing import Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
+
+if TYPE_CHECKING:
+    from .poem_template import LineTemplate
 
 import spacy
 
+from poetryplayground.core.lexicon import get_lexicon_data
+from poetryplayground.core.quality_scorer import get_quality_scorer
 from poetryplayground.corpus_analyzer import StyleFingerprint
-from poetryplayground.lexicon import get_lexicon_data
 from poetryplayground.line_seeds import (
     GenerationStrategy,
     LineSeed,
     LineSeedGenerator,
     SeedType,
 )
-from poetryplayground.quality_scorer import get_quality_scorer
 from poetryplayground.semantic_geodesic import SemanticSpace
 
 
@@ -351,7 +354,7 @@ class PersonalizedLineSeedGenerator:
         Returns:
             List of similar words from hybrid_vocab
         """
-        from poetryplayground.lexigen import similar_meaning_words
+        from poetryplayground.core.lexigen import similar_meaning_words
 
         # Get generic similar words
         candidates = similar_meaning_words(
@@ -384,7 +387,7 @@ class PersonalizedLineSeedGenerator:
         Returns:
             List of phonetically related words from hybrid_vocab
         """
-        from poetryplayground.lexigen import phonetically_related_words
+        from poetryplayground.core.lexigen import phonetically_related_words
 
         # Get generic phonetic words
         candidates = phonetically_related_words(
@@ -417,7 +420,7 @@ class PersonalizedLineSeedGenerator:
         Returns:
             List of contextual words from hybrid_vocab
         """
-        from poetryplayground.lexigen import contextually_linked_words
+        from poetryplayground.core.lexigen import contextually_linked_words
 
         # Get generic contextual words
         candidates = contextually_linked_words(
@@ -1034,3 +1037,185 @@ class PersonalizedLineSeedGenerator:
         overall = sum(components.values()) / len(components)
 
         return overall, components
+
+    def generate_line_seed_with_constraints(
+        self,
+        seed_type: Optional[SeedType] = None,
+        strategy: Optional[GenerationStrategy] = None,
+        syllable_count: Optional[int] = None,
+        pos_pattern: Optional[List[str]] = None,
+        semantic_domain: Optional[str] = None,
+        min_quality: float = 0.5,
+        min_style_fit: float = 0.4,
+        count: int = 5,
+    ) -> List[LineSeed]:
+        """Generate line seeds matching specific template constraints.
+
+        This method exposes public API for constrained line seed generation,
+        enabling template-aware poem generation with personalized style.
+
+        Args:
+            seed_type: Optional SeedType to generate (OPENING, PIVOT, etc.)
+            strategy: Optional GenerationStrategy (JUXTAPOSITION, SYNESTHESIA, etc.)
+            syllable_count: Optional target syllable count
+            pos_pattern: Optional POS pattern to match (e.g., ['DET', 'NOUN', 'VERB'])
+            semantic_domain: Optional semantic domain for vocabulary
+            min_quality: Minimum quality score threshold
+            min_style_fit: Minimum style fit threshold
+            count: Number of line seeds to return
+
+        Returns:
+            List of LineSeed objects matching constraints, sorted by combined score
+
+        Example:
+            >>> generator = PersonalizedLineSeedGenerator(fingerprint)
+            >>> seeds = generator.generate_line_seed_with_constraints(
+            ...     seed_type=SeedType.OPENING,
+            ...     syllable_count=5,
+            ...     semantic_domain="nature",
+            ...     count=3
+            ... )
+        """
+        # Select seed words based on semantic domain if specified
+        if semantic_domain:
+            # Try to get words from vocabulary's concept domains
+            from poetryplayground.core.vocabulary import vocabulary
+
+            if semantic_domain in vocabulary.concept_domains:
+                seed_words = vocabulary.concept_domains[semantic_domain][:20]
+            else:
+                # Fall back to fingerprint vocab
+                seed_words = list(self.fingerprint_vocab.keys())[:20]
+        else:
+            seed_words = list(self.fingerprint_vocab.keys())[:20]
+
+        # Generate candidates based on seed_type
+        candidates = []
+        attempts = 0
+        max_attempts = count * 10
+
+        while len(candidates) < count * 3 and attempts < max_attempts:
+            attempts += 1
+
+            # Select generation method based on seed_type
+            if seed_type == SeedType.OPENING:
+                seed = self.generate_opening_line(seed_words)
+            elif seed_type == SeedType.PIVOT:
+                seed = self.generate_pivot_line(seed_words)
+            elif seed_type == SeedType.IMAGE:
+                seed = self.generate_image_seed(seed_words)
+            elif seed_type == SeedType.CLOSING:
+                seed = self.generate_ending_approach(seed_words)
+            elif seed_type == SeedType.FRAGMENT:
+                seed = self.generate_fragment(seed_words)
+            elif seed_type == SeedType.SONIC:
+                seed = self.generate_sonic_pattern(seed_words)
+            else:
+                # Random selection if no seed_type specified
+                generators = [
+                    self.generate_fragment,
+                    self.generate_image_seed,
+                    self.generate_opening_line,
+                    self.generate_pivot_line,
+                    self.generate_ending_approach,
+                ]
+                generator_func = random.choice(generators)
+                seed = generator_func(seed_words)
+
+            if seed is None:
+                continue
+
+            # Apply constraints
+            passes = True
+
+            # Check syllable count
+            if syllable_count is not None:
+                from poetryplayground.forms import count_syllables
+
+                actual_syllables = count_syllables(seed.text)
+                if actual_syllables != syllable_count:
+                    passes = False
+
+            # Check POS pattern
+            if passes and pos_pattern is not None:
+                doc = self.nlp(seed.text)
+                actual_pos = [token.pos_ for token in doc if not token.is_punct]
+                if actual_pos != pos_pattern:
+                    passes = False
+
+            # Check strategy if specified
+            if passes and strategy is not None and seed.strategy != strategy:
+                passes = False
+
+            # Check quality thresholds
+            if passes:
+                if seed.quality_score < min_quality:
+                    passes = False
+                if seed.style_fit_score < min_style_fit:
+                    passes = False
+
+            if passes:
+                candidates.append(seed)
+
+        # Sort by combined score (70% quality + 30% style)
+        candidates.sort(
+            key=lambda s: (0.7 * s.quality_score + 0.3 * s.style_fit_score),
+            reverse=True,
+        )
+
+        return candidates[:count]
+
+    def generate_line_seed_from_template(
+        self,
+        line_template: "LineTemplate",  # type: ignore  # Forward reference
+        count: int = 5,
+    ) -> List[LineSeed]:
+        """Generate line seeds matching a LineTemplate's constraints.
+
+        This is a convenience method that extracts constraints from a LineTemplate
+        and calls generate_line_seed_with_constraints().
+
+        Args:
+            line_template: LineTemplate with structure and content constraints
+            count: Number of line seeds to generate
+
+        Returns:
+            List of LineSeed objects matching template constraints
+
+        Example:
+            >>> from poetryplayground.poem_template import LineTemplate, LineType
+            >>> template = LineTemplate(
+            ...     syllable_count=5,
+            ...     pos_pattern=["DET", "NOUN", "VERB"],
+            ...     line_type=LineType.OPENING,
+            ...     semantic_domain="nature",
+            ...     min_quality_score=0.7
+            ... )
+            >>> generator = PersonalizedLineSeedGenerator(fingerprint)
+            >>> seeds = generator.generate_line_seed_from_template(template)
+        """
+        # Map LineType to SeedType
+        from poetryplayground.poem_template import LineType
+
+        line_type_to_seed_type = {
+            LineType.OPENING: SeedType.OPENING,
+            LineType.PIVOT: SeedType.PIVOT,
+            LineType.IMAGE: SeedType.IMAGE,
+            LineType.CLOSING: SeedType.CLOSING,
+            LineType.FRAGMENT: SeedType.FRAGMENT,
+            LineType.SONIC: SeedType.SONIC,
+            LineType.EMOTIONAL: SeedType.EMOTIONAL,
+            LineType.TRANSITION: SeedType.PIVOT,  # Map to pivot
+        }
+
+        seed_type = line_type_to_seed_type.get(line_template.line_type)
+
+        return self.generate_line_seed_with_constraints(
+            seed_type=seed_type,
+            syllable_count=line_template.syllable_count,
+            pos_pattern=line_template.pos_pattern,
+            semantic_domain=line_template.semantic_domain,
+            min_quality=line_template.min_quality_score,
+            min_style_fit=0.4,  # Default style fit threshold
+            count=count,
+        )

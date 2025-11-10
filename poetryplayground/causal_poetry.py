@@ -13,9 +13,9 @@ from dataclasses import dataclass, field
 from typing import List
 
 from .config import DocumentConfig, QualityConfig
-from .document_library import get_diverse_gutenberg_documents
-from .vocabulary import vocabulary
-from .word_validator import WordValidator
+from .core.document_library import get_diverse_gutenberg_documents
+from .core.vocabulary import vocabulary
+from .core.word_validator import WordValidator
 
 
 @dataclass

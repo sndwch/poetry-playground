@@ -147,8 +147,10 @@ class LexiconData:
             FileNotFoundError: If snapshot file doesn't exist
         """
         # Find the snapshot file relative to this module
-        module_dir = Path(__file__).parent
-        project_root = module_dir.parent
+        # Since we're in core/, need to go up two levels to get to project root
+        module_dir = Path(__file__).parent  # poetryplayground/core/
+        package_dir = module_dir.parent  # poetryplayground/
+        project_root = package_dir.parent  # project root
         snapshot_path = project_root / "tests" / "data" / "snapshot_lexicon.txt"
 
         if not snapshot_path.exists():

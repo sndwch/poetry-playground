@@ -15,9 +15,9 @@ from typing import List, Optional, Tuple
 
 from rich.console import Console
 
-from .lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
+from .core.lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
+from .core.word_validator import WordValidator
 from .logger import logger
-from .word_validator import WordValidator
 
 # Initialize Rich console for formatted output
 console = Console()

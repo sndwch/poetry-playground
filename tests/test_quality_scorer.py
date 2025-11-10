@@ -1,7 +1,7 @@
 """Comprehensive tests for the quality scoring system."""
 
 import pytest
-from poetryplayground.quality_scorer import (
+from poetryplayground.core.quality_scorer import (
     QualityScorer,
     QualityScore,
     GenerationContext,

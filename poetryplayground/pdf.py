@@ -10,10 +10,10 @@ from pdf2image.exceptions import PDFInfoNotInstalledError, PDFPageCountError, PD
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.pdfgen import canvas
 
-from .lexigen import phonetically_related_words
+from .core.lexigen import phonetically_related_words
+from .core.system_utils import check_poppler_installed, get_poppler_install_instructions
 from .poemgen import PoemGenerator
 from .setup_models import lazy_ensure_nltk_data
-from .system_utils import check_poppler_installed, get_poppler_install_instructions
 from .utils import filter_word_list, get_input_words, get_random_color
 
 rgb_tuple = Tuple[float]

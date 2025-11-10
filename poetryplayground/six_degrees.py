@@ -12,9 +12,9 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from rich.console import Console
 
+from .core.word_validator import WordValidator
 from .datamuse_api import get_datamuse_api
 from .logger import logger
-from .word_validator import WordValidator
 
 # Initialize Rich console for formatted output
 console = Console()

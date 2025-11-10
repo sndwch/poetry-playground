@@ -5,24 +5,27 @@ import random
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
+
+if TYPE_CHECKING:
+    from .poem_template import LineTemplate
 
 import spacy
 
 from .config import DocumentConfig, QualityConfig
-from .decomposer import ParsedText
-from .document_library import get_diverse_gutenberg_documents
-from .grammatical_templates import MetaphorPatterns
-from .lexigen import (
+from .core.document_library import get_diverse_gutenberg_documents
+from .core.lexigen import (
     contextually_linked_words,
     frequently_following_words,
     related_rare_words,
     similar_meaning_words,
 )
-from .quality_scorer import get_quality_scorer
+from .core.quality_scorer import get_quality_scorer
+from .core.vocabulary import vocabulary
+from .core.word_validator import word_validator
+from .decomposer import ParsedText
+from .grammatical_templates import MetaphorPatterns
 from .setup_models import lazy_ensure_spacy_model
-from .vocabulary import vocabulary
-from .word_validator import word_validator
 
 logger = logging.getLogger(__name__)
 
@@ -846,6 +849,89 @@ class MetaphorGenerator:
             grounds=grounds,
         )
 
+    def generate_metaphor_from_pair(self, source: str, target: str) -> Optional[Metaphor]:
+        """Generate a high-quality metaphor from a specific source-target pair.
+
+        This is a targeted metaphor generation method designed for use by the
+        GeneratePoemScaffold strategy. It bypasses Gutenberg text extraction
+        and directly creates a metaphor using the generator's quality-aware
+        internal logic.
+
+        The method reuses the full "smart" pipeline:
+        - Finds connecting attributes via _find_connecting_attributes()
+        - Scores using _score_metaphor() with comprehensive quality checks
+        - Validates against NER, POS, concreteness, and semantic distance
+        - Returns None if the metaphor doesn't meet quality thresholds
+
+        Args:
+            source: The tenor (what's being described), e.g., "rust"
+            target: The vehicle (what it's compared to), e.g., "memory"
+
+        Returns:
+            A high-quality Metaphor object, or None if no suitable metaphor can be formed
+
+        Example:
+            >>> gen = MetaphorGenerator()
+            >>> metaphor = gen.generate_metaphor_from_pair("rust", "memory")
+            >>> print(metaphor.text)
+            "rust as a quiet memory"
+            >>> print(metaphor.quality_score)
+            0.88
+        """
+        # Validate inputs - both source and target must be valid words
+        if not word_validator.is_valid_word(source) or not word_validator.is_valid_word(target):
+            logger.debug(f"Invalid source or target word: {source}, {target}")
+            return None
+
+        # Find connecting attributes using the smart semantic search
+        grounds = self._find_connecting_attributes(source, target)
+
+        # If no grounds found, the metaphor is too weak to be useful
+        if not grounds:
+            logger.debug(f"No connecting grounds found for {source} -> {target}")
+            return None
+
+        # Score the metaphor using the comprehensive quality system
+        quality = self._score_metaphor(source, target, grounds)
+
+        # Quality threshold: Only return high-quality metaphors (> 0.5)
+        # This ensures the scaffold provides genuinely useful creative material
+        if quality < 0.5:
+            logger.debug(f"Metaphor quality too low ({quality:.2f}): {source} -> {target}")
+            return None
+
+        # Choose an appropriate metaphor pattern based on word characteristics
+        # Prefer possessive for concrete-abstract pairs, direct for others
+        target_concreteness = self._get_concreteness(target)
+        source_concreteness = self._get_concreteness(source)
+
+        if target_concreteness > 0.7 and source_concreteness < 0.5:
+            # Abstract -> Concrete: Use possessive pattern ("X of Y")
+            pattern = random.choice(self.possessive_patterns)
+            metaphor_type = MetaphorType.POSSESSIVE
+        elif abs(target_concreteness - source_concreteness) < 0.3:
+            # Similar concreteness: Use direct pattern ("X is Y")
+            pattern = random.choice(self.direct_patterns)
+            metaphor_type = MetaphorType.DIRECT
+        else:
+            # Mixed: Use simile pattern ("X like Y")
+            pattern = random.choice(self.simile_patterns)
+            metaphor_type = MetaphorType.SIMILE
+
+        # Build the metaphor text
+        text = pattern.format(source=source, target=target)
+
+        # Create and return the Metaphor object
+        return Metaphor(
+            text=text,
+            source=source,
+            target=target,
+            metaphor_type=metaphor_type,
+            quality_score=min(1.0, quality),
+            grounds=grounds,
+            source_text=None,  # Not derived from Gutenberg
+        )
+
     def mine_gutenberg_for_domain(self, domain: str, sample_size: int = 5) -> List[Tuple[str, str]]:
         """Mine Gutenberg texts for metaphors in a specific domain.
 
@@ -871,7 +957,7 @@ class MetaphorGenerator:
 
         Enhanced to use word embeddings for semantic similarity when available.
         """
-        from .quality_scorer import get_quality_scorer
+        from .core.quality_scorer import get_quality_scorer
 
         attributes = []
         scorer = get_quality_scorer()
@@ -1041,6 +1127,152 @@ class MetaphorGenerator:
             pass
 
         return max(0.0, min(1.0, score))
+
+    def generate_metaphor_with_constraints(
+        self,
+        source_words: Optional[List[str]] = None,
+        semantic_domains: Optional[List[str]] = None,
+        metaphor_types: Optional[List[str]] = None,
+        min_quality_score: float = 0.6,
+        count: int = 10,
+    ) -> List[Metaphor]:
+        """Generate metaphors with template-based constraints.
+
+        This method exposes public API for constrained metaphor generation,
+        enabling template-aware poem generation.
+
+        Args:
+            source_words: Optional list of source words to use. If None, samples from semantic_domains
+            semantic_domains: Optional list of semantic domains to constrain vocabulary
+                            (e.g., ["nature", "emotion"]). If None, uses all domains.
+            metaphor_types: Optional list of metaphor types to generate
+                          (e.g., ["simile", "direct", "possessive"]). If None, generates all types.
+            min_quality_score: Minimum quality threshold (0.0-1.0)
+            count: Number of metaphors to return
+
+        Returns:
+            List of Metaphor objects matching constraints, sorted by quality score
+
+        Example:
+            >>> gen = MetaphorGenerator()
+            >>> metaphors = gen.generate_metaphor_with_constraints(
+            ...     semantic_domains=["nature", "emotion"],
+            ...     metaphor_types=["simile", "direct"],
+            ...     min_quality_score=0.7,
+            ...     count=5
+            ... )
+        """
+        # 1. Determine source words
+        if source_words is None:
+            source_words = []
+            # Sample from semantic domains if provided
+            if semantic_domains:
+                for domain in semantic_domains:
+                    if domain in self.domains:
+                        source_words.extend(
+                            random.sample(self.domains[domain], min(3, len(self.domains[domain])))
+                        )
+            else:
+                # Sample from all domains
+                for domain_words in self.domains.values():
+                    source_words.extend(random.sample(domain_words, min(2, len(domain_words))))
+
+            # Clean and limit
+            source_words = word_validator.clean_word_list(source_words)
+            source_words = source_words[:10]  # Limit to prevent explosion
+
+        # 2. Determine metaphor types to generate
+        type_generators = {
+            "simile": self._generate_simile,
+            "direct": self._generate_direct_metaphor,
+            "implied": self._generate_implied_metaphor,
+            "possessive": self._generate_possessive_metaphor,
+            "compound": self._generate_compound_metaphor,
+            "conceptual": self._generate_conceptual_metaphor,
+        }
+
+        if metaphor_types:
+            # Filter to requested types
+            active_generators = {k: v for k, v in type_generators.items() if k in metaphor_types}
+        else:
+            # Use all types
+            active_generators = type_generators
+
+        # 3. Generate metaphors
+        metaphors = []
+
+        for source in source_words:
+            # Find target words
+            if semantic_domains:
+                # Constrain targets to semantic domains
+                targets = []
+                for domain in semantic_domains:
+                    if domain in self.domains:
+                        # Sample from this domain, excluding source
+                        domain_words = [w for w in self.domains[domain] if w != source]
+                        if domain_words:
+                            targets.extend(random.sample(domain_words, min(2, len(domain_words))))
+            else:
+                # Use existing method (cross-domain)
+                targets = self._find_target_domains(source)
+
+            # Generate using active generators
+            for target in targets[:5]:  # Limit targets per source
+                for gen_func in active_generators.values():
+                    metaphor = gen_func(source, target)
+                    if metaphor and metaphor.quality_score >= min_quality_score:
+                        metaphors.append(metaphor)
+
+        # 4. Sort by quality and return top results
+        metaphors.sort(key=lambda m: m.quality_score, reverse=True)
+        return metaphors[:count]
+
+    def generate_metaphor_from_template(
+        self,
+        line_template: "LineTemplate",  # type: ignore  # Forward reference
+        source_words: Optional[List[str]] = None,
+        count: int = 5,
+    ) -> List[Metaphor]:
+        """Generate metaphors matching a LineTemplate's constraints.
+
+        This is a convenience method that extracts constraints from a LineTemplate
+        and calls generate_metaphor_with_constraints().
+
+        Args:
+            line_template: LineTemplate with semantic_domain, metaphor_type, min_quality_score
+            source_words: Optional list of source words. If None, samples from template's domain
+            count: Number of metaphors to generate
+
+        Returns:
+            List of Metaphor objects matching template constraints
+
+        Example:
+            >>> from poetryplayground.poem_template import LineTemplate, LineType
+            >>> template = LineTemplate(
+            ...     syllable_count=5,
+            ...     pos_pattern=["DET", "NOUN", "VERB"],
+            ...     line_type=LineType.IMAGE,
+            ...     metaphor_type="simile",
+            ...     semantic_domain="nature",
+            ...     min_quality_score=0.7
+            ... )
+            >>> gen = MetaphorGenerator()
+            >>> metaphors = gen.generate_metaphor_from_template(template)
+        """
+        # Extract constraints from template
+        semantic_domains = (
+            [line_template.semantic_domain] if line_template.semantic_domain else None
+        )
+        metaphor_types = [line_template.metaphor_type] if line_template.metaphor_type else None
+        min_quality_score = line_template.min_quality_score
+
+        return self.generate_metaphor_with_constraints(
+            source_words=source_words,
+            semantic_domains=semantic_domains,
+            metaphor_types=metaphor_types,
+            min_quality_score=min_quality_score,
+            count=count,
+        )
 
     def generate_synesthetic_metaphor(self, source: str) -> Optional[Metaphor]:
         """Generate a cross-sensory (synesthetic) metaphor."""

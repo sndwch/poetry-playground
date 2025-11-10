@@ -200,7 +200,7 @@ class TestHelperFunctions:
 
     def test_passes_filters_frequency(self):
         """Test frequency filtering."""
-        from poetryplayground.lexicon import get_lexicon_data
+        from poetryplayground.core.lexicon import get_lexicon_data
         lexicon = get_lexicon_data()
 
         # Common word should pass

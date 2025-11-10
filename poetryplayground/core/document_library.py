@@ -14,7 +14,7 @@ from typing import Dict, List, Optional, Set
 
 from gutenbergpy.textget import get_text_by_id, strip_headers
 
-from .config import DocumentConfig, PerformanceConfig
+from ..config import DocumentConfig, PerformanceConfig
 from .quality_scorer import get_quality_scorer
 
 # Configure logging to be less verbose

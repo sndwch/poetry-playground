@@ -12,9 +12,9 @@ import random
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
+from .core.pos_vocabulary import POSVocabulary
 from .forms import count_syllables
 from .logger import logger
-from .pos_vocabulary import POSVocabulary
 
 
 @dataclass

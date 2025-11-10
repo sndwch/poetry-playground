@@ -27,7 +27,7 @@ from typing import Dict, Optional, Set
 
 from wordfreq import word_frequency
 
-from .logger import logger
+from ..logger import logger
 
 
 class EmotionalTone(Enum):
@@ -138,8 +138,8 @@ class QualityScorer:
             data_dir: Directory containing quality data files
         """
         if data_dir is None:
-            # Default to data/ subdirectory
-            data_dir = Path(__file__).parent / "data"
+            # Default to data/ subdirectory (parent.parent since we're in core/)
+            data_dir = Path(__file__).parent.parent / "data"
 
         self.data_dir = data_dir
         self.cliche_phrases: Set[str] = set()

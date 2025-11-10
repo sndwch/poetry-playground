@@ -13,9 +13,9 @@ from enum import Enum
 from typing import List, Optional
 
 from .config import DocumentConfig
+from .core.document_library import get_diverse_gutenberg_documents
+from .core.word_validator import WordValidator
 from .decomposer import ParsedText
-from .document_library import get_diverse_gutenberg_documents
-from .word_validator import WordValidator
 
 
 class IdeaType(Enum):

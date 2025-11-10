@@ -13,9 +13,13 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 import pronouncing
 
 from .cache import cached_api_call
-from .lexigen import contextually_linked_words, frequently_following_words, similar_meaning_words
+from .core.lexigen import (
+    contextually_linked_words,
+    frequently_following_words,
+    similar_meaning_words,
+)
+from .core.vocabulary import vocabulary
 from .logger import logger, timed
-from .vocabulary import vocabulary
 
 # Lazy import to avoid circular dependency
 if TYPE_CHECKING:

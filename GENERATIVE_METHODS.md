@@ -1,6 +1,6 @@
 # Poetry Playground: Generative Methods Reference
 
-Complete catalog of all 21 generative methods, their inputs, outputs, implementation details, and quality characteristics. This document serves as both a user reference and an AI ideation resource for future method development.
+Complete catalog of all 22 generative methods, their inputs, outputs, implementation details, and quality characteristics. This document serves as both a user reference and an AI ideation resource for future method development.
 
 ## Overview
 
@@ -36,10 +36,11 @@ Poetry Playground provides computational poetry tools organized into categories:
 - Ship of Theseus: Transform poems gradually
 - Six Degrees: Find convergence between concepts
 
-**Semantic/Lexical Tools** (4 methods):
+**Semantic/Lexical Tools** (5 methods):
 - Conceptual Cloud: 6-dimensional word associations
 - Semantic Path: Transitional paths through meaning-space
 - Equidistant Finder: Words between two anchors (quality-ranked)
+- Definitional Finder: Lateral dictionary search (finds words by definition)
 - Related Rare Words: "Strange orbit" vocabulary
 
 **Form Generators** (3 methods):
@@ -1360,6 +1361,96 @@ hits = find_equidistant("dog", "cat", mode="orth", window=0)
 - **Quality**: +5.0 × overall_quality (0-1) [NEW!]
 - Length penalty: -0.1 × |word_len - avg_anchor_len|
 - Rime bonus: +0.5 if shares rime with either anchor
+
+---
+
+**Module:** `poetryplayground/definitional_finder.py`
+
+### `find_words_by_definition()`
+
+**Description:** Finds words by searching WordNet dictionary definitions for a search term (lateral search).
+
+**How it works:**
+- Scans all WordNet synset definitions (glosses) for a search term
+- Unlike semantic similarity searches (which find synonyms), this finds words whose DEFINITIONS MENTION the search term
+- Reveals associative and conceptual connections
+- Uses quality scoring to rank results
+- Filters by POS, frequency, and English validity
+- Caches results for 7 days for performance
+
+**Inputs:**
+- `search_term` (str): Word to search for in definitions
+- `pos_filter` (str, optional): Filter by part of speech
+  - "n": Nouns only
+  - "v": Verbs only
+  - "a": Adjectives only
+  - "r": Adverbs only
+  - None: All parts of speech (default)
+- `limit` (int, default=20): Maximum results to return
+- `min_quality` (float, default=0.5): Minimum quality threshold (0.0-1.0)
+- `allow_multiword` (bool, default=True): Include multi-word terms (e.g., "iron oxide")
+- `verbose` (bool, default=True): Show progress bar and logging
+
+**Expected outputs:**
+- List of `DefinitionalResult` objects containing:
+  - `word`: The word found
+  - `definition`: The WordNet definition containing the search term
+  - `quality_score`: Overall quality score (0.0-1.0)
+  - `pos`: Part of speech ('n', 'v', 'a', 'r')
+
+**Quality scoring:**
+- Uses universal Quality Scorer
+- Filters out junk words, proper nouns, and low-frequency terms
+- Ranks by novelty, frequency balance, and poetic potential
+- Results sorted by quality score (descending)
+
+**Example:**
+```python
+from poetryplayground.definitional_finder import find_words_by_definition
+
+# Find words whose definitions mention "rust"
+results = find_words_by_definition("rust", limit=10)
+
+# Sample results:
+# 1. corrosion    [noun ] ★★★★☆ (0.82)
+#    → a state of deterioration due to oxidization or chemical action
+# 2. oxidation    [noun ] ★★★★☆ (0.79)
+#    → the process of oxidizing; the addition of oxygen to a compound
+# 3. patina       [noun ] ★★★★☆ (0.75)
+#    → a green or brown film on the surface of bronze or copper due to oxidation
+
+# Search for "threshold" as nouns only
+results = find_words_by_definition("threshold", pos_filter='n', limit=5)
+
+# Sample results:
+# 1. limen        [noun ] ★★★★★ (0.85)
+#    → the threshold of consciousness
+# 2. doorsill     [noun ] ★★★☆☆ (0.71)
+#    → the sill of a door; a horizontal piece of wood at the bottom of a doorway
+```
+
+**Use cases:**
+- Find words related by concept rather than similarity
+- Discover unexpected associative connections
+- Explore definitional relationships
+- Find technical/scientific terms related to a concept
+- Build semantic word clusters
+- Generate vocabulary for specific themes
+
+**Comparison with similar tools:**
+- **Semantic similarity**: Finds synonyms (hot → warm, heated)
+- **Definitional search**: Finds words whose definitions mention the term (hot → temperature, fever, spicy)
+- **Result**: More diverse, lateral, and unexpected connections
+
+**Caching:**
+- Results cached for 7 days using `@cached_api_call` decorator
+- Cache key includes: search_term, pos_filter, allow_multiword
+- Significantly speeds up repeated searches
+
+**Data source:**
+- WordNet lexical database (NLTK)
+- Open Multilingual Wordnet (omw-1.4) for extended coverage
+- Automatically downloaded via `poetry-playground --setup`
 
 ---
 

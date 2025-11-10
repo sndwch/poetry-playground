@@ -25,17 +25,17 @@ from rich.panel import Panel
 from rich.table import Table
 
 from poetryplayground.cache import cached_api_call
-from poetryplayground.datamuse_api import DatamuseAPI
-from poetryplayground.lexicon import get_lexicon_data
-from poetryplayground.lexigen import (
+from poetryplayground.core.lexicon import get_lexicon_data
+from poetryplayground.core.lexigen import (
     contextually_linked_words,
     frequently_following_words,
     phonetically_related_words,
     related_rare_words,
     similar_meaning_words,
 )
+from poetryplayground.core.word_validator import WordValidator
+from poetryplayground.datamuse_api import DatamuseAPI
 from poetryplayground.logger import logger
-from poetryplayground.word_validator import WordValidator
 
 # ============================================================================
 # Enums and Constants
@@ -286,7 +286,7 @@ def _generate_semantic_cluster(word: str, k: int) -> List[CloudTerm]:
     Returns:
         List of CloudTerms with real quality scores
     """
-    from poetryplayground.quality_scorer import get_quality_scorer
+    from poetryplayground.core.quality_scorer import get_quality_scorer
 
     terms = []
     scorer = get_quality_scorer()
@@ -348,7 +348,7 @@ def _generate_contextual_cluster(word: str, k: int) -> List[CloudTerm]:
     Returns:
         List of CloudTerms with real quality scores
     """
-    from poetryplayground.quality_scorer import get_quality_scorer
+    from poetryplayground.core.quality_scorer import get_quality_scorer
 
     terms = []
     scorer = get_quality_scorer()
@@ -406,7 +406,7 @@ def _generate_opposite_cluster(word: str, k: int) -> List[CloudTerm]:
     Returns:
         List of CloudTerms with real quality scores
     """
-    from poetryplayground.quality_scorer import get_quality_scorer
+    from poetryplayground.core.quality_scorer import get_quality_scorer
 
     terms = []
     scorer = get_quality_scorer()
@@ -455,7 +455,7 @@ def _generate_phonetic_cluster(word: str, k: int) -> List[CloudTerm]:
     Returns:
         List of CloudTerms with real quality scores
     """
-    from poetryplayground.quality_scorer import get_quality_scorer
+    from poetryplayground.core.quality_scorer import get_quality_scorer
 
     terms = []
     scorer = get_quality_scorer()
@@ -502,7 +502,7 @@ def _generate_imagery_cluster(word: str, k: int) -> List[CloudTerm]:
     Returns:
         List of CloudTerms with real quality scores
     """
-    from poetryplayground.quality_scorer import get_quality_scorer
+    from poetryplayground.core.quality_scorer import get_quality_scorer
 
     terms = []
     scorer = get_quality_scorer()
@@ -556,7 +556,7 @@ def _generate_rare_cluster(word: str, k: int) -> List[CloudTerm]:
     Returns:
         List of CloudTerms with real quality scores
     """
-    from poetryplayground.quality_scorer import get_quality_scorer
+    from poetryplayground.core.quality_scorer import get_quality_scorer
 
     terms = []
     scorer = get_quality_scorer()

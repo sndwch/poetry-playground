@@ -5,8 +5,8 @@ import argparse
 import pytest
 
 from poetryplayground.cli import parse_syllable_range
+from poetryplayground.core.lexicon import get_lexicon_data
 from poetryplayground.finders import find_equidistant
-from poetryplayground.lexicon import get_lexicon_data
 
 
 @pytest.fixture(scope="module")

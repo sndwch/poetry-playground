@@ -17,7 +17,7 @@ except ImportError:
     INTERNETARCHIVE_AVAILABLE = False
 from urllib.parse import urlsplit
 
-from .gutenberg_utils import get_document_id_from_url
+from .core.gutenberg_utils import get_document_id_from_url
 from .setup_models import lazy_ensure_nltk_data, lazy_ensure_spacy_model
 
 

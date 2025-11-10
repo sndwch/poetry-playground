@@ -9,15 +9,15 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional
 
-from .lexigen import (
+from .core.lexigen import (
     contextually_linked_words,
     frequently_following_words,
     phonetically_related_words,
     similar_meaning_words,
 )
+from .core.vocabulary import vocabulary
+from .core.word_validator import word_validator
 from .semantic_geodesic import get_semantic_space
-from .vocabulary import vocabulary
-from .word_validator import word_validator
 
 
 class SeedType(Enum):

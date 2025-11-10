@@ -18,6 +18,7 @@ REQUIRED_NLTK_DATA = [
     ("corpora/words", "words", "Words corpus"),
     ("corpora/brown", "brown", "Brown corpus"),
     ("corpora/wordnet", "wordnet", "WordNet lexical database"),
+    ("corpora/omw-1.4", "omw-1.4", "Open Multilingual Wordnet"),
     ("corpora/stopwords", "stopwords", "Stopwords corpus"),
 ]
 

@@ -191,6 +191,12 @@ class UnifiedTUIScreen(Screen):
         ("fragments", "Resonant Fragment Miner", "Extract poetic sentence fragments", "Ideation"),
         ("equidistant", "Equidistant Word Finder", "Find words bridging two anchors", "Ideation"),
         (
+            "definitional",
+            "Definitional Finder",
+            "Find words by searching dictionary definitions",
+            "Ideation",
+        ),
+        (
             "semantic_path",
             "Semantic Geodesic Finder",
             "Find transitional paths through meaning-space",

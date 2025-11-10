@@ -21,7 +21,7 @@ try:
 except ImportError:
     VADER_AVAILABLE = False
 
-from .logger import logger
+from ..logger import logger
 
 # Lazy import to avoid circular dependencies
 _quality_scorer = None

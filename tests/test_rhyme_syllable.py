@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pronouncing
 
-from poetryplayground.lexigen import rhyme, similar_sounding_word
+from poetryplayground.core.lexigen import rhyme, similar_sounding_word
 
 
 def syllables_in_word(word: str) -> int:

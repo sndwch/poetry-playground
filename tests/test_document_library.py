@@ -2,7 +2,7 @@
 
 import pytest
 
-from poetryplayground.document_library import DocumentInfo, DocumentLibrary
+from poetryplayground.core.document_library import DocumentInfo, DocumentLibrary
 
 
 class TestDocumentQualityScoring:

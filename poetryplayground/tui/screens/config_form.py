@@ -147,6 +147,17 @@ class ConfigFormScreen(Screen):
                 ("window", "Window (distance tolerance)", "0"),
             ],
         },
+        "definitional": {
+            "name": "Definitional Finder",
+            "description": "Find words by searching dictionary definitions (lateral search)",
+            "inputs": [
+                ("search_term", "Search term", ""),
+                ("pos_filter", "Part of speech (n/v/a/r, optional)", ""),
+                ("limit", "Max results", "20"),
+                ("min_quality", "Min quality score (0.0-1.0)", "0.5"),
+                ("allow_multiword", "Allow multi-word terms (y/n)", "y"),
+            ],
+        },
         "corpus": {
             "name": "Personal Corpus Analyzer",
             "description": "Analyze your personal poetry collection for style insights",
@@ -229,6 +240,23 @@ class ConfigFormScreen(Screen):
                 ("k_per_cluster", "Words per cluster", "10"),
                 ("sections", "Sections (all or comma-separated)", "all"),
                 ("output_format", "Output format (simple/markdown/json/rich)", "simple"),
+            ],
+        },
+        "poem_scaffold": {
+            "name": "Poem Scaffold Generator",
+            "description": "Generate multi-stanza thematic structure from start to end concept",
+            "inputs": [
+                ("start_concept", "Starting Concept", ""),
+                ("end_concept", "Ending Concept", ""),
+                ("num_stanzas", "Number of Stanzas", "3"),
+                ("fingerprint_path", "Style Fingerprint Path (optional)", ""),
+            ],
+        },
+        "template_extract": {
+            "name": "Template Extractor",
+            "description": "Extract structural templates from existing poems",
+            "inputs": [
+                ("poem_text", "Poem Text (paste your poem here)", ""),
             ],
         },
         "deps": {
@@ -557,6 +585,76 @@ class ConfigFormScreen(Screen):
 
             return "\n".join(result_lines)
 
+        elif procedure_id == "definitional":
+            from poetryplayground.definitional_finder import find_words_by_definition
+
+            search_term = config.get("search_term", "").strip()
+
+            if not search_term:
+                return "Error: Search term is required"
+
+            pos_input = config.get("pos_filter", "").strip().lower()
+            pos_filter = pos_input if pos_input in ["n", "v", "a", "r"] else None
+
+            try:
+                limit = int(config.get("limit", 20))
+            except ValueError:
+                limit = 20
+
+            try:
+                min_quality = float(config.get("min_quality", 0.5))
+                if not 0.0 <= min_quality <= 1.0:
+                    min_quality = 0.5
+            except ValueError:
+                min_quality = 0.5
+
+            multiword_input = config.get("allow_multiword", "y").strip().lower()
+            allow_multiword = multiword_input != "n"
+
+            try:
+                results = find_words_by_definition(
+                    search_term=search_term,
+                    pos_filter=pos_filter,
+                    limit=limit,
+                    min_quality=min_quality,
+                    allow_multiword=allow_multiword,
+                    verbose=False,  # Suppress progress bar in TUI
+                )
+
+                if not results:
+                    return f"No words found in definitions containing '{search_term}'"
+
+                result_lines = [f"Found {len(results)} words:\n"]
+
+                # POS mapping
+                pos_map = {"n": "noun", "v": "verb", "a": "adj", "r": "adv"}
+
+                for i, result in enumerate(results, 1):
+                    # Show quality as stars
+                    filled_stars = int(result.quality_score * 5 + 0.5)
+                    empty_stars = 5 - filled_stars
+                    stars = "★" * filled_stars + "☆" * empty_stars
+
+                    pos_str = pos_map.get(result.pos, result.pos)
+
+                    result_lines.append(
+                        f"{i:2d}. {result.word:20s} [{pos_str:5s}] {stars} ({result.quality_score:.2f})"
+                    )
+                    result_lines.append(f"    → {result.definition}")
+                    result_lines.append("")
+
+                if len(results) == limit:
+                    result_lines.append(f"(Showing top {limit} results)")
+
+                return "\n".join(result_lines)
+
+            except ImportError as e:
+                return f"Error: {e!s}\n\nPlease run: poetry-playground --setup"
+            except Exception as e:
+                import traceback
+
+                return f"Error searching definitions:\n{e!s}\n\n{traceback.format_exc()}"
+
         elif procedure_id == "semantic_path":
             from poetryplayground.semantic_geodesic import find_semantic_path, get_semantic_space
 
@@ -818,7 +916,7 @@ class ConfigFormScreen(Screen):
                 return f"Error during convergence search:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "futurist":
-            from poetryplayground.lexigen import phonetically_related_words
+            from poetryplayground.core.lexigen import phonetically_related_words
             from poetryplayground.poemgen import PoemGenerator
 
             input_words_str = config.get("input_words", "").strip()
@@ -934,8 +1032,87 @@ class ConfigFormScreen(Screen):
                 "  generator.generate_pdf(input_words=['your', 'words'])"
             )
 
+        elif procedure_id == "poem_scaffold":
+            from poetryplayground.strategies.generate_poem_scaffold import (
+                GeneratePoemScaffoldStrategy,
+            )
+            from poetryplayground.tui.screens.scaffold_display import ScaffoldDisplayScreen
+
+            start_concept = config.get("start_concept", "").strip()
+            end_concept = config.get("end_concept", "").strip()
+            num_stanzas = int(config.get("num_stanzas", 3))
+            fingerprint_path = config.get("fingerprint_path", "").strip() or None
+
+            if not start_concept or not end_concept:
+                return "Error: Both start_concept and end_concept are required"
+
+            try:
+                # Generate the scaffold
+                strategy = GeneratePoemScaffoldStrategy()
+                scaffold = strategy.run(
+                    start_concept=start_concept,
+                    end_concept=end_concept,
+                    num_stanzas=num_stanzas,
+                    fingerprint_path=fingerprint_path,
+                )
+
+                # Push the specialized scaffold display screen instead of returning text
+                # Use call_from_thread since we're in a @work(thread=True) method
+                self.app.call_from_thread(self.app.push_screen, ScaffoldDisplayScreen(scaffold))
+
+                # Return None to indicate we handled the display ourselves
+                return None
+
+            except Exception as e:
+                import traceback
+
+                return f"Error generating scaffold:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "template_extract":
+            from poetryplayground.template_extractor import TemplateExtractor
+
+            poem_text = config.get("poem_text", "").strip()
+
+            if not poem_text:
+                return "Error: Poem text is required"
+
+            try:
+                # Extract template
+                extractor = TemplateExtractor()
+                template = extractor.extract_template(poem_text)
+
+                # Format output
+                result_lines = [
+                    "=" * 60,
+                    f"EXTRACTED TEMPLATE: {template.title}",
+                    "=" * 60,
+                    "",
+                    f"Lines: {template.lines}",
+                    f"Syllable Pattern: {template.syllable_pattern}",
+                    f"Emotional Tone: {template.emotional_tone.value if template.emotional_tone else 'N/A'}",
+                    f"Semantic Domains: {', '.join(template.semantic_domains[:5]) if template.semantic_domains else 'None'}",
+                    f"Metaphor Types: {', '.join(template.metaphor_types[:3]) if template.metaphor_types else 'None'}",
+                    "",
+                    "Line Templates:",
+                ]
+
+                for i, line_template in enumerate(template.line_templates[:5], 1):  # Show first 5
+                    result_lines.append(
+                        f"  Line {i}: {line_template.syllable_count} syllables, {line_template.line_type.value}"
+                    )
+
+                if len(template.line_templates) > 5:
+                    result_lines.append(f"  ... and {len(template.line_templates) - 5} more lines")
+
+                return "\n".join(result_lines)
+
+            except Exception as e:
+                import traceback
+
+                return f"Error extracting template:\n{e!s}\n\n{traceback.format_exc()}"
+
         elif procedure_id == "deps":
-            from poetryplayground.system_utils import check_system_dependencies
+            from poetryplayground.core.system_utils import check_system_dependencies
 
             try:
                 # Run dependency checks

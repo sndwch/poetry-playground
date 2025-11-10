@@ -3,7 +3,7 @@
 
 import unittest
 
-from poetryplayground.word_validator import WordValidator, word_validator
+from poetryplayground.core.word_validator import WordValidator, word_validator
 
 
 class TestWordValidator(unittest.TestCase):

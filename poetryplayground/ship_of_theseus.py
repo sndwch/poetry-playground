@@ -18,9 +18,9 @@ from typing import List, Optional, Union
 
 import nltk
 
+from .core.pos_vocabulary import PENN_TO_UNIVERSAL, POSVocabulary
 from .forms import count_syllables
 from .logger import logger
-from .pos_vocabulary import PENN_TO_UNIVERSAL, POSVocabulary
 
 
 @dataclass

@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING, List, Optional, TypeVar
 
 import pronouncing
 
-from .cache import cached_api_call
-from .datamuse_api import get_datamuse_instance
-from .utils import (
+from ..cache import cached_api_call
+from ..datamuse_api import get_datamuse_instance
+from ..utils import (
     sort_by_rarity,
     too_similar,
     validate_str_or_list_of_str,

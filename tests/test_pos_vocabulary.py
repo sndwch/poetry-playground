@@ -5,13 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from poetryplayground.forms import count_syllables
-from poetryplayground.pos_vocabulary import (
+from poetryplayground.core.pos_vocabulary import (
     CORE_POS_TAGS,
     PENN_TO_UNIVERSAL,
     POSVocabulary,
     create_pos_vocabulary,
 )
+from poetryplayground.forms import count_syllables
 
 
 class TestPOSTagMappings:

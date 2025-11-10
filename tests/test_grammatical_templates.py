@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from poetryplayground.core.pos_vocabulary import POSVocabulary
 from poetryplayground.forms import count_syllables
 from poetryplayground.grammatical_templates import (
     GrammaticalTemplate,
@@ -12,7 +13,6 @@ from poetryplayground.grammatical_templates import (
     TemplateLibrary,
     create_template_generator,
 )
-from poetryplayground.pos_vocabulary import POSVocabulary
 
 
 class TestGrammaticalTemplate:

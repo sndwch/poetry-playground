@@ -6,8 +6,8 @@ import inflect
 import pytest
 import spacy
 
+from poetryplayground.core.lexigen import *
 from poetryplayground.decomposer import *
-from poetryplayground.lexigen import *
 from poetryplayground.pdf import *
 from poetryplayground.poemgen import *
 from poetryplayground.utils import *
