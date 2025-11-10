@@ -142,29 +142,29 @@ class TestUtils(unittest.TestCase):
 class TestLexigen(unittest.TestCase):
     def test_rhymes(self):
         self.assertEqual(rhymes("metamorphosis"), [])
-        # rhymes() filters out rare words (zipf < 3.0) by default
-        # 'crowds' (zipf 3.87) passes, 'shrouds' (zipf 2.47) is filtered
+        # WordValidator filters out invalid words (not in NLTK dictionary, proper nouns, etc.)
+        # 'crowds' passes validation, 'shrouds' is filtered (not in NLTK words or other reason)
         rhymes_with_clouds = ["crowds"]
         results = rhymes("clouds")
         self.assertEqual(sorted(results), rhymes_with_clouds)
-        # Only common rhymes pass the zipf >= 3.0 filter
-        # Most -outing words are rare, only 'shouting' is common enough
-        rhymes_with_sprouting = ["shouting"]
+        # WordValidator no longer filters by frequency (that's now QualityScorer's job)
+        # All valid -outing words pass: doubting, flouting, outing, pouting, routing, scouting, shouting, spouting
+        rhymes_with_sprouting = ["doubting", "flouting", "outing", "pouting", "routing", "scouting", "shouting", "spouting"]
         self.assertEqual(sorted(rhymes("sprouting", sample_size=None)), rhymes_with_sprouting)
         results = rhymes("sprouting")
         self.assertNotIn("sprouting", results)
         self.assertEqual(sorted(results), rhymes_with_sprouting)
-        # With only 1 rhyme available, sample_size=6 returns just that 1
+        # With 8 rhymes available, sample_size=6 returns 6
         results = rhymes("sprouting", sample_size=6)
-        self.assertEqual(len(results), 1)
+        self.assertEqual(len(results), 6)
         self.assertTrue(set(rhymes_with_sprouting).issuperset(set(results)))
         rhymes_with_either = sorted(rhymes_with_clouds + rhymes_with_sprouting)
         self.assertEqual(
             sorted(rhymes(["sprouting", "clouds"], sample_size=None)), rhymes_with_either
         )
-        # With only 2 total rhymes (crowds + shouting), sample_size=6 returns 2
+        # With 9 total rhymes (1 from clouds + 8 from sprouting), sample_size=6 returns 6
         results = rhymes(["clouds", "sprouting"], sample_size=6)
-        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results), 6)
         self.assertTrue(set(rhymes_with_either).issuperset(set(results)))
 
     def test_rhyme(self):

@@ -165,6 +165,7 @@ class TestLineSeedsWordPoolExpansion:
             f"Only {len(unique_lines)} unique pivot lines out of 30. Expected more diversity."
         )
 
+    @skip_on_network_disabled
     def test_adjective_diversity(self, generator):
         """Test that seeds use diverse adjectives (not just 5 options)."""
         seed_words = ["stone", "water"]
