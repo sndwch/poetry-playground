@@ -46,7 +46,19 @@ class GenerationStrategy(Enum):
 
 @dataclass
 class LineSeed:
-    """A line seed with metadata."""
+    """A line seed with metadata.
+
+    Attributes:
+        text: The actual line seed text
+        seed_type: Type of seed (opening, pivot, image, etc.)
+        strategy: Generation strategy used
+        momentum: 0-1, how much forward movement it creates
+        openness: 0-1, how many directions it could go
+        quality_score: 0-1, overall quality (universal quality scorer)
+        notes: Optional notes about the seed
+        style_fit_score: 0-1, how well it matches a personal style (0 if not personalized)
+        style_components: Breakdown of style matching scores (None if not personalized)
+    """
 
     text: str
     seed_type: SeedType
@@ -55,6 +67,8 @@ class LineSeed:
     openness: float  # 0-1, how many directions it could go
     quality_score: float  # 0-1, overall quality
     notes: Optional[str] = None
+    style_fit_score: float = 0.0  # 0-1, style matching score (new for personalized seeds)
+    style_components: Optional[dict] = None  # Breakdown: {line_length, pos, concreteness, phonetic}
 
 
 class LineSeedGenerator:

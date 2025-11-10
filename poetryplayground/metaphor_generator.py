@@ -81,7 +81,7 @@ class MetaphorGenerator:
         """Initialize verb associations using shared vocabulary."""
         self.verb_associations = vocabulary.domain_verb_associations
 
-    def extract_metaphor_patterns(self, num_texts: int = 3, verbose: bool = True) -> List[str]:
+    def extract_metaphor_patterns(self, num_texts: int = 3, verbose: bool = True) -> List[Metaphor]:
         """Extract metaphorical patterns from multiple Gutenberg texts.
 
         Args:
@@ -89,7 +89,7 @@ class MetaphorGenerator:
             verbose: Whether to print progress messages (default: True for CLI, False for TUI)
 
         Returns:
-            List of extracted metaphor patterns from diverse sources
+            List of Metaphor objects with quality scores, types, and context
         """
         all_metaphors = []
 
@@ -152,19 +152,18 @@ class MetaphorGenerator:
                 if len(all_metaphors) >= min_target:
                     break
 
-        # Remove duplicates, apply quality filtering, and store for later use
+        # Remove duplicates based on source-target pairs
         unique_metaphors = []
         seen_pairs = set()
         quality_filtered = 0
 
         for metaphor in all_metaphors:
-            source, target = metaphor[0], metaphor[1]
-            pair = (source.lower(), target.lower())
+            pair = (metaphor.source.lower(), metaphor.target.lower())
 
-            if pair not in seen_pairs and len(source) > 2 and len(target) > 2:
-                # Apply quality filter - only keep high-quality metaphors
-                quality = self._score_metaphor(source, target, [])
-                if quality >= 0.5:  # Quality threshold for final selection
+            if pair not in seen_pairs and len(metaphor.source) > 2 and len(metaphor.target) > 2:
+                # Quality score already calculated in _extract_metaphors_from_text
+                # Apply threshold of 0.5 for final selection
+                if metaphor.quality_score >= 0.5:
                     seen_pairs.add(pair)
                     unique_metaphors.append(metaphor)
                 else:
@@ -254,14 +253,25 @@ class MetaphorGenerator:
         total_docs: Optional[int] = None,
         is_additional: bool = False,
         verbose: bool = True,
-    ) -> List[Tuple[str, str, str]]:
-        """Extract metaphors from a single text using defined patterns."""
+    ) -> List[Metaphor]:
+        """Extract metaphors from a single text using defined patterns.
+
+        Returns:
+            List of Metaphor objects with quality scores and type classification
+        """
+        # Patterns with their corresponding MetaphorType
         patterns = [
-            r"(\w+)\s+(?:is|was|are|were)\s+like\s+(?:a\s+|an\s+|the\s+)?(\w+)",
-            r"(\w+)\s+as\s+(?:a\s+|an\s+|the\s+)?(\w+)",
-            r"(\w+),\s+(?:a\s+|an\s+|that\s+|this\s+)(\w+)",
-            r"the\s+(\w+)\s+of\s+(\w+)",
-            r"(\w+)\s+(?:resembles|mirrors|echoes)\s+(?:a\s+|an\s+|the\s+)?(\w+)",
+            (
+                r"(\w+)\s+(?:is|was|are|were)\s+like\s+(?:a\s+|an\s+|the\s+)?(\w+)",
+                MetaphorType.SIMILE,
+            ),
+            (r"(\w+)\s+as\s+(?:a\s+|an\s+|the\s+)?(\w+)", MetaphorType.SIMILE),
+            (r"(\w+),\s+(?:a\s+|an\s+|that\s+|this\s+)(\w+)", MetaphorType.APPOSITIVE),
+            (r"the\s+(\w+)\s+of\s+(\w+)", MetaphorType.POSSESSIVE),
+            (
+                r"(\w+)\s+(?:resembles|mirrors|echoes)\s+(?:a\s+|an\s+|the\s+)?(\w+)",
+                MetaphorType.DIRECT,
+            ),
         ]
 
         try:
@@ -281,19 +291,20 @@ class MetaphorGenerator:
             )
 
             for sentence in sentences_to_check:
-                for pattern in patterns:
+                for pattern, metaphor_type in patterns:
                     matches = re.findall(pattern, sentence.lower())
                     for match in matches:
                         if len(match) == 2:
                             source, target = match
                             if self._is_valid_metaphor_pair(source, target):
-                                found_metaphors.append((source, target, sentence))
+                                # Store with type information
+                                found_metaphors.append((source, target, sentence, metaphor_type))
 
             # Sort by quality using comprehensive quality scoring
             if found_metaphors:
-                # Score each metaphor and sort by quality
-                scored_metaphors = []
-                for source, target, sentence in found_metaphors:
+                # Score each metaphor and create Metaphor objects
+                metaphor_objects = []
+                for source, target, sentence, metaphor_type in found_metaphors:
                     # Calculate quality score for this metaphor
                     quality = self._score_metaphor(source, target, [])
 
@@ -303,28 +314,36 @@ class MetaphorGenerator:
                     # Combined score: 80% metaphor quality, 20% clarity
                     combined_score = (quality * 0.8) + (clarity_bonus * 0.2)
 
-                    scored_metaphors.append((source, target, sentence, combined_score))
+                    # Create Metaphor object with all metadata
+                    metaphor_obj = Metaphor(
+                        text=f"{source} → {target}",
+                        source=source,
+                        target=target,
+                        metaphor_type=metaphor_type,
+                        quality_score=combined_score,
+                        grounds=[],  # Could be enhanced later
+                        source_text=sentence,  # Store full context sentence
+                    )
+                    metaphor_objects.append(metaphor_obj)
 
-                # Sort by combined score (descending)
-                scored_metaphors.sort(key=lambda x: x[3], reverse=True)
-
-                # Convert back to original format (drop the score)
-                found_metaphors = [(s, t, sent) for s, t, sent, _ in scored_metaphors]
+                # Sort by quality score (descending)
+                metaphor_objects.sort(key=lambda m: m.quality_score, reverse=True)
 
                 if verbose:
                     if is_additional:
                         print(
-                            f"    ✓ Found {len(found_metaphors)} additional metaphor patterns (quality-sorted)"
+                            f"    ✓ Found {len(metaphor_objects)} additional metaphor patterns (quality-sorted)"
                         )
                     else:
                         print(
-                            f"    ✓ Found {len(found_metaphors)} metaphor patterns (quality-sorted)"
+                            f"    ✓ Found {len(metaphor_objects)} metaphor patterns (quality-sorted)"
                         )
+
+                return metaphor_objects
             else:
                 if verbose:
                     print("    ✓ Found 0 metaphor patterns")
-
-            return found_metaphors
+                return []
 
         except Exception as e:
             if verbose:

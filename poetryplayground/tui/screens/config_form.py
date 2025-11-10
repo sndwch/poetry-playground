@@ -112,6 +112,17 @@ class ConfigFormScreen(Screen):
                 ("count", "Number of seeds", "10"),
             ],
         },
+        "personalized_lineseeds": {
+            "name": "Personalized Line Seeds",
+            "description": "Generate line seeds matching your personal style fingerprint",
+            "inputs": [
+                ("corpus_dir", "Corpus Directory Path", ""),
+                ("strictness", "Strictness (0.0-1.0)", "0.7"),
+                ("count", "Number of seeds", "15"),
+                ("min_quality", "Min Quality (0.0-1.0)", "0.5"),
+                ("min_style_fit", "Min Style Fit (0.0-1.0)", "0.4"),
+            ],
+        },
         "ideas": {
             "name": "Poetry Idea Generator",
             "description": "Mine creative seeds from classic literature",
@@ -342,6 +353,7 @@ class ConfigFormScreen(Screen):
             return result
 
         elif procedure_id == "metaphor":
+            from poetryplayground.metaphor_display import format_metaphors
             from poetryplayground.metaphor_generator import MetaphorGenerator
 
             count = int(config.get("count", 10))
@@ -352,13 +364,14 @@ class ConfigFormScreen(Screen):
             num_texts = max(3, count // 3)  # Use more texts for larger counts
             metaphors = generator.extract_metaphor_patterns(num_texts=num_texts, verbose=False)
 
-            # Return the requested count
-            result_lines = []
-            for i, metaphor in enumerate(metaphors[:count], 1):
-                result_lines.append(f"{i}. {metaphor}")
-                result_lines.append("")
-
-            return "\n".join(result_lines)
+            # Use compact formatter optimized for TUI (60 chars wide, box drawing)
+            if metaphors:
+                max_per_cat = max(3, count // 3)  # Show more if they requested more
+                return format_metaphors(
+                    metaphors, mode="compact", max_per_category=max_per_cat, show_context=False
+                )
+            else:
+                return "No metaphors found. Try again or adjust parameters."
 
         elif procedure_id == "lineseeds":
             from poetryplayground.line_seeds import LineSeedGenerator
@@ -383,6 +396,85 @@ class ConfigFormScreen(Screen):
                 )
                 if seed.notes:
                     result.append(f"   Note: {seed.notes}")
+
+            return "\n".join(result)
+
+        elif procedure_id == "personalized_lineseeds":
+            import os
+
+            from poetryplayground.corpus_analyzer import PersonalCorpusAnalyzer
+            from poetryplayground.personalized_seeds import PersonalizedLineSeedGenerator
+
+            corpus_dir = config.get("corpus_dir", "").strip()
+            if not corpus_dir or not os.path.exists(corpus_dir):
+                return "Error: Invalid or missing corpus directory path"
+
+            try:
+                strictness = float(config.get("strictness", 0.7))
+                if not 0.0 <= strictness <= 1.0:
+                    strictness = 0.7
+            except ValueError:
+                strictness = 0.7
+
+            try:
+                count = int(config.get("count", 15))
+            except ValueError:
+                count = 15
+
+            try:
+                min_quality = float(config.get("min_quality", 0.5))
+                if not 0.0 <= min_quality <= 1.0:
+                    min_quality = 0.5
+            except ValueError:
+                min_quality = 0.5
+
+            try:
+                min_style_fit = float(config.get("min_style_fit", 0.4))
+                if not 0.0 <= min_style_fit <= 1.0:
+                    min_style_fit = 0.4
+            except ValueError:
+                min_style_fit = 0.4
+
+            # Analyze corpus
+            analyzer = PersonalCorpusAnalyzer()
+            fingerprint = analyzer.analyze_directory(corpus_dir)
+
+            if fingerprint.metrics.total_poems == 0:
+                return "Error: No poems found in the specified directory"
+
+            # Generate personalized seeds
+            generator = PersonalizedLineSeedGenerator(fingerprint, strictness=strictness)
+            seeds = generator.generate_personalized_collection(
+                count=count, min_quality=min_quality, min_style_fit=min_style_fit
+            )
+
+            if not seeds:
+                return "No seeds met the quality/style thresholds. Try lowering min_quality or min_style_fit."
+
+            # Format output
+            result = [
+                f"Generated {len(seeds)} personalized seeds from {fingerprint.metrics.total_poems} poems\n"
+            ]
+            for i, seed in enumerate(seeds, 1):
+                quality = seed.quality_score
+                style_fit = seed.style_fit_score
+                combined = 0.7 * quality + 0.3 * style_fit
+
+                result.append(f"{i}. [{seed.seed_type.value}] {seed.text}")
+                result.append(
+                    f"   Quality: {quality:.2f} | Style: {style_fit:.2f} | Combined: {combined:.2f}"
+                )
+
+                # Show style breakdown for top 5
+                if i <= 5 and seed.style_components:
+                    comp = seed.style_components
+                    result.append(
+                        f"   Style breakdown: length={comp['line_length']:.2f}, "
+                        f"pos={comp['pos_pattern']:.2f}, "
+                        f"concrete={comp['concreteness']:.2f}, "
+                        f"phonetic={comp['phonetic']:.2f}"
+                    )
+                result.append("")
 
             return "\n".join(result)
 

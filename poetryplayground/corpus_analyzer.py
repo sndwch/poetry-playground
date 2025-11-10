@@ -20,6 +20,7 @@ from wordfreq import word_frequency
 
 from .lexigen import contextually_linked_words, similar_meaning_words, similar_sounding_words
 from .logger import logger
+from .quality_scorer import get_quality_scorer
 from .word_validator import WordValidator
 
 # Initialize Rich console for formatted output
@@ -66,6 +67,10 @@ class VocabularyProfile:
     preferred_verbs: List[Tuple[str, int]] = field(default_factory=list)
     preferred_nouns: List[Tuple[str, int]] = field(default_factory=list)
 
+    # Dominant POS n-gram patterns (3-grams and 4-grams from typical lines)
+    dominant_pos_3grams: List[Tuple[Tuple[str, str, str], int]] = field(default_factory=list)
+    dominant_pos_4grams: List[Tuple[Tuple[str, str, str, str], int]] = field(default_factory=list)
+
 
 @dataclass
 class ThematicProfile:
@@ -75,6 +80,7 @@ class ThematicProfile:
     metaphor_patterns: List[str] = field(default_factory=list)
     emotional_register: Dict[str, float] = field(default_factory=dict)
     concrete_vs_abstract: Dict[str, int] = field(default_factory=dict)
+    avg_concreteness: float = 0.0  # Average concreteness score for the corpus
 
 
 @dataclass
@@ -315,6 +321,7 @@ class PersonalCorpusAnalyzer:
 
     def analyze_directory(self, directory_path: str) -> StyleFingerprint:
         """Analyze all poetry files in a directory"""
+        console.print(f"[cyan]📚 Loading poetry from:[/cyan] {directory_path}")
         directory = Path(directory_path)
         if not directory.exists():
             raise FileNotFoundError(f"Directory not found: {directory_path}")
@@ -335,10 +342,12 @@ class PersonalCorpusAnalyzer:
         if not poems:
             raise ValueError("No readable poetry files found in directory")
 
+        console.print(f"[green]✓ Found {len(poems)} poem(s)[/green]")
         return self.analyze_poems(poems)
 
     def analyze_poems(self, poems: List[Dict[str, str]]) -> StyleFingerprint:
         """Analyze a collection of poems"""
+        console.print("[cyan]🔍 Analyzing your poetry...[/cyan]")
         fingerprint = StyleFingerprint()
 
         # Prepare text data
@@ -356,21 +365,39 @@ class PersonalCorpusAnalyzer:
             all_lines.extend(lines)
             poem_structures.append(len(lines))
 
+        console.print(f"[cyan]  • {len(all_lines)} total lines[/cyan]")
+        console.print(f"[cyan]  • {sum(len(text.split()) for text in all_text)} total words[/cyan]")
+
         # Calculate basic metrics
+        console.print("[cyan]  • Calculating metrics...[/cyan]")
         fingerprint.metrics = self._calculate_metrics(poem_structures, all_lines)
 
         # Analyze vocabulary
+        console.print("[cyan]  • Analyzing vocabulary patterns...[/cyan]")
         fingerprint.vocabulary = self._analyze_vocabulary(all_text, all_lines)
 
         # Analyze themes and patterns
+        console.print("[cyan]  • Analyzing themes...[/cyan]")
         fingerprint.themes = self._analyze_themes(all_text, all_lines)
 
         # Identify compositional patterns
+        console.print("[cyan]  • Identifying compositional patterns...[/cyan]")
         self._analyze_compositional_patterns(all_lines, fingerprint)
 
         # Generate vocabulary expansions and inspired stanzas
         self._generate_vocabulary_expansions(fingerprint)
         self._generate_inspired_stanzas(all_lines, fingerprint)
+
+        console.print("[green]✓ Analysis complete![/green]")
+        console.print(
+            f"[green]  • {len(fingerprint.vocabulary.signature_words)} signature words identified[/green]"
+        )
+        console.print(
+            f"[green]  • {len(fingerprint.vocabulary.dominant_pos_3grams)} dominant syntax patterns found[/green]"
+        )
+        console.print(
+            f"[green]  • Average concreteness: {fingerprint.themes.avg_concreteness:.2f}[/green]"
+        )
 
         return fingerprint
 
@@ -666,23 +693,31 @@ class PersonalCorpusAnalyzer:
         profile.most_common_content_words = content_counter.most_common(30)
 
         # Signature words (high frequency relative to general usage)
+        # Use affinity scoring: corpus_freq / general_freq (TF-IDF style)
+        # Scan ALL words with count >= 2, not just top 100
         signature_words = []
-        for word, count in content_counter.most_common(100):
+        total_content_words = len(content_words) if content_words else 1
+
+        for word, count in content_counter.items():
             if count >= 2:  # Appears at least twice
                 general_freq = word_frequency(word, "en")
                 if general_freq > 0:
-                    corpus_freq = count / len(content_words)
-                    signature_score = corpus_freq / general_freq
-                    if signature_score > 10:  # Much more frequent than general usage
-                        signature_words.append((word, signature_score))
+                    corpus_freq = count / total_content_words
+                    affinity_score = corpus_freq / general_freq
+                    # Lower threshold (5x instead of 10x) to catch more signature words
+                    if affinity_score > 5:
+                        signature_words.append((word, affinity_score))
 
-        profile.signature_words = sorted(signature_words, key=lambda x: x[1], reverse=True)[:20]
+        # Sort by affinity score and take top 30
+        profile.signature_words = sorted(signature_words, key=lambda x: x[1], reverse=True)[:30]
 
-        # Rare words (low general frequency but used in corpus)
+        # Rare words: Remove aggressive filter, use moderate threshold
+        # Only include words that are somewhat rare (< 1e-5) but not ultra-rare
         rare_words = []
         for word, count in content_counter.items():
             general_freq = word_frequency(word, "en")
-            if 0 < general_freq < 1e-6 and count >= 2:  # Rare but used multiple times
+            # Moderately rare: between 1e-6 and 1e-5, and used at least 2 times
+            if 1e-6 < general_freq < 1e-5 and count >= 2:
                 rare_words.append((word, count))
 
         profile.rare_words = sorted(rare_words, key=lambda x: x[1], reverse=True)[:20]
@@ -693,6 +728,10 @@ class PersonalCorpusAnalyzer:
             adjectives = Counter()
             verbs = Counter()
             nouns = Counter()
+
+            # For POS n-grams: filter lines to typical length (3-12 words)
+            pos_3gram_counter = Counter()
+            pos_4gram_counter = Counter()
 
             for text in all_text:
                 doc = self.nlp(text)
@@ -707,10 +746,36 @@ class PersonalCorpusAnalyzer:
                         elif token.pos_ in ["NOUN", "PROPN"]:
                             nouns[token.lemma_.lower()] += 1
 
+            # Extract POS n-grams from filtered lines
+            for line in all_lines:
+                words = line.split()
+                # Filter: only analyze lines with 3-12 words (typical verse lines)
+                if 3 <= len(words) <= 12:
+                    doc = self.nlp(line)
+                    pos_tags = [token.pos_ for token in doc]
+
+                    # Extract 3-grams
+                    for i in range(len(pos_tags) - 2):
+                        trigram = (pos_tags[i], pos_tags[i + 1], pos_tags[i + 2])
+                        pos_3gram_counter[trigram] += 1
+
+                    # Extract 4-grams
+                    for i in range(len(pos_tags) - 3):
+                        fourgram = (pos_tags[i], pos_tags[i + 1], pos_tags[i + 2], pos_tags[i + 3])
+                        pos_4gram_counter[fourgram] += 1
+
             profile.pos_distribution = dict(pos_counter)
             profile.preferred_adjectives = adjectives.most_common(20)
             profile.preferred_verbs = verbs.most_common(20)
             profile.preferred_nouns = nouns.most_common(20)
+
+            # Store top 15 dominant POS n-grams (filter: must appear at least 2 times)
+            profile.dominant_pos_3grams = [
+                (ngram, count) for ngram, count in pos_3gram_counter.most_common(15) if count >= 2
+            ]
+            profile.dominant_pos_4grams = [
+                (ngram, count) for ngram, count in pos_4gram_counter.most_common(15) if count >= 2
+            ]
 
         return profile
 
@@ -807,6 +872,23 @@ class PersonalCorpusAnalyzer:
             "abstract": abstract_count,
             "ratio": concrete_count / max(abstract_count, 1),
         }
+
+        # Calculate average concreteness using quality scorer's concreteness cache
+        quality_scorer = get_quality_scorer()
+        concreteness_scores = []
+
+        for text in all_text:
+            words = re.findall(r"\b[a-zA-Z]+\b", text.lower())
+            for word in words:
+                if word in quality_scorer.concreteness_cache:
+                    concreteness_scores.append(quality_scorer.concreteness_cache[word])
+
+        # Calculate average (0.0 = abstract, 1.0 = concrete)
+        profile.avg_concreteness = (
+            sum(concreteness_scores) / len(concreteness_scores)
+            if concreteness_scores
+            else 0.5  # Neutral if no data
+        )
 
         return profile
 

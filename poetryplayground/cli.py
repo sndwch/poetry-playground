@@ -2,6 +2,8 @@
 import argparse
 import os
 import re
+from datetime import datetime
+from pathlib import Path
 
 from consolemenu import ConsoleMenu
 from consolemenu.items import FunctionItem
@@ -19,6 +21,7 @@ from poetryplayground.forms import FormGenerator
 from poetryplayground.idea_generator import IdeaType, PoetryIdeaGenerator
 from poetryplayground.line_seeds import LineSeedGenerator, SeedType
 from poetryplayground.logger import enable_profiling, set_log_level
+from poetryplayground.metaphor_display import format_metaphors
 from poetryplayground.metaphor_generator import MetaphorGenerator, MetaphorType
 from poetryplayground.pdf import (
     ChaoticConcretePoemPDFGenerator,
@@ -27,6 +30,7 @@ from poetryplayground.pdf import (
     MarkovPoemPDFGenerator,
     StopwordSoupPoemPDFGenerator,
 )
+from poetryplayground.personalized_seeds import PersonalizedLineSeedGenerator
 from poetryplayground.poem_transformer import PoemTransformer
 from poetryplayground.poemgen import PoemGenerator, print_poem
 from poetryplayground.rich_console import console
@@ -34,10 +38,64 @@ from poetryplayground.rich_output import display_poem_output
 from poetryplayground.seed_manager import format_seed_message, set_global_seed
 from poetryplayground.setup_models import setup as setup_models
 from poetryplayground.six_degrees import SixDegrees
+from poetryplayground.strategies.bridge_two_concepts import BridgeTwoConceptsStrategy
+from poetryplayground.strategy_engine import get_strategy_engine
 from poetryplayground.system_utils import check_system_dependencies
 from poetryplayground.utils import get_input_words
 
 reuse_words_prompt = "\nType yes to use the same words again, Otherwise just hit enter.\n"
+
+
+def _export_metaphors(metaphors, default_name="metaphors"):
+    """Prompt user to export metaphors and save to file if requested.
+
+    Args:
+        metaphors: List of Metaphor objects to export
+        default_name: Default filename base (without extension)
+
+    Returns:
+        True if exported, False if skipped
+    """
+    if not metaphors:
+        return False
+
+    print("\n" + "-" * 40)
+    print("Export metaphors?")
+    print("  j - JSON format")
+    print("  m - Markdown table")
+    print("  s - Simple list (source→target)")
+    print("  n - No export")
+
+    choice = input("\nExport choice (j/m/s/n): ").strip().lower()
+
+    if choice not in ["j", "m", "s"]:
+        return False
+
+    # Map choice to mode
+    mode_map = {"j": "json", "m": "markdown", "s": "simple"}
+    mode = mode_map[choice]
+
+    # Format metaphors
+    formatted = format_metaphors(metaphors, mode=mode)
+
+    # Determine file extension
+    ext_map = {"json": ".json", "markdown": ".md", "simple": ".txt"}
+    ext = ext_map[mode]
+
+    # Create output directory
+    output_dir = Path("output")
+    output_dir.mkdir(exist_ok=True)
+
+    # Generate timestamped filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{default_name}_{timestamp}{ext}"
+    file_path = output_dir / filename
+
+    # Write file
+    file_path.write_text(formatted, encoding="utf-8")
+
+    print(f"✓ Exported to: {file_path}")
+    return True
 
 
 def parse_syllable_range(value: str) -> tuple:
@@ -391,31 +449,18 @@ def metaphor_generator_action():
                 for line in extended.text.split("\n"):
                     print(f"  {line}")
 
-        # Show some Gutenberg-inspired patterns if found
+        # Show Gutenberg-inspired patterns with new formatter
         if gutenberg_patterns:
             print("\nINSPIRED BY CLASSIC LITERATURE:")
             print("-" * 40)
+            # Use detailed formatter with context for literary patterns
+            formatted = format_metaphors(
+                gutenberg_patterns, mode="detailed", max_per_category=3, show_context=True
+            )
+            print(formatted)
 
-            # Group patterns by source text to show diversity
-            text_groups = {}
-            for source, target, sentence in gutenberg_patterns:
-                text_key = sentence[:50]  # Use first 50 chars as grouping key
-                if text_key not in text_groups:
-                    text_groups[text_key] = []
-                text_groups[text_key].append((source, target, sentence))
-
-            # Show patterns from different texts
-            shown_count = 0
-            for _text_key, patterns in text_groups.items():
-                if shown_count >= 3:
-                    break
-                source, target, sentence = patterns[0]  # Take first pattern from this text
-                print(f"  • {source} like {target}")
-                print(f'    From: "{sentence[:80]}..."')
-                shown_count += 1  # noqa: SIM113
-
-            if len(text_groups) > 1:
-                print(f"    (Patterns from {len(text_groups)} different classic texts)")
+            # Offer to export
+            _export_metaphors(gutenberg_patterns, default_name="gutenberg_metaphors")
 
         # Generate a synesthetic metaphor
         print("\nSYNESTHETIC (CROSS-SENSORY):")
@@ -440,32 +485,17 @@ def metaphor_generator_action():
             input_words = get_input_words()  # Get new words
         elif choice == "3":
             print("\nMining additional Gutenberg texts...")
-            patterns = generator.extract_metaphor_patterns(num_texts=8)
+            patterns = generator.extract_metaphor_patterns(num_texts=8, verbose=True)
             if patterns:
-                # Group by text source to show diversity
-                text_groups = {}
-                for source, target, sentence in patterns:
-                    text_key = sentence[:60]
-                    if text_key not in text_groups:
-                        text_groups[text_key] = []
-                    text_groups[text_key].append((source, target, sentence))
-
-                print(
-                    f"Found {len(patterns)} metaphorical patterns from {len(text_groups)} different texts"
+                print(f"\nFound {len(patterns)} metaphorical patterns!")
+                # Use compact formatter for mining results
+                formatted = format_metaphors(
+                    patterns, mode="detailed", max_per_category=5, show_context=True
                 )
+                print(formatted)
 
-                # Show examples from different texts
-                shown_texts = 0
-                for _text_key, group_patterns in text_groups.items():
-                    if shown_texts >= 3:
-                        break
-                    source, target, sentence = group_patterns[0]
-                    print(f"  • {source} like {target}")
-                    print(f'    From: "{sentence[:80]}..."')
-                    shown_texts += 1  # noqa: SIM113
-
-                if len(text_groups) > 3:
-                    print(f"    (Plus patterns from {len(text_groups) - 3} more texts)")
+                # Offer to export
+                _export_metaphors(patterns, default_name="mined_metaphors")
             else:
                 print("No additional patterns found")
         else:
@@ -547,6 +577,384 @@ def line_seeds_action():
             input_words = get_input_words()  # Get new words
         else:
             exit_loop = True  # Exit
+
+
+def personalized_line_seeds_action():
+    """Generate personalized line seeds matching author's style."""
+    print("\n" + "=" * 60)
+    print("🎯 PERSONALIZED LINE SEEDS - Style-Matched Generation")
+    print("=" * 60 + "\n")
+
+    # Get corpus directory
+    corpus_dir = input("Enter path to your poetry corpus directory: ").strip()
+
+    if not os.path.exists(corpus_dir):
+        print(f"❌ Error: Directory '{corpus_dir}' not found.")
+        input("\nPress Enter to return to main menu...")
+        return
+
+    # Analyze corpus
+    print(f"\n📚 Analyzing corpus at {corpus_dir}...")
+    analyzer = PersonalCorpusAnalyzer()
+    fingerprint = analyzer.analyze_directory(corpus_dir)
+
+    if fingerprint.metrics.total_poems == 0:
+        print("❌ Error: No poems found in directory.")
+        input("\nPress Enter to return to main menu...")
+        return
+
+    print(
+        f"✅ Analyzed {fingerprint.metrics.total_poems} poems, {fingerprint.metrics.total_lines} lines"
+    )
+    print(f"   Vocabulary size: {fingerprint.metrics.vocabulary_size} words")
+
+    # Get strictness parameter
+    while True:
+        strictness_input = input("\nEnter strictness (0.0-1.0, default 0.7): ").strip()
+        if not strictness_input:
+            strictness = 0.7
+            break
+        try:
+            strictness = float(strictness_input)
+            if 0.0 <= strictness <= 1.0:
+                break
+            print("⚠️  Strictness must be between 0.0 and 1.0")
+        except ValueError:
+            print("⚠️  Please enter a valid number")
+
+    # Create generator
+    print(f"\n🔧 Initializing personalized generator (strictness={strictness})...")
+    generator = PersonalizedLineSeedGenerator(fingerprint, strictness=strictness)
+
+    # Generate seeds
+    exit_loop = False
+    while not exit_loop:
+        print("\n" + "=" * 60)
+        print("Generating personalized line seeds...")
+        print("=" * 60 + "\n")
+
+        # Generate collection
+        seeds = generator.generate_personalized_collection(
+            count=15, min_quality=0.5, min_style_fit=0.4
+        )
+
+        if not seeds:
+            print("❌ No seeds met the quality/style thresholds. Try lowering strictness.")
+        else:
+            # Display seeds sorted by combined score
+            print(f"✨ Generated {len(seeds)} personalized line seeds:\n")
+            for i, seed in enumerate(seeds[:15], 1):
+                quality = seed.quality_score
+                style_fit = seed.style_fit_score
+                combined = 0.7 * quality + 0.3 * style_fit
+
+                print(f"{i:2d}. {seed.text}")
+                print(
+                    f"    └─ Quality: {quality:.2f} | Style: {style_fit:.2f} | Combined: {combined:.2f}"
+                )
+
+                # Show style breakdown for top 3
+                if i <= 3 and seed.style_components:
+                    comp = seed.style_components
+                    print(
+                        f"       Style: length={comp['line_length']:.2f} pos={comp['pos_pattern']:.2f} "
+                        f"concrete={comp['concreteness']:.2f} phonetic={comp['phonetic']:.2f}"
+                    )
+                print()
+
+        print("=" * 60)
+        print("\nOptions:")
+        print("  1. Generate more seeds")
+        print("  2. Change strictness")
+        print("  3. Return to main menu")
+
+        choice = input("\nYour choice (1-3): ").strip()
+
+        if choice == "1":
+            continue
+        elif choice == "2":
+            while True:
+                strictness_input = input("Enter new strictness (0.0-1.0): ").strip()
+                try:
+                    strictness = float(strictness_input)
+                    if 0.0 <= strictness <= 1.0:
+                        generator = PersonalizedLineSeedGenerator(
+                            fingerprint, strictness=strictness
+                        )
+                        break
+                    print("⚠️  Strictness must be between 0.0 and 1.0")
+                except ValueError:
+                    print("⚠️  Please enter a valid number")
+        else:
+            exit_loop = True
+
+
+def display_strategy_result(result):
+    """Display Strategy Engine results grouped by block type.
+
+    Args:
+        result: StrategyResult object
+
+    Example output:
+        ═══════════════════════════════════════════════════
+        BRIDGE TWO CONCEPTS: rust → forgiveness
+        ═══════════════════════════════════════════════════
+
+        BridgeWords (3 items)
+        ─────────────────────────────────────────────────
+          1. murmur
+             ★★★★☆ 0.87 | SemanticPath
+    """
+
+    print("\n" + "═" * 60)
+    print(f"STRATEGY ENGINE: {result.strategy_name.replace('_', ' ').title()}")
+    print("═" * 60)
+
+    # Show key metadata
+    metadata = result.metadata
+    if "start_word" in metadata and "end_word" in metadata:
+        print(f"Bridging: {metadata['start_word']} → {metadata['end_word']}")
+        if metadata.get("seed_words"):
+            print(f"Seed words: {', '.join(metadata['seed_words'])}")
+        print()
+
+    # Group by block_type
+    by_type = {}
+    for block in result.building_blocks:
+        by_type.setdefault(block.block_type, []).append(block)
+
+    # Display each group
+    for block_type in sorted(by_type.keys()):
+        blocks = by_type[block_type]
+        print(f"\n{'─' * 60}")
+        print(f"{block_type.upper()} ({len(blocks)} items)")
+        print(f"{'─' * 60}")
+
+        # Show top 10 per type
+        for i, block in enumerate(blocks[:10], 1):
+            # Create star rating
+            filled_stars = int(block.quality_score * 5 + 0.5)
+            empty_stars = 5 - filled_stars
+            stars = "★" * filled_stars + "☆" * empty_stars
+
+            print(f"  {i:2d}. {block.text}")
+            print(f"      {stars} {block.quality_score:.2f} | {block.source_method}")
+
+            # Show metadata for top 3
+            if i <= 3 and block.metadata:
+                # Filter out verbose metadata
+                display_meta = {
+                    k: v
+                    for k, v in block.metadata.items()
+                    if k
+                    in [
+                        "freq_bucket",
+                        "cluster_type",
+                        "seed_type",
+                        "metaphor_type",
+                        "source",
+                        "target",
+                    ]
+                    and v is not None
+                }
+                if display_meta:
+                    meta_str = ", ".join(f"{k}={v}" for k, v in display_meta.items())
+                    print(f"      ({meta_str})")
+            print()
+
+    # Summary
+    print("═" * 60)
+    print(
+        f"Total: {len(result.building_blocks)} building blocks | "
+        f"Generators: {len(result.generators_used)} | "
+        f"Time: {result.execution_time:.2f}s"
+    )
+    print("═" * 60)
+
+
+def export_strategy_result(result):
+    """Export strategy result to file.
+
+    Args:
+        result: StrategyResult object
+
+    Prompts user for format (JSON/Markdown) and saves to output/ directory.
+    """
+    import json
+
+    print("\n" + "─" * 60)
+    print("Export building blocks?")
+    print("  j - JSON format (with full metadata)")
+    print("  m - Markdown table")
+    print("  n - No export")
+
+    choice = input("\nExport choice (j/m/n): ").strip().lower()
+
+    if choice not in ["j", "m"]:
+        return
+
+    # Create output directory
+    output_dir = Path("output")
+    output_dir.mkdir(exist_ok=True)
+
+    # Generate timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    strategy_slug = result.strategy_name.replace("_", "-")
+
+    if choice == "j":
+        # JSON export with full metadata
+        data = {
+            "strategy_name": result.strategy_name,
+            "metadata": result.metadata,
+            "params": result.params,
+            "execution_time": result.execution_time,
+            "generators_used": result.generators_used,
+            "building_blocks": [
+                {
+                    "text": block.text,
+                    "source_method": block.source_method,
+                    "block_type": block.block_type,
+                    "quality_score": block.quality_score,
+                    "metadata": block.metadata,
+                }
+                for block in result.building_blocks
+            ],
+            "total_blocks": len(result.building_blocks),
+        }
+
+        filename = f"{strategy_slug}_{timestamp}.json"
+        file_path = output_dir / filename
+        file_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        print(f"✓ Exported to: {file_path}")
+
+    elif choice == "m":
+        # Markdown export
+        lines = [f"# Strategy Engine: {result.strategy_name.replace('_', ' ').title()}\n"]
+
+        # Metadata
+        if result.metadata:
+            lines.append("## Parameters\n")
+            for key, value in result.metadata.items():
+                lines.append(f"- **{key}**: {value}")
+            lines.append("")
+
+        # Building blocks table
+        lines.append("## Building Blocks\n")
+        lines.append("| # | Text | Type | Quality | Source |")
+        lines.append("|---|------|------|---------|--------|")
+
+        for i, block in enumerate(result.building_blocks, 1):
+            # Create star rating
+            filled_stars = int(block.quality_score * 5 + 0.5)
+            empty_stars = 5 - filled_stars
+            stars = "★" * filled_stars + "☆" * empty_stars
+
+            lines.append(
+                f"| {i} | {block.text} | {block.block_type} | "
+                f"{stars} {block.quality_score:.2f} | {block.source_method} |"
+            )
+
+        # Summary
+        lines.append("")
+        lines.append("## Summary\n")
+        lines.append(f"- **Total blocks**: {len(result.building_blocks)}")
+        lines.append(f"- **Generators used**: {', '.join(result.generators_used)}")
+        lines.append(f"- **Execution time**: {result.execution_time:.2f}s")
+
+        filename = f"{strategy_slug}_{timestamp}.md"
+        file_path = output_dir / filename
+        file_path.write_text("\n".join(lines), encoding="utf-8")
+        print(f"✓ Exported to: {file_path}")
+
+
+def strategy_engine_action():
+    """Run the Strategy Engine with bridge_two_concepts strategy."""
+    # Initialize engine and register strategy
+    engine = get_strategy_engine()
+    if "bridge_two_concepts" not in engine.list_strategies():
+        engine.register_strategy("bridge_two_concepts", BridgeTwoConceptsStrategy)
+
+    print("\n" + "═" * 60)
+    print("STRATEGY ENGINE: Bridge Two Concepts")
+    print("═" * 60)
+    print("\nThis strategy orchestrates multiple generators to bridge")
+    print("two concepts using semantic paths, imagery, metaphors,")
+    print("and line seeds.")
+    print("\n" + "─" * 60)
+
+    # Get inputs
+    start_word = input("Start word: ").strip()
+    if not start_word:
+        print("⚠️  Start word is required")
+        return
+
+    end_word = input("End word: ").strip()
+    if not end_word:
+        print("⚠️  End word is required")
+        return
+
+    seed_words_input = input("Seed words (optional, comma-separated): ").strip()
+    seed_words = (
+        [w.strip() for w in seed_words_input.split(",") if w.strip()] if seed_words_input else []
+    )
+
+    exit_loop = False
+    while not exit_loop:
+        try:
+            # Execute strategy
+            print(f"\n⚙️  Orchestrating generators to bridge '{start_word}' → '{end_word}'...")
+            print("   (This may take 10-20 seconds for parallel execution)\n")
+
+            result = engine.execute(
+                "bridge_two_concepts",
+                {"start_word": start_word, "end_word": end_word, "seed_words": seed_words},
+            )
+
+            # Display results
+            display_strategy_result(result)
+
+            # Offer export
+            export_strategy_result(result)
+
+        except Exception as e:
+            print(f"\n⚠️  Error executing strategy: {e}")
+            import traceback
+
+            traceback.print_exc()
+
+        # Menu
+        print("\n" + "─" * 60)
+        print("Options:")
+        print("  1. Generate with new words")
+        print("  2. Regenerate with same words")
+        print("  3. Return to main menu")
+
+        choice = input("\nYour choice (1-3): ").strip()
+
+        if choice == "1":
+            # Get new words
+            start_word = input("Start word: ").strip()
+            if not start_word:
+                print("⚠️  Start word is required")
+                exit_loop = True
+                continue
+
+            end_word = input("End word: ").strip()
+            if not end_word:
+                print("⚠️  End word is required")
+                exit_loop = True
+                continue
+
+            seed_words_input = input("Seed words (optional, comma-separated): ").strip()
+            seed_words = (
+                [w.strip() for w in seed_words_input.split(",") if w.strip()]
+                if seed_words_input
+                else []
+            )
+        elif choice == "2":
+            continue  # Regenerate with same words
+        else:
+            exit_loop = True
 
 
 def haiku_action():
@@ -1749,6 +2157,9 @@ def main():
 
     # New ideation items
     line_seeds_item = FunctionItem("🌱 Generate Line Seeds (Poetry Ideation)", line_seeds_action)
+    personalized_seeds_item = FunctionItem(
+        "🎯 Personalized Line Seeds (Style-Matched)", personalized_line_seeds_action
+    )
     metaphor_item = FunctionItem(
         "🔮 Generate Metaphors (Poetry Ideation)", metaphor_generator_action
     )
@@ -1772,6 +2183,10 @@ def main():
     conceptual_cloud_item = FunctionItem(
         "🌥️  Conceptual Cloud Generator (Word Associations)", conceptual_cloud_action
     )
+    strategy_engine_item = FunctionItem(
+        "⚙️  Strategy Engine: Bridge Two Concepts (Multi-Generator Orchestration)",
+        strategy_engine_action,
+    )
 
     # Syllable-constrained form generators
     haiku_item = FunctionItem("🌸 Generate Haiku (5-7-5 syllables)", haiku_action)
@@ -1788,6 +2203,7 @@ def main():
     menu.append_item(stopword_soup_function_item)
     menu.append_item(simple_visual_function_item)
     menu.append_item(line_seeds_item)
+    menu.append_item(personalized_seeds_item)
     menu.append_item(metaphor_item)
     menu.append_item(corpus_item)
     menu.append_item(transformer_item)
@@ -1797,6 +2213,7 @@ def main():
     menu.append_item(equidistant_item)
     menu.append_item(semantic_geodesic_item)
     menu.append_item(conceptual_cloud_item)
+    menu.append_item(strategy_engine_item)
     menu.append_item(haiku_item)
     menu.append_item(tanka_item)
     menu.append_item(senryu_item)

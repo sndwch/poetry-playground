@@ -172,6 +172,12 @@ class UnifiedTUIScreen(Screen):
             "Ideation",
         ),
         (
+            "personalized_lineseeds",
+            "Personalized Line Seeds",
+            "Style-matched seeds from your corpus fingerprint",
+            "Ideation",
+        ),
+        (
             "metaphor",
             "Metaphor Generator",
             "Fresh metaphors from Project Gutenberg texts",
