@@ -1076,6 +1076,174 @@ def poem_scaffold_action():
             exit_loop = True
 
 
+def contextual_sampler_action():
+    """Extract context-aware samples from classic literature."""
+    from poetryplayground.strategies.contextual_sampler import ContextualSamplerStrategy
+
+    # Initialize engine and register strategy
+    engine = get_strategy_engine()
+    if "contextual_sampler" not in engine.list_strategies():
+        engine.register_strategy("contextual_sampler", ContextualSamplerStrategy)
+
+    exit_loop = False
+
+    while not exit_loop:
+        print("\n" + "═" * 60)
+        print("CONTEXTUAL SAMPLER")
+        print("═" * 60)
+        print("\nExtract context-aware samples from Project Gutenberg")
+        print("literature surrounding a specific word or phrase.\n")
+
+        # Get inputs
+        search_term = input("Search term or phrase: ").strip()
+        if not search_term:
+            print("⚠️  Search term is required.")
+            continue
+
+        sample_count_input = input("Number of samples (default 20): ").strip()
+        try:
+            sample_count = int(sample_count_input) if sample_count_input else 20
+            if sample_count < 1 or sample_count > 100:
+                print("Sample count must be between 1 and 100.")
+                continue
+        except ValueError:
+            print("Invalid number. Using default (20).")
+            sample_count = 20
+
+        context_window_input = input("Context window in characters (default 200): ").strip()
+        try:
+            context_window = int(context_window_input) if context_window_input else 200
+            if context_window < 50 or context_window > 1000:
+                print("Context window must be between 50 and 1000.")
+                continue
+        except ValueError:
+            print("Invalid number. Using default (200).")
+            context_window = 200
+
+        min_quality_input = input("Minimum quality score (0.0-1.0, default 0.5): ").strip()
+        try:
+            min_quality = float(min_quality_input) if min_quality_input else 0.5
+            if min_quality < 0.0 or min_quality > 1.0:
+                print("Quality must be between 0.0 and 1.0.")
+                continue
+        except ValueError:
+            print("Invalid number. Using default (0.5).")
+            min_quality = 0.5
+
+        transform_input = (
+            input("Apply Ship of Theseus transformation? (y/n, default n): ").strip().lower()
+        )
+        transform_ratio = 0.3 if transform_input == "y" else 0.0
+
+        genre_input = input("Genre filter (PZ/PR/PS, comma-separated, optional): ").strip()
+        locc_codes = None
+        if genre_input:
+            locc_codes = [g.strip().upper() for g in genre_input.split(",") if g.strip()]
+
+        # Execute strategy
+        console.print(
+            f"\n[bold cyan]Searching for '{search_term}' in classic literature...[/bold cyan]\n"
+        )
+
+        try:
+            with console.status("[bold green]Extracting context samples...", spinner="dots"):
+                result = engine.execute(
+                    "contextual_sampler",
+                    {
+                        "search_term": search_term,
+                        "sample_count": sample_count,
+                        "context_window": context_window,
+                        "min_quality": min_quality,
+                        "transform_ratio": transform_ratio,
+                        "locc_codes": locc_codes,
+                    },
+                )
+
+            # Display results
+            console.print(f"\n[bold]Found {len(result.building_blocks)} samples[/bold]")
+            console.print(f"Execution time: {result.execution_time:.2f}s\n")
+
+            # Separate original and transformed samples
+            original_blocks = [
+                b for b in result.building_blocks if not b.metadata.get("was_transformed", False)
+            ]
+            transformed_blocks = [
+                b for b in result.building_blocks if b.metadata.get("was_transformed", False)
+            ]
+
+            # Display original samples
+            if original_blocks:
+                console.print(
+                    f"[bold cyan]═══ ORIGINAL SAMPLES ({len(original_blocks)}) ═══[/bold cyan]\n"
+                )
+
+                for i, block in enumerate(original_blocks, 1):
+                    # Star rating
+                    filled_stars = int(block.quality_score * 5 + 0.5)
+                    stars = "★" * filled_stars + "☆" * (5 - filled_stars)
+
+                    console.print(
+                        f"[bold]{i}. {stars}[/bold] [dim]({block.quality_score:.2f})[/dim]"
+                    )
+                    console.print(f"[white]{block.text}[/white]")
+                    console.print(
+                        f"[dim]Source: {block.metadata.get('source_title', 'Unknown')}[/dim]"
+                    )
+                    if block.metadata.get("source_author"):
+                        console.print(f"[dim]Author: {block.metadata['source_author']}[/dim]")
+                    console.print()
+
+            # Display transformed samples
+            if transformed_blocks:
+                console.print(
+                    f"[bold magenta]═══ TRANSFORMED SAMPLES ({len(transformed_blocks)}) ═══[/bold magenta]\n"
+                )
+
+                for i, block in enumerate(transformed_blocks, 1):
+                    # Star rating
+                    filled_stars = int(block.quality_score * 5 + 0.5)
+                    stars = "★" * filled_stars + "☆" * (5 - filled_stars)
+
+                    console.print(
+                        f"[bold]{i}. {stars}[/bold] [dim]({block.quality_score:.2f})[/dim] [magenta][TRANSFORMED][/magenta]"
+                    )
+                    console.print(f"[white]{block.text}[/white]")
+                    console.print(
+                        f"[dim]Original: {block.metadata.get('original_text', '')[:80]}...[/dim]"
+                    )
+                    console.print(
+                        f"[dim]Replacements: {block.metadata.get('num_replacements', 0)}[/dim]"
+                    )
+                    console.print()
+
+            # Ask if user wants to continue or export
+            print("\nOptions:")
+            print("  [1] Search again")
+            print("  [2] Return to main menu")
+            choice = input("\nChoice: ").strip()
+
+            if choice == "1":
+                continue
+            else:
+                exit_loop = True
+
+        except Exception as e:
+            console.print(f"\n[red]⚠️  Error: {e}[/red]")
+            import traceback
+
+            traceback.print_exc()
+
+            print("\nOptions:")
+            print("  [1] Try again")
+            print("  [2] Return to main menu")
+            choice = input("\nChoice: ").strip()
+
+            if choice == "1":
+                continue
+            else:
+                exit_loop = True
+
+
 def haiku_action():
     """Generate haiku poems (5-7-5 syllable pattern)."""
     generator = FormGenerator()
@@ -2401,6 +2569,10 @@ def main():
         "📐 Poem Scaffold Generator (Multi-Stanza Thematic Structure)",
         poem_scaffold_action,
     )
+    contextual_sampler_item = FunctionItem(
+        "📖 Contextual Sampler (Extract Literature Samples)",
+        contextual_sampler_action,
+    )
 
     # Syllable-constrained form generators
     haiku_item = FunctionItem("🌸 Generate Haiku (5-7-5 syllables)", haiku_action)
@@ -2430,6 +2602,7 @@ def main():
     menu.append_item(conceptual_cloud_item)
     menu.append_item(strategy_engine_item)
     menu.append_item(poem_scaffold_item)
+    menu.append_item(contextual_sampler_item)
     menu.append_item(haiku_item)
     menu.append_item(tanka_item)
     menu.append_item(senryu_item)

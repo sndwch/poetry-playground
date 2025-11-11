@@ -252,6 +252,18 @@ class ConfigFormScreen(Screen):
                 ("fingerprint_path", "Style Fingerprint Path (optional)", ""),
             ],
         },
+        "contextual_sampler": {
+            "name": "Contextual Sampler",
+            "description": "Extract context-aware samples from classic literature",
+            "inputs": [
+                ("search_term", "Search Term (word or phrase)", ""),
+                ("sample_count", "Number of Samples", "20"),
+                ("context_window", "Context Window (characters)", "200"),
+                ("min_quality", "Min Quality (0.0-1.0)", "0.5"),
+                ("transform_ratio", "Transform Ratio (0.0-1.0)", "0.0"),
+                ("genre_filter", "Genre Filter (PZ/PR/PS, optional)", ""),
+            ],
+        },
         "template_extract": {
             "name": "Template Extractor",
             "description": "Extract structural templates from existing poems",
@@ -1115,6 +1127,109 @@ class ConfigFormScreen(Screen):
                 import traceback
 
                 return f"Error generating scaffold:\n{e!s}\n\n{traceback.format_exc()}"
+
+        elif procedure_id == "contextual_sampler":
+            from poetryplayground.strategies.contextual_sampler import ContextualSamplerStrategy
+            from poetryplayground.strategy_engine import get_strategy_engine
+
+            search_term = config.get("search_term", "").strip()
+            if not search_term:
+                return "Error: Search term is required"
+
+            sample_count = int(config.get("sample_count", 20))
+            context_window = int(config.get("context_window", 200))
+            min_quality = float(config.get("min_quality", 0.5))
+            transform_ratio = float(config.get("transform_ratio", 0.0))
+            genre_filter = config.get("genre_filter", "").strip()
+
+            # Parse genre filter
+            locc_codes = None
+            if genre_filter:
+                locc_codes = [g.strip().upper() for g in genre_filter.split(",") if g.strip()]
+
+            try:
+                # Use StrategyEngine
+                engine = get_strategy_engine()
+                if "contextual_sampler" not in engine.list_strategies():
+                    engine.register_strategy("contextual_sampler", ContextualSamplerStrategy)
+
+                # Execute via strategy engine
+                result = engine.execute(
+                    "contextual_sampler",
+                    {
+                        "search_term": search_term,
+                        "sample_count": sample_count,
+                        "context_window": context_window,
+                        "min_quality": min_quality,
+                        "transform_ratio": transform_ratio,
+                        "locc_codes": locc_codes,
+                    },
+                )
+
+                # Format output
+                output_lines = []
+                output_lines.append(
+                    f"Found {len(result.building_blocks)} samples for '{search_term}'"
+                )
+                output_lines.append(f"Execution time: {result.execution_time:.2f}s\n")
+
+                # Show original samples
+                original_blocks = [
+                    b
+                    for b in result.building_blocks
+                    if not b.metadata.get("was_transformed", False)
+                ]
+                if original_blocks:
+                    output_lines.append(f"\n{'=' * 60}")
+                    output_lines.append(f"ORIGINAL SAMPLES ({len(original_blocks)})")
+                    output_lines.append(f"{'=' * 60}\n")
+
+                    for i, block in enumerate(original_blocks, 1):
+                        # Star rating
+                        filled_stars = int(block.quality_score * 5 + 0.5)
+                        stars = "★" * filled_stars + "☆" * (5 - filled_stars)
+
+                        output_lines.append(f"{i}. {stars} ({block.quality_score:.2f})")
+                        output_lines.append(f"   {block.text}")
+                        output_lines.append(
+                            f"   Source: {block.metadata.get('source_title', 'Unknown')}"
+                        )
+                        if block.metadata.get("source_author"):
+                            output_lines.append(f"   Author: {block.metadata['source_author']}")
+                        output_lines.append("")
+
+                # Show transformed samples if any
+                transformed_blocks = [
+                    b for b in result.building_blocks if b.metadata.get("was_transformed", False)
+                ]
+                if transformed_blocks:
+                    output_lines.append(f"\n{'=' * 60}")
+                    output_lines.append(f"TRANSFORMED SAMPLES ({len(transformed_blocks)})")
+                    output_lines.append(f"{'=' * 60}\n")
+
+                    for i, block in enumerate(transformed_blocks, 1):
+                        # Star rating
+                        filled_stars = int(block.quality_score * 5 + 0.5)
+                        stars = "★" * filled_stars + "☆" * (5 - filled_stars)
+
+                        output_lines.append(
+                            f"{i}. {stars} ({block.quality_score:.2f}) [TRANSFORMED]"
+                        )
+                        output_lines.append(f"   {block.text}")
+                        output_lines.append(
+                            f"   Original: {block.metadata.get('original_text', '')[:80]}..."
+                        )
+                        output_lines.append(
+                            f"   Replacements: {block.metadata.get('num_replacements', 0)}"
+                        )
+                        output_lines.append("")
+
+                return "\n".join(output_lines)
+
+            except Exception as e:
+                import traceback
+
+                return f"Error sampling contexts:\n{e!s}\n\n{traceback.format_exc()}"
 
         elif procedure_id == "template_extract":
             from poetryplayground.template_extractor import TemplateExtractor

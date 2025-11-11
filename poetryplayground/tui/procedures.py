@@ -85,6 +85,12 @@ PROCEDURES: ClassVar[list] = [
         "Multi-dimensional word associations",
         "Ideation",
     ),
+    (
+        "contextual_sampler",
+        "Contextual Sampler",
+        "Extract context-aware samples from classic literature",
+        "Ideation",
+    ),
     # Templates
     (
         "template_extract",
